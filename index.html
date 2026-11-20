@@ -11,8 +11,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="LUMENIA" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
 
   <!-- Tailwind CSS pour l'interface sombre façon Melvor Idle 2 -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -17414,7 +17414,7 @@ function wmDraw(ctx, t, opt) {
     const PWA = { prompt: null, standalone: (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true };
     window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); PWA.prompt = e; try { if (!document.getElementById("screen-title").classList.contains("hidden")) renderTitleMenu(); } catch (er) {} });
     window.addEventListener("appinstalled", () => { PWA.prompt = null; PWA.standalone = true; try { showToast("📲 LUMENIA est installé sur ton appareil !"); } catch (e) {} });
-    function pwaCanOffer() { return !PWA.standalone && /^https?:$/.test(location.protocol) && (PWA.prompt || /iphone|ipad|ipod/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent)); }
+    function pwaCanOffer() { return !PWA.standalone && location.port !== "47821" && /^https?:$/.test(location.protocol) && (PWA.prompt || /iphone|ipad|ipod/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent)); }
     async function pwaInstall() {
       if (PWA.prompt) { PWA.prompt.prompt(); try { await PWA.prompt.userChoice; } catch (e) {} PWA.prompt = null; renderTitleMenu(); return; }
       const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -17546,7 +17546,8 @@ function wmDraw(ctx, t, opt) {
         "📲 LUMENIA devient une application mobile : installe-la depuis l'écran titre (« INSTALLER L'APPLI ») ou via « Ajouter à l'écran d'accueil ». Elle se lance en plein écran avec sa propre icône et fonctionne hors ligne.",
         "📱 Interface mobile : nouvelle barre d'onglets en bas (Expédition, Camp, Sac, Héros, Menu), menu complet en tiroir, boutons plus grands, et retour en haut de page à chaque changement d'onglet.",
         "✨ Mises à jour automatiques : quand une nouvelle version est en ligne, une bannière « Nouvelle version disponible » apparaît. Touche-la pour mettre à jour, ta partie est sauvegardée avant.",
-        "🗺️ La carte du monde s'adapte aux petits écrans (étiquettes compactes)."
+        "🗺️ La carte du monde s'adapte aux petits écrans (étiquettes compactes).",
+        "💻 Version Windows : LUMENIA.exe lance le jeu dans sa propre fenêtre, avec son icône, sans passer par le navigateur."
       ] },
       { v: "1.27", date: "20/11/2026", titre: "Relief et nuages", items: [
         "⛰️ Carte du monde redessinée avec un vrai relief : chaînes de montagnes ombrées, volcan en cône, collines boisées en bosquets, mares du marais, dunes et fissures du Néant. Les biomes se fondent les uns dans les autres au lieu d'être séparés par des traits.",
