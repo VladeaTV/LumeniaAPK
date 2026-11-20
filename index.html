@@ -424,6 +424,49 @@
     }
     @keyframes mobSheet { from { transform: translateY(30px); opacity: 0; } }
     @media (display-mode: standalone) { body { overscroll-behavior-y: none; } }
+
+    /* v1.31 — HUD de combat compact sur petit écran + bandeau PV/PM mobile + sélection multiple */
+    @media (max-width: 640px) {
+      #combat-hud-overlay .stage-chip { width: 8.5rem !important; right: 6px; top: 6px; padding: 3px 6px; border-radius: 8px; }
+      #combat-enemy-name { font-size: 9px !important; }
+      #combat-turn-badge { display: none; }
+      #combat-enemy-hp-bar { }
+      #combat-hud-overlay .stage-chip .h-2 { height: 5px; }
+      #combat-enemy-hp-text { font-size: 8px !important; margin-top: 1px; }
+      #ult-gauge-box { width: 7.5rem !important; left: 6px; top: 6px; padding: 3px 6px; border-radius: 8px; }
+      #ult-gauge-box .text-\[10px\] { font-size: 8px; }
+      #combat-status-line { font-size: 8px !important; right: 6px; bottom: 8px; padding: 2px 5px; max-width: 42% !important; }
+      #skill-strip { transform: scale(.78); transform-origin: left bottom; left: 4px; bottom: 6px; }
+    }
+    #mob-vitals { display: none; }
+    @media (max-width: 1023px) {
+      #mob-vitals { display: flex; position: fixed; left: 0; right: 0; top: 0; z-index: 53; align-items: center; gap: 8px; padding: calc(6px + env(safe-area-inset-top)) 10px 6px;
+        background: linear-gradient(180deg, rgba(14,23,48,.97), rgba(9,14,31,.95)); border-bottom: 2px solid #1c2a52; box-shadow: 0 6px 18px rgba(0,0,0,.5); backdrop-filter: blur(6px);
+        transform: translateY(-110%); transition: transform .22s ease; }
+      #mob-vitals.show { transform: none; }
+      #mob-vitals canvas { width: 30px; height: 30px; image-rendering: pixelated; border-radius: 7px; background: #0f172a; border: 1px solid #334155; flex-shrink: 0; }
+      .mv-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+      .mv-row { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .mv-row .lb { width: 18px; } .mv-row .tx { margin-left: auto; color: #e2e8f0; font-size: 10px; }
+      .mv-bar { flex: 1; height: 7px; border-radius: 99px; background: #020617; border: 1px solid #1e293b; overflow: hidden; }
+      .mv-bar > i { display: block; height: 100%; transition: width .2s; }
+      #mv-enemy { display: none; max-width: 38%; min-width: 0; flex-direction: column; gap: 3px; padding-left: 8px; border-left: 1px solid #334155; }
+      #mv-enemy.on { display: flex; }
+      #mv-enemy .nm { font-size: 9px; color: #fda4af; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #mv-gold { font-size: 10px; color: #fde047; font-weight: 700; white-space: nowrap; }
+    }
+    .inv-check { position: absolute; top: 6px; left: 6px; width: 20px; height: 20px; border-radius: 6px; border: 2px solid #64748b; background: rgba(2,6,23,.8); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #0f172a; }
+    .inv-picked .inv-check { background: #fbbf24; border-color: #fde68a; }
+    .inv-picked { box-shadow: 0 0 0 2px #fbbf24 inset, 0 0 14px rgba(251,191,36,.35); }
+    .inv-locked { opacity: .45; }
+    #inv-multi-bar:not(.hidden) { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(560px, calc(100% - 16px)); z-index: 56; }
+    body.inv-multi-on #view-inventaire { padding-bottom: 190px; }
+    @media (max-width: 1023px) {
+      #inv-multi-bar:not(.hidden) { bottom: calc(74px + env(safe-area-inset-bottom)); }
+      #inv-multi-bar .melvor-card { box-shadow: 0 -8px 30px rgba(0,0,0,.6); }
+      #inv-multi-bar .im-hint { display: none; }
+      body.inv-multi-on #toast-banner { bottom: calc(250px + env(safe-area-inset-bottom)) !important; }
+    }
 </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -1100,9 +1143,11 @@
                 </div>
               </div>
 
+              <div class="flex justify-end -mt-1"><button id="btn-inv-multi" type="button" class="tab-btn ui-btn text-xs">☑️ Sélection multiple</button></div>
               <div id="inv-grid-container"
                 class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[520px] overflow-y-auto pr-1">
               </div>
+              <div id="inv-multi-bar" class="hidden"></div>
             </div>
 
             <div class="lg:col-span-5 melvor-panel p-5 space-y-4">
@@ -1276,6 +1321,16 @@
   </div>
 
   <!-- NOTIFICATION TOAST -->
+  <!-- v1.31 : bandeau PV/PM fixe (mobile) -->
+  <div id="mob-vitals" aria-hidden="true">
+    <canvas id="mv-hero" width="128" height="128"></canvas>
+    <div class="mv-col">
+      <div class="mv-row"><span class="lb text-emerald-400">PV</span><div class="mv-bar"><i id="mv-hp" class="bg-emerald-500" style="width:100%"></i></div><span id="mv-hp-t" class="tx">0/0</span></div>
+      <div class="mv-row"><span class="lb text-sky-400">PM</span><div class="mv-bar"><i id="mv-mp" class="bg-sky-500" style="width:100%"></i></div><span id="mv-mp-t" class="tx">0/0</span></div>
+    </div>
+    <div id="mv-enemy"><span id="mv-en-name" class="nm">Ennemi</span><div class="mv-bar"><i id="mv-en-hp" class="bg-rose-500" style="width:100%"></i></div></div>
+    <span id="mv-gold">🪙 0</span>
+  </div>
   <!-- v1.28 : barre d'onglets mobile -->
   <div id="mob-backdrop"></div>
   <nav id="mob-tabbar" aria-label="Navigation mobile">
@@ -11165,6 +11220,109 @@
       return list;
     }
 
+
+    /* =======================================================================
+       v1.31 — Bandeau PV/PM fixe sur mobile
+       ======================================================================= */
+    let _mvObs = null, _mvLastDraw = 0;
+    function updateMobVitals(h, stats) {
+      const bar = document.getElementById("mob-vitals"); if (!bar || window.innerWidth >= 1024) return;
+      h = h || state.hero; stats = stats || getHeroTotalStats();
+      document.getElementById("mv-hp").style.width = `${Math.max(0, Math.min(100, h.pv / stats.pvMax * 100))}%`;
+      document.getElementById("mv-hp-t").textContent = `${h.pv}/${stats.pvMax}`;
+      document.getElementById("mv-mp").style.width = `${Math.max(0, Math.min(100, h.pm / stats.pmMax * 100))}%`;
+      document.getElementById("mv-mp-t").textContent = `${h.pm}/${stats.pmMax}`;
+      document.getElementById("mv-gold").textContent = "🪙 " + Math.floor(state.or).toLocaleString("fr-FR");
+      const c = state.expedition && state.expedition.combat, en = document.getElementById("mv-enemy");
+      en.classList.toggle("on", !!c);
+      if (c) { document.getElementById("mv-en-name").textContent = c.enemy.nom.replace(/^(BOSS|ÉLITE)\s*:\s*/, ""); document.getElementById("mv-en-hp").style.width = `${Math.max(0, c.enemy.pv / c.enemy.pvMax * 100)}%`; }
+      const now = performance.now(); if (now - _mvLastDraw > 1500) { _mvLastDraw = now; try { drawHero128(document.getElementById("mv-hero"), state.hero, 0, 0, false, false); } catch (e) {} }
+      if (!_mvObs && "IntersectionObserver" in window) {
+        const hp = document.getElementById("tb-hp-bar"), head = hp ? hp.closest(".w-32") || hp : document.querySelector("#screen-game header");
+        if (head) { _mvObs = new IntersectionObserver(es => es.forEach(x => bar.classList.toggle("show", !x.isIntersecting && state.started)), { threshold: 0 }); _mvObs.observe(head); }
+      }
+    }
+
+    /* =======================================================================
+       v1.31 — Inventaire : sélection multiple (vente / recyclage groupés)
+       ======================================================================= */
+    let invMulti = false, invPick = new Set(), invConfirm = null;
+    function invEntryValue(it) {
+      if (it.kind === "equip") return UNIVERS_CONFIG.raretes[it.data.rarete].valeurOr + it.data.niveau * 5;
+      return (it.data.valeurOr || 0) * it.qty;
+    }
+    function invMultiSummary(items) {
+      const picked = items.filter(i => invPick.has(i.key));
+      const eqs = picked.filter(i => i.kind === "equip");
+      return { picked, eqs, gold: picked.reduce((a, i) => a + invEntryValue(i), 0), shards: eqs.reduce((a, i) => a + (RECYCLE_SHARDS[i.data.rarete] || 1), 0) };
+    }
+    function renderInvMultiBar(items) {
+      const box = document.getElementById("inv-multi-bar"); if (!box) return;
+      const tog = document.getElementById("btn-inv-multi");
+      if (tog) { tog.textContent = invMulti ? "✖ Terminer" : "☑️ Sélection multiple"; tog.classList.toggle("tab-on", invMulti); }
+      if (box.parentElement !== document.body) document.body.appendChild(box);   // hors des panneaux (sinon « fixed » ne suit pas l'écran)
+      document.body.classList.toggle("inv-multi-on", invMulti && state.activeView === "inventaire");
+      if (!invMulti) { box.innerHTML = ""; box.classList.add("hidden"); return; }
+      box.classList.remove("hidden");
+      const S = invMultiSummary(items), n = S.picked.length, f = v => v.toLocaleString("fr-FR");
+      const selectable = items.filter(i => !(i.data && i.data.fav));
+      box.innerHTML = `<div class="melvor-card p-3 space-y-2 border border-amber-500/40" style="background:linear-gradient(180deg,rgba(30,41,59,.97),rgba(15,23,42,.98))">
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span class="font-bold text-amber-200">${n} sélectionné${n > 1 ? "s" : ""}${S.eqs.length && S.eqs.length !== n ? ` <span class="text-slate-400 font-normal">(${S.eqs.length} équipement${S.eqs.length > 1 ? "s" : ""})</span>` : ""}</span>
+          <span class="flex flex-wrap gap-1.5">
+            <button type="button" data-im="all" class="ui-btn px-2 py-1 rounded-md bg-slate-800 border border-slate-600 text-[11px] text-slate-200">Tout (${selectable.length})</button>
+            ${["commun", "rare"].map(r => `<button type="button" data-im="r:${r}" class="ui-btn px-2 py-1 rounded-md bg-slate-800 border border-slate-600 text-[11px] text-slate-200">+ ${UNIVERS_CONFIG.raretes[r].nom}s</button>`).join("")}
+            <button type="button" data-im="none" class="ui-btn px-2 py-1 rounded-md bg-slate-800 border border-slate-600 text-[11px] text-slate-400">Aucun</button>
+          </span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" data-im="recycle" ${S.eqs.length ? "" : "disabled"} class="ui-btn py-2.5 rounded-lg text-xs font-bold ${invConfirm === "recycle" ? "bg-sky-500 text-slate-950" : "bg-slate-800 border border-sky-700/60 text-sky-300"} disabled:opacity-40">
+            ${invConfirm === "recycle" ? `✔ Confirmer le recyclage` : `♻️ Recycler ${S.eqs.length || ""}`}<br><span class="text-[10px] font-semibold opacity-80">+${f(S.shards)} 🔸 Éclats</span></button>
+          <button type="button" data-im="sell" ${n ? "" : "disabled"} class="ui-btn py-2.5 rounded-lg text-xs font-bold ${invConfirm === "sell" ? "bg-amber-400 text-slate-950" : "bg-amber-600 text-white"} disabled:opacity-40">
+            ${invConfirm === "sell" ? `✔ Confirmer la vente` : `🪙 Vendre ${n || ""}`}<br><span class="text-[10px] font-semibold opacity-90">+${f(S.gold)} Or</span></button>
+        </div>
+        ${S.picked.some(i => i.kind === "res") ? `<div class="im-hint text-[10px] text-slate-400">Les ressources sélectionnées sont vendues en totalité (tout le stack). Seuls les équipements peuvent être recyclés.</div>` : ""}
+        <div class="im-hint text-[10px] text-slate-500">★ Les favoris ne peuvent pas être sélectionnés.</div>
+      </div>`;
+      box.querySelectorAll("[data-im]").forEach(b => b.addEventListener("click", () => {
+        const a = b.dataset.im; RetroAudio.cursor();
+        if (a === "all") { selectable.forEach(i => invPick.add(i.key)); invConfirm = null; }
+        else if (a === "none") { invPick.clear(); invConfirm = null; }
+        else if (a.startsWith("r:")) { selectable.filter(i => i.kind === "equip" && i.data.rarete === a.slice(2)).forEach(i => invPick.add(i.key)); invConfirm = null; }
+        else if (a === "recycle" || a === "sell") {
+          if (invConfirm !== a) { invConfirm = a; renderInventoryView(); return; }
+          invBulkApply(a, items); return;
+        }
+        renderInventoryView();
+      }));
+    }
+    function invBulkApply(action, items) {
+      const S = invMultiSummary(items); invConfirm = null;
+      if (action === "recycle") {
+        const uids = new Set(S.eqs.filter(i => !i.data.fav).map(i => i.data.uid)); if (!uids.size) return;
+        state.inventaireEquip = state.inventaireEquip.filter(e => !uids.has(e.uid));
+        state.ressources.eclat_forge = (state.ressources.eclat_forge || 0) + S.shards;
+        state.metiers.forge.xp += 12 * S.shards;
+        while (state.metiers.forge.niveau < MAX_PROF_LEVEL && state.metiers.forge.xp >= getProfXpReq(state.metiers.forge.niveau)) { state.metiers.forge.xp -= getProfXpReq(state.metiers.forge.niveau); state.metiers.forge.niveau++; }
+        S.eqs.forEach(i => invPick.delete(i.key));
+        RetroAudio.confirm(); showToast(`♻️ ${uids.size} équipement(s) recyclé(s) : +${S.shards} Éclat(s) de Forge !`);
+      } else {
+        let gold = 0, cnt = 0;
+        S.picked.forEach(i => {
+          if (i.kind === "equip") { if (i.data.fav) return; const idx = state.inventaireEquip.findIndex(e => e.uid === i.data.uid); if (idx < 0) return; state.inventaireEquip.splice(idx, 1); gold += invEntryValue(i); cnt++; }
+          else { const q = state.ressources[i.resId] || 0; if (q <= 0) return; gold += (i.data.valeurOr || 0) * q; state.ressources[i.resId] = 0; cnt++; }
+        });
+        state.or += gold; invPick.clear();
+        RetroAudio.confirm(); showToast(`🪙 ${cnt} objet(s) vendu(s) pour +${gold.toLocaleString("fr-FR")} Or !`);
+      }
+      try { updateGlobalHUD(); } catch (e) {}
+      renderInventoryView(); saveGame();
+    }
+
+    document.addEventListener("click", e => {
+      const b = e.target.closest && e.target.closest("#btn-inv-multi"); if (!b) return;
+      invMulti = !invMulti; invPick.clear(); invConfirm = null; RetroAudio.cursor(); renderInventoryView();
+    });
     function renderInventoryView() {
       const used = getUsedBagSlots();
       const max = getMaxBagSlots();
@@ -11186,7 +11344,7 @@
       const grid = document.getElementById("inv-grid-container");
       if (items.length === 0) {
         grid.innerHTML = `<div class="col-span-full melvor-card p-6 text-center text-xs text-slate-400">Aucun objet dans cette catégorie.</div>`;
-        renderInventoryInspector(null);
+        renderInventoryInspector(null); renderInvMultiBar([]);
         return;
       }
 
@@ -11194,14 +11352,16 @@
         state.selectedInvKey = items[0].key;
       }
 
+      [...invPick].forEach(k => { if (!items.some(i => i.key === k)) invPick.delete(k); });
       grid.innerHTML = items.map(it => {
-        const selected = it.key === state.selectedInvKey;
+        const selected = invMulti ? false : it.key === state.selectedInvKey, picked = invMulti && invPick.has(it.key), locked = invMulti && it.data && it.data.fav;
         const rInfo = UNIVERS_CONFIG.raretes[it.rarete];
         return `
           <button type="button" data-inv-select="${it.key}"
-            class="ui-btn text-left p-3 rounded-lg border rarity-${it.rarete} ${it.data && it.data.setId ? "inv-set" : ""} ${selected ? "bg-slate-800 ring-2 ring-amber-400" : "bg-slate-900/80 hover:bg-slate-800/80"} flex flex-col justify-between gap-2"${it.data && it.data.setId ? ` style="--bolt:${({ commun: "#e2e8f0", rare: "#38bdf8", maitre: "#c084fc", legendaire: "#fbbf24" })[it.rarete] || "#fff"}"` : ""}>
+            class="ui-btn relative text-left p-3 rounded-lg border rarity-${it.rarete} ${picked ? "inv-picked" : ""} ${locked ? "inv-locked" : ""} ${it.data && it.data.setId ? "inv-set" : ""} ${selected ? "bg-slate-800 ring-2 ring-amber-400" : "bg-slate-900/80 hover:bg-slate-800/80"} flex flex-col justify-between gap-2"${it.data && it.data.setId ? ` style="--bolt:${({ commun: "#e2e8f0", rare: "#38bdf8", maitre: "#c084fc", legendaire: "#fbbf24" })[it.rarete] || "#fff"}"` : ""}>
+            ${invMulti ? `<span class="inv-check">${locked ? "★" : picked ? "✓" : ""}</span>` : ""}
             <div class="flex items-center justify-between">
-              <span class="text-xl">${it.icon}</span>
+              <span class="text-xl" style="${invMulti ? "margin-left:24px" : ""}">${it.icon}</span>
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-950 border border-current tabular-nums">
                 ${it.kind === "equip" ? `Niv.${it.niveau}` : `x${it.qty}`}
               </span>
@@ -11217,10 +11377,16 @@
       grid.querySelectorAll("[data-inv-select]").forEach(btn => {
         btn.addEventListener("click", () => {
           RetroAudio.cursor();
+          if (invMulti) {
+            const k = btn.dataset.invSelect, it = items.find(i => i.key === k);
+            if (it && it.data && it.data.fav) { showToast("★ Objet favori : retire l'étoile pour le sélectionner."); return; }
+            invPick.has(k) ? invPick.delete(k) : invPick.add(k); invConfirm = null; renderInventoryView(); return;
+          }
           state.selectedInvKey = btn.dataset.invSelect;
           renderInventoryView();
         });
       });
+      renderInvMultiBar(items);
 
       const activeItem = items.find(i => i.key === state.selectedInvKey) || null;
       renderInventoryInspector(activeItem);
@@ -12386,6 +12552,7 @@ function wmDraw(ctx, t, opt) {
       const e = c.enemy;
       document.getElementById("combat-enemy-hp-bar").style.width = `${Math.max(0, (e.pv / e.pvMax) * 100)}%`;
       document.getElementById("combat-enemy-hp-text").textContent = `${e.pv}/${e.pvMax} PV${e.shield > 0 ? ` (+🛡️${e.shield})` : ""}`;
+      try { updateMobVitals(); } catch (er) {}
       document.getElementById("combat-atb-bar").style.width = `${Math.min(100, c.atb)}%`;
       { const nIt = combatUsableItems().length; document.getElementById("combat-potion-count").textContent = nIt ? `${nIt} objet${nIt > 1 ? "s" : ""}` : "Aucun objet"; }
 
@@ -16392,6 +16559,8 @@ function wmDraw(ctx, t, opt) {
 
       document.querySelectorAll(".game-view").forEach(v => v.classList.add("hidden"));
       document.querySelectorAll("[data-mtab]").forEach(b => b.classList.toggle("on", b.dataset.mtab === viewId));
+      document.body.classList.toggle("inv-multi-on", viewId === "inventaire" && typeof invMulti !== "undefined" && invMulti);
+      { const imb = document.getElementById("inv-multi-bar"); if (imb && viewId !== "inventaire") imb.classList.add("hidden"); }
       if (window.innerWidth < 1024) { mobMenu(false); try { window.scrollTo({ top: 0 }); } catch (e) {} }
 
       if (viewId === "expedition") {
@@ -16486,6 +16655,7 @@ function wmDraw(ctx, t, opt) {
 
       document.getElementById("tb-mp-text").textContent = `${h.pm}/${stats.pmMax}`;
       document.getElementById("tb-mp-bar").style.width = `${Math.max(0, (h.pm / stats.pmMax) * 100)}%`;
+      try { updateMobVitals(h, stats); } catch (e) {}
 
       const bagStr = `${getUsedBagSlots()}/${getMaxBagSlots()}`;
       document.getElementById("tb-coupons").textContent = state.couponsRepos;
@@ -17414,7 +17584,7 @@ function wmDraw(ctx, t, opt) {
     const PWA = { prompt: null, standalone: (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true };
     window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); PWA.prompt = e; try { if (!document.getElementById("screen-title").classList.contains("hidden")) renderTitleMenu(); } catch (er) {} });
     window.addEventListener("appinstalled", () => { PWA.prompt = null; PWA.standalone = true; try { showToast("📲 LUMENIA est installé sur ton appareil !"); } catch (e) {} });
-    function pwaCanOffer() { return !PWA.standalone && location.port !== "47821" && /^https?:$/.test(location.protocol) && (PWA.prompt || /iphone|ipad|ipod/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent)); }
+    function pwaCanOffer() { return !PWA.standalone && location.port !== "47821" && !/[?&]exe=1/.test(location.search) && /^https?:$/.test(location.protocol) && (PWA.prompt || /iphone|ipad|ipod/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent)); }
     async function pwaInstall() {
       if (PWA.prompt) { PWA.prompt.prompt(); try { await PWA.prompt.userChoice; } catch (e) {} PWA.prompt = null; renderTitleMenu(); return; }
       const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -17540,8 +17710,18 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.29";
+    const GAME_VERSION = "1.31";
     const PATCH_NOTES = [
+      { v: "1.31", date: "20/11/2026", titre: "Confort de jeu", items: [
+        "🎒 Inventaire : nouveau bouton « ☑️ Sélection multiple ». Coche plusieurs objets (ou « Tout », « + Communs », « + Rares ») puis recycle ou vends-les en une fois. Le total d'Or et d'Éclats s'affiche avant de confirmer.",
+        "★ Les favoris restent protégés : ils ne peuvent pas être sélectionnés.",
+        "📱 Mobile : un bandeau fixe en haut de l'écran affiche tes PV, tes PM et ton or dès que tu fais défiler la page, ainsi que la vie de l'ennemi pendant un combat.",
+        "📱 Mobile : la fiche de l'ennemi, la jauge d'ultime et les compétences sont plus compactes et ne recouvrent plus toute la scène de combat."
+      ] },
+      { v: "1.30", date: "20/11/2026", titre: "Le .exe se met à jour tout seul", items: [
+        "💻 Version Windows : LUMENIA.exe charge maintenant le jeu depuis le site officiel. Chaque mise à jour publiée en ligne arrive automatiquement, sans retélécharger le .exe.",
+        "📴 Le .exe reste jouable hors ligne après un premier lancement connecté à Internet."
+      ] },
       { v: "1.29", date: "20/11/2026", titre: "Nouvelle icône", items: [
         "🗡️ Nouvelle icône de l'application : l'Épée de Lumière dressée devant le portail du Néant, en pixel art lumineux.",
         "📲 Si l'ancienne icône reste affichée sur ton téléphone, désinstalle l'appli puis réinstalle-la depuis le site (ta sauvegarde est conservée)."
