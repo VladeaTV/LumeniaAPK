@@ -1,0 +1,28 @@
+LUMENIA — APPLICATION MOBILE (PWA)
+==================================
+
+Contenu du dossier
+  index.html             le jeu (copie de jeu-2.html)
+  manifest.webmanifest   nom, icônes et couleurs de l'application
+  sw.js                  mode hors ligne + récupération des mises à jour
+  icons/                 icônes de l'application
+
+1) METTRE LE JEU EN LIGNE (une seule fois, gratuit)
+  Option la plus simple : Netlify Drop
+    - Va sur https://app.netlify.com/drop
+    - Glisse-dépose ce dossier entier (lumenia-app) sur la page
+    - Tu obtiens une adresse du type https://xxxx.netlify.app
+    - Crée un compte gratuit pour garder le site (sinon il expire)
+  Autre option : GitHub Pages (dépôt GitHub > Settings > Pages)
+  Important : il faut une adresse en https (Netlify/GitHub le font tout seuls).
+
+2) INSTALLER SUR LE TÉLÉPHONE
+  Android (Chrome) : ouvre l'adresse > écran titre > « INSTALLER L'APPLI »
+                     (ou menu ⋮ > « Installer l'application »)
+  iPhone (Safari)  : ouvre l'adresse > bouton Partager ⬆️ > « Sur l'écran d'accueil »
+
+3) PUBLIER UNE MISE À JOUR
+  - Remplace index.html par le nouveau jeu-2.html (renommé en index.html)
+  - Renvoie le dossier au même endroit (Netlify : onglet Deploys > glisser le dossier)
+  - Les joueurs voient la bannière « Nouvelle version disponible » et mettent à jour d'un geste.
+  - Garde toujours la MÊME adresse : les sauvegardes sont liées à l'adresse du site.
