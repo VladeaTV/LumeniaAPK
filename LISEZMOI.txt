@@ -5,7 +5,7 @@ Contenu du dossier
   index.html             le jeu (copie de jeu-2.html)
   manifest.webmanifest   nom, icônes et couleurs de l'application
   sw.js                  mode hors ligne + récupération des mises à jour
-  icons/                 icônes de l'application
+  *.png                  icônes de l application
 
 1) METTRE LE JEU EN LIGNE (une seule fois, gratuit)
   Option la plus simple : Netlify Drop

@@ -1,6 +1,6 @@
 /* LUMENIA — service worker : jeu jouable hors ligne, mises à jour automatiques */
-const CACHE = "lumenia-app-v2";
-const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon-32.png"];
+const CACHE = "lumenia-app-v3";
+const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png?v=2", "./icon-512.png?v=2", "./apple-touch-icon.png?v=2", "./favicon-32.png?v=2"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));

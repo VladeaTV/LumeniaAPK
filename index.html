@@ -11,8 +11,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="LUMENIA" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=2" />
 
   <!-- Tailwind CSS pour l'interface sombre façon Melvor Idle 2 -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -17540,8 +17540,12 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.28";
+    const GAME_VERSION = "1.29";
     const PATCH_NOTES = [
+      { v: "1.29", date: "20/11/2026", titre: "Nouvelle icône", items: [
+        "🗡️ Nouvelle icône de l'application : l'Épée de Lumière dressée devant le portail du Néant, en pixel art lumineux.",
+        "📲 Si l'ancienne icône reste affichée sur ton téléphone, désinstalle l'appli puis réinstalle-la depuis le site (ta sauvegarde est conservée)."
+      ] },
       { v: "1.28", date: "20/11/2026", titre: "LUMENIA sur mobile", items: [
         "📲 LUMENIA devient une application mobile : installe-la depuis l'écran titre (« INSTALLER L'APPLI ») ou via « Ajouter à l'écran d'accueil ». Elle se lance en plein écran avec sa propre icône et fonctionne hors ligne.",
         "📱 Interface mobile : nouvelle barre d'onglets en bas (Expédition, Camp, Sac, Héros, Menu), menu complet en tiroir, boutons plus grands, et retour en haut de page à chaque changement d'onglet.",
