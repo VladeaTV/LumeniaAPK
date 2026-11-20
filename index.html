@@ -467,6 +467,16 @@
       #inv-multi-bar .im-hint { display: none; }
       body.inv-multi-on #toast-banner { bottom: calc(250px + env(safe-area-inset-bottom)) !important; }
     }
+
+    /* v1.32 — scène d'expédition recadrée et plus haute sur téléphone */
+    @media (max-width: 640px) {
+      #scene-stage.crop { overflow: hidden; aspect-ratio: 390 / 210; }
+      #scene-stage.crop > #biome-scene-canvas { width: 164.1% !important; max-width: none; margin-left: -33.33%; aspect-ratio: 640 / 210 !important; }
+      #exp-path-dialog { left: auto !important; right: 3% !important; top: 4% !important; width: 58% !important; min-width: 0 !important; padding: 6px 8px !important; border-width: 2px !important; }
+      #exp-path-dialog-title { font-size: 9px !important; }
+      #exp-path-dialog > div:nth-child(2) { font-size: 8px !important; margin: 3px 0 5px !important; }
+      #btn-path-yes, #btn-path-no { font-size: 9px !important; padding: 4px 0 !important; }
+    }
 </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -813,7 +823,7 @@
 
                 <!-- Fenêtre d'animation + surcouches de combat -->
                 <div class="relative rounded-xl overflow-hidden border border-slate-700/70 bg-slate-950">
-                  <div class="relative mx-auto" style="position: relative; max-width: 960px;">
+                  <div id="scene-stage" class="relative mx-auto" style="position: relative; max-width: 960px;">
                     <canvas id="biome-scene-canvas" width="640" height="210" class="pixelated w-full h-auto block" style="aspect-ratio: 640 / 210;"></canvas>
                     <div id="camp-chip" class="hidden stage-chip text-center" style="position:absolute;left:50%;top:8px;transform:translateX(-50%);pointer-events:none;white-space:nowrap;z-index:2;"><div class="text-[11px] font-semibold text-orange-200">🔥 Repos au campement</div><div class="text-[10px] text-slate-400">Cuisson à la broche &amp; récupération</div></div>
 
@@ -8166,6 +8176,7 @@
       if (!SCENE_TR.mode) { const lc = lf.getContext("2d"); lc.clearRect(0, 0, W, H); lc.drawImage(canvas, 0, 0); }
     }
     function renderBiomeSceneCanvasInner(timeSec, dt) {
+      { const st = document.getElementById("scene-stage"); if (st) st.classList.toggle("crop", !!state.expedition.active); }
       const canvas = document.getElementById("biome-scene-canvas");
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
@@ -17710,8 +17721,12 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.31";
+    const GAME_VERSION = "1.32";
     const PATCH_NOTES = [
+      { v: "1.32", date: "20/11/2026", titre: "Scène mobile agrandie", items: [
+        "📱 Mobile : pendant une expédition, la scène est recadrée sur l'action et devient environ 60 % plus haute. Le héros, les monstres et les découvertes sont bien plus grands et les fenêtres ne sont plus coupées.",
+        "📱 Mobile : la fenêtre « Entrer dans cette grotte ? » est plus compacte, les boutons OUI / NON sont toujours visibles."
+      ] },
       { v: "1.31", date: "20/11/2026", titre: "Confort de jeu", items: [
         "🎒 Inventaire : nouveau bouton « ☑️ Sélection multiple ». Coche plusieurs objets (ou « Tout », « + Communs », « + Rares ») puis recycle ou vends-les en une fois. Le total d'Or et d'Éclats s'affiche avant de confirmer.",
         "★ Les favoris restent protégés : ils ne peuvent pas être sélectionnés.",
