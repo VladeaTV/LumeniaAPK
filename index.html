@@ -3030,7 +3030,18 @@
       return out;
     }
 
+    /* v1.63 — Détail des stats : quand _statTrace est un objet, getHeroTotalStats y note chaque source ({ stat: [[libellé, valeur], …] }).
+       Le détail est relevé pendant le vrai calcul : la somme affichée tombe donc toujours exactement sur le total. */
+    let _statTrace = null;
+    function getHeroStatBreakdown() {
+      const trace = {}; _statTrace = trace;
+      let tot; try { tot = getHeroTotalStats(); } finally { _statTrace = null; }
+      return { tot, trace };
+    }
+
     function getHeroTotalStats() {
+      const trace = _statTrace; _statTrace = null;   // les appels imbriqués ne tracent pas
+      const T = (k, label, v) => { if (trace && v && Math.abs(v) > 1e-9) (trace[k] = trace[k] || []).push([label, v]); };
       const h = state.hero;
       const lin = UNIVERS_CONFIG.lignees[h.lignee];
       const cls = UNIVERS_CONFIG.classes[h.classe];
@@ -3044,10 +3055,12 @@
       let agilite = h.baseStats.agilite + (lin.bonuses.agilite || 0);
       let esprit = h.baseStats.esprit + (lin.bonuses.esprit || 0);
       let chance = h.baseStats.chance + (lin.bonuses.chance || 0);
+      if (trace) ["force", "agilite", "esprit", "chance"].forEach(k => { T(k, "Points répartis", h.baseStats[k]); T(k, `Lignée ${lin.nom}`, lin.bonuses[k] || 0); });
 
       let eqAtk = 0, eqDef = 0, eqPv = 0, eqPm = 0, eqCrit = 0;
       const _rl = h.classe === "runelame" ? runeStatBonus(h) : null;
-      if (_rl) { force += _rl.force; agilite += _rl.agilite; esprit += _rl.esprit; chance += _rl.chance; eqCrit += _rl.crit; }
+      if (_rl) { force += _rl.force; agilite += _rl.agilite; esprit += _rl.esprit; chance += _rl.chance; eqCrit += _rl.crit;
+        ["force", "agilite", "esprit", "chance"].forEach(k => T(k, "🔮 Lames runiques (absorption)", _rl[k])); T("critChance", "🔮 Lames runiques (absorption)", _rl.crit); }
       Object.values(state.equipementPorte).forEach(it => {
         if (!it || (_rl && it.slot === "arme")) return;
         const rf = 1 + RENFORT_PER_LVL * (it.renfort || 0), R = v => Math.round((v || 0) * rf);
@@ -3060,6 +3073,9 @@
         eqPv += R(it.stats.pvMax);
         eqPm += R(it.stats.pmMax);
         eqCrit += (it.stats.critChance || 0) * rf;
+        if (trace) { const lab = `${{ arme: "⚔️", armure: "🛡️", casque: "🪖", anneau: "💍", bouclier: "🔰" }[it.slot] || "🎒"} ${it.nom}${it.renfort && !/ \+\d+$/.test(it.nom) ? " +" + it.renfort : ""}`;
+          ["force", "agilite", "esprit", "chance", "atk", "def", "pvMax", "pmMax"].forEach(k => T(k, lab, R(it.stats[k])));
+          T("critChance", lab, (it.stats.critChance || 0) * rf); }
       });
 
       // Bonus de panoplie étoilée (2 pièces : stats • 4 pièces : stats + effet de combat)
@@ -3068,35 +3084,70 @@
       const setCount = setInfo ? setInfo.count : 0;
       if (setInfo) {
         const bags = [];
-        if (setCount >= 2) bags.push(setInfo.pan.stat2);
-        if (setCount >= 4) { bags.push(setInfo.pan.effet4.stat); setEffect = setInfo.pan.effet4; }
-        bags.forEach(b => {
+        if (setCount >= 2) bags.push([setInfo.pan.stat2, 2]);
+        if (setCount >= 4) { bags.push([setInfo.pan.effet4.stat, 4]); setEffect = setInfo.pan.effet4; }
+        bags.forEach(([b, n]) => {
           force += b.force || 0; agilite += b.agilite || 0; esprit += b.esprit || 0; chance += b.chance || 0;
           eqAtk += b.atk || 0; eqDef += b.def || 0; eqPv += b.pvMax || 0; eqPm += b.pmMax || 0; eqCrit += b.critChance || 0;
+          if (trace) ["force", "agilite", "esprit", "chance", "atk", "def", "pvMax", "pmMax", "critChance"].forEach(k => T(k, `✨ ${setInfo.pan.nom || "Panoplie"} (${n} pièces)`, b[k] || 0));
         });
       }
 
       // Malus de -20% sur PV Max, ATQ, DEF et Magie tant que "Blessure Grave" est actif
       const injuryMult = h.injuryTimer > 0 ? 0.80 : 1.0;
       const _bb = bestiaryBonus();
+      const L = h.niveau - 1, lvlLab = `Niveau de combat ${h.niveau}`;
 
       const rawPvMax = 100 + (h.niveau - 1) * 18 + force * 3 + (lin.bonuses.pvFlat || 0) + (cls.bonuses.pvFlat || 0) + bMinage.pvFlat + bRecolte.pvFlat + bBuch.pvFlat + eqPv + _bb.pv;
       const pvMax = Math.max(20, Math.round(rawPvMax * injuryMult));
       const pmMax = 25 + (h.niveau - 1) * 5 + Math.floor(esprit * 2.5) + (lin.bonuses.pmFlat || 0) + (cls.bonuses.pmFlat || 0) + bPeche.pmFlat + eqPm;
       const rawAtk = _rl ? 8 + (h.niveau - 1) * 2 + Math.floor(esprit * 1.3) + Math.floor(agilite * 0.4) + (cls.bonuses.atkFlat || 0) + eqAtk + _rl.swordAtk + _bb.atk
         : 8 + (h.niveau - 1) * 2 + Math.floor(force * 1.3) + Math.floor(agilite * 0.4) + (cls.bonuses.atkFlat || 0) + eqAtk + _bb.atk;
-      const atk = Math.max(1, Math.round(rawAtk * (1 + bMinage.physDmgMult + bBuch.physDmgMult) * injuryMult));
+      const atkMult = 1 + bMinage.physDmgMult + bBuch.physDmgMult;
+      const atk = Math.max(1, Math.round(rawAtk * atkMult * injuryMult));
       const rawMagic = 8 + (h.niveau - 1) * 2 + Math.floor(esprit * 1.5) + (cls.bonuses.atkFlat || 0) + eqAtk + (_rl ? Math.round(_rl.swordAtk * 0.9) : 0) + _bb.atk;
       const magicAtk = Math.max(1, Math.round(rawMagic * injuryMult));
       const rawDef = 2 + Math.floor((h.niveau - 1) * 1.2) + Math.floor(force * 0.3 + agilite * 0.25) + (cls.bonuses.defFlat || 0) + bMinage.defFlat + bBuch.defFlat + eqDef + _bb.def;
       const def = Math.max(0, Math.round(rawDef * injuryMult));
-      const critChance = Math.min(0.60, 0.05 + agilite * 0.004 + chance * 0.005 + (lin.bonuses.critFlat || 0) + (cls.bonuses.critFlat || 0) + bPeche.critFlat + eqCrit);
+      const critRaw = 0.05 + agilite * 0.004 + chance * 0.005 + (lin.bonuses.critFlat || 0) + (cls.bonuses.critFlat || 0) + bPeche.critFlat + eqCrit;
+      const critChance = Math.min(0.60, critRaw);
       const critMult = +(1.6 + chance * 0.01).toFixed(2);
       const lootBonusPct = Math.round(chance * 0.4 + bPeche.rareLootBonus);
       const xpMult = 1 + (lin.bonuses.xpMult || 0) + chance * 0.002 + _bb.xp;
       const atbSpeedMult = 1 + (cls.bonuses.speedBonus || 0) + agilite * 0.008;
 
-      return applyEngravings(applySetEffects(applySkillPassives(applyCombatBuffs({
+      if (trace) {
+        const linL = `Lignée ${lin.nom}`, clsL = `Classe ${cls.nom}`, bestL = `📖 Bestiaire (palier ${_bb.t})`, injL = "🩸 Blessure grave (−20 %)";
+        // PV Max
+        T("pvMax", "Base", 100); T("pvMax", lvlLab + " (+18 / niv.)", L * 18); T("pvMax", `Force ${force} × 3`, force * 3);
+        T("pvMax", linL, lin.bonuses.pvFlat || 0); T("pvMax", clsL, cls.bonuses.pvFlat || 0); T("pvMax", "⛏️ Paliers de Minage", bMinage.pvFlat);
+        T("pvMax", "🌿 Paliers de Récolte", bRecolte.pvFlat); T("pvMax", "🪓 Paliers de Bûcheron", bBuch.pvFlat); T("pvMax", bestL, _bb.pv);
+        T("pvMax", injL, pvMax - rawPvMax);
+        // PM Max
+        T("pmMax", "Base", 25); T("pmMax", lvlLab + " (+5 / niv.)", L * 5); T("pmMax", `Esprit ${esprit} × 2,5`, Math.floor(esprit * 2.5));
+        T("pmMax", linL, lin.bonuses.pmFlat || 0); T("pmMax", clsL, cls.bonuses.pmFlat || 0); T("pmMax", "🎣 Paliers de Pêche", bPeche.pmFlat);
+        // Attaque
+        T("atk", "Base", 8); T("atk", lvlLab + " (+2 / niv.)", L * 2);
+        if (_rl) { T("atk", `Esprit ${esprit} × 1,3 (lames)`, Math.floor(esprit * 1.3)); T("atk", "🔮 Lames runiques", _rl.swordAtk); }
+        else T("atk", `Force ${force} × 1,3`, Math.floor(force * 1.3));
+        T("atk", `Agilité ${agilite} × 0,4`, Math.floor(agilite * 0.4)); T("atk", clsL, cls.bonuses.atkFlat || 0); T("atk", bestL, _bb.atk);
+        const atkM = Math.round(rawAtk * atkMult);
+        T("atk", `Paliers Minage / Bûcheron (+${Math.round((atkMult - 1) * 1000) / 10} % dégâts physiques)`, atkM - rawAtk);
+        T("atk", injL, atk - atkM);
+        // Défense
+        T("def", "Base", 2); T("def", lvlLab + " (+1,2 / niv.)", Math.floor(L * 1.2)); T("def", `Force × 0,3 + Agilité × 0,25`, Math.floor(force * 0.3 + agilite * 0.25));
+        T("def", clsL, cls.bonuses.defFlat || 0); T("def", "⛏️ Paliers de Minage", bMinage.defFlat); T("def", "🪓 Paliers de Bûcheron", bBuch.defFlat); T("def", bestL, _bb.def);
+        T("def", injL, def - rawDef);
+        // Critique
+        T("critChance", "Base", 0.05); T("critChance", `Agilité ${agilite} × 0,4 %`, agilite * 0.004); T("critChance", `Chance ${chance} × 0,5 %`, chance * 0.005);
+        T("critChance", linL, lin.bonuses.critFlat || 0); T("critChance", clsL, cls.bonuses.critFlat || 0); T("critChance", "🎣 Paliers de Pêche", bPeche.critFlat);
+        T("critChance", "⛔ Plafond de 60 %", critChance - critRaw);
+        T("critMult", "Base", 1.6); T("critMult", `Chance ${chance} × 0,01`, critMult - 1.6);
+        // Butin rare
+        T("lootBonusPct", `Chance ${chance} × 0,4`, lootBonusPct - bPeche.rareLootBonus); T("lootBonusPct", "🎣 Paliers de Pêche (★)", bPeche.rareLootBonus);
+      }
+
+      const base = {
         force, agilite, esprit, chance, setEffect, setCount,
         pvMax, pmMax, atk, magicAtk, def,
         critChance, critMult, lootBonusPct, xpMult, atbSpeedMult,
@@ -3105,7 +3156,23 @@
         forgeLegBonus: bMinage.forgeLegBonus,
         forgeDiscount: bRecolte.forgeDiscount,
         potionBonus: (cls.bonuses.potionMult || 0) + bRecolte.potionBonus
-      }))));
+      };
+      if (!trace) return applyEngravings(applySetEffects(applySkillPassives(applyCombatBuffs(base))));
+
+      // Étapes finales (buffs, compétences, effet de panoplie, gravures) : on relève l'écart qu'apporte chacune
+      const KEYS = ["force", "agilite", "esprit", "chance", "pvMax", "pmMax", "atk", "def", "critChance", "critMult", "lootBonusPct"];
+      const FX = { pvMax: ["pvPct"], pmMax: ["pmPct"], atk: ["atkPct"], def: ["defPct"], esprit: ["espritPct"], critChance: ["critAdd"], critMult: ["critMultAdd"] };
+      const passName = k => getUnlockedSkills().filter(s => s.type === "passive" && (FX[k] || []).some(f => s.fx[f])).map(s => s.nom).join(", ");
+      const gravName = () => Object.values(state.equipementPorte || {}).filter(it => it && it.grav && !it.setId && GRAVURES[it.grav]).map(it => GRAVURES[it.grav].nom).join(", ");
+      const stages = [
+        [k => "⚡ Buffs de combat actifs", applyCombatBuffs],
+        [k => `🌳 Compétences passives${passName(k) ? " : " + passName(k) : ""}`, applySkillPassives],
+        [k => `✨ Effet ${setEffect ? setEffect.nom : "de panoplie"}`, applySetEffects],
+        [k => `🖋️ Gravure${gravName() ? " : " + gravName() : ""}`, applyEngravings]
+      ];
+      let cur = base;
+      stages.forEach(([lab, fn]) => { const before = { ...cur }; cur = fn(cur); KEYS.forEach(k => T(k, lab(k), (cur[k] || 0) - (before[k] || 0))); });
+      return cur;
     }
     const GRAVURES = {
       vampire: { nom: "Vampirique", ic: "🩸", desc: "Vous soigne de 3 % des dégâts infligés.", apply: o => { o.lifesteal = (o.lifesteal || 0) + 0.03; } },
@@ -4354,7 +4421,7 @@
       { id: "pegase",        nom: "Pégase d'Argent",      icon: "🪽", bonus: 1.50, legend: true, desc: "Ses ailes d'argent l'emportent au-dessus des nuages.", drop: { biome: "abysse_neant", minDiff: 1, elite: 0.007, boss: 0.04 } },
       { id: "licorne",       nom: "Licorne Céleste",      icon: "🦄", bonus: 1.65, legend: true, desc: "Une crinière d'arc-en-ciel et une corne qui purifie le Néant.", drop: { biome: "abysse_neant", minDiff: 2, elite: 0.006, boss: 0.035 } },
       { id: "phenix",        nom: "Phénix Éternel",       icon: "🔥", bonus: 1.80, legend: true, desc: "Il renaît de ses cendres à chaque aube, plus vif que la flamme.", drop: { biome: "abysse_neant", minDiff: 3, elite: 0.005, boss: 0.03 } },
-      { id: "dragon_ancien", nom: "Dragon Ancestral",     icon: "🐲", bonus: 2.00, legend: true, desc: "Le premier des dragons, aux écailles d'or. La plus rapide des montures : les expéditions durent trois fois moins.", drop: { biome: "abysse_neant", minDiff: 4, elite: 0.004, boss: 0.06 } }
+      { id: "dragon_ancien", nom: "Dragon Ancestral",     icon: "🐲", bonus: 2.00, legend: true, desc: "Le premier des dragons, aux écailles d'or. La plus rapide des montures : les expéditions durent trois fois moins.", drop: { biome: "abysse_neant", minDiff: 4, elite: 0.004, boss: 0.025 } }
     ];
     function getMountState() {
       if (!state.montures) state.montures = { possedees: {}, actif: null };
@@ -9472,10 +9539,17 @@
         qualityMult = fixedQuality.mult;
       } else {
         const stats = getHeroTotalStats();
-        const roll = Math.random() * 100 + bonusTier * 6 + stats.lootBonusPct * 0.25;
-        if (roll >= 98.5) rareteKey = "legendaire";
-        else if (roll >= 90) rareteKey = "maitre";
-        else if (roll >= 58) rareteKey = "rare";
+        // v1.62 : le bonus (biome, difficulté, élite/boss, butin) MULTIPLIE les chances de chaque rareté au lieu de décaler
+        // le tirage (avant, tout le bonus devenait du Légendaire : 67 % de Légendaires sur un boss de l'Abysse en Cauchemar).
+        // Base : 58 % Commun • 32 % Rare • 8,5 % Maître • 1,5 % Légendaire. Bonus 66 : ~14 % • 58 % • 22 % • 5 %.
+        const bonus = Math.max(0, bonusTier * 6 + (stats.lootBonusPct || 0) * 0.25);
+        let wLeg = 1.5 * (1 + bonus / 30), wMai = 8.5 * (1 + bonus / 40), wRar = 32 * (1 + bonus / 80);
+        const sum = wLeg + wMai + wRar;
+        if (sum > 100) { wLeg *= 100 / sum; wMai *= 100 / sum; wRar *= 100 / sum; }
+        const roll = Math.random() * 100;
+        if (roll < wLeg) rareteKey = "legendaire";
+        else if (roll < wLeg + wMai) rareteKey = "maitre";
+        else if (roll < wLeg + wMai + wRar) rareteKey = "rare";
         qualityMult = UNIVERS_CONFIG.raretes[rareteKey].mult;
       }
 
@@ -12921,9 +12995,68 @@
     /* =======================================================================
        11. ONGLET HÉROS & MAÎTRISES
        ======================================================================= */
+    /* v1.63 — Infobulles « d'où vient ce total ? » sur les stats du héros (survol PC, appui mobile) */
+    const STAT_TIP_FMT = {
+      critChance: v => `${v > 0 ? "+" : "−"}${(Math.abs(v) * 100).toFixed(1).replace(".", ",")} %`,
+      critMult: v => `${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(2).replace(".", ",")}`,
+      lootBonusPct: v => `${v > 0 ? "+" : "−"}${Math.abs(v)} %`
+    };
+    function statTipHtml(key, title, total, trace) {
+      const f = STAT_TIP_FMT[key] || (v => `${v > 0 ? "+" : "−"}${Math.abs(Math.round(v))}`);
+      // ordre de lecture : base / niveau / attributs → équipement et bonus → multiplicateurs, plafonds et malus
+      const rank = l => /^(Base|Points répartis|Niveau de combat|Lignée|Classe|Force|Agilité|Esprit|Chance|Force ×)/.test(l) ? 0
+        : /^(⛔|🩸|🌳|⚡|🖋️|✨ Effet|Paliers Minage)/u.test(l) ? 2 : 1;
+      const rows = (trace[key] || []).map((r, i) => [r, i]).sort((a, b) => rank(a[0][0]) - rank(b[0][0]) || a[1] - b[1]).map(([[l, v]]) => [l.replace(/(\d)\.(\d)/g, "$1,$2"), v]).map(([l, v]) => `<div class="flex justify-between gap-3"><span class="text-slate-300">${l}</span><b class="${v >= 0 ? "text-emerald-300" : "text-rose-300"} tabular-nums whitespace-nowrap">${f(v)}</b></div>`).join("");
+      return `<div class="font-bold text-amber-200 mb-1">${title}</div>${rows || '<div class="text-slate-500">Aucune source</div>'}<div class="flex justify-between gap-3 border-t border-slate-600 mt-1 pt-1"><span class="text-slate-200 font-bold">Total</span><b class="text-white">${total}</b></div>`;
+    }
+    function ultTipHtml() {
+      const p = getSkillPassives(), g = Math.round((p.ultGain || 0) * 100), rl = state.hero.classe === "runelame";
+      const src = getUnlockedSkills().filter(s => s.type === "passive" && s.fx.ultGain).map(s => `${s.icon || ""} ${s.nom} (+${Math.round(s.fx.ultGain * 100)} %)`);
+      const acts = getUnlockedSkills().filter(s => s.type === "active" && s.act && s.act.ult).map(s => `${s.icon || ""} ${s.nom} : +${s.act.ult} %`);
+      const L = rl ? ["Lame principale : +10 % (+4 si critique)", "Autres lames : +3 % (+2 si critique)", "Élément Arcane : +3 % par coup", "Lame Fantôme : +3 %"]
+        : ["Attaque : +10 % (+4 si critique)", "Coups supplémentaires : +3 % (+2 si critique)"];
+      L.push("Compétence de classe : +16 %", "Compétence de l'arbre : +12 %");
+      return `<div class="font-bold text-amber-200 mb-1">Jauge d'Ultime</div><div class="text-slate-400 mb-1">Se remplit à chaque action et se conserve entre les combats. À 100 %, l'ultime est prête.</div>`
+        + L.concat(acts).map(x => `<div class="text-slate-300">• ${x}</div>`).join("")
+        + `<div class="flex justify-between gap-3 border-t border-slate-600 mt-1 pt-1"><span class="text-slate-200">Vitesse de charge</span><b class="${g ? "text-emerald-300" : "text-slate-400"}">+${g} %</b></div>`
+        + (src.length ? src.map(x => `<div class="text-[10px] text-emerald-200/80">${x}</div>`).join("") : "");
+    }
+    let _statTips = {};
+    function statTipBox() {
+      let el = document.getElementById("stat-tip");
+      if (!el) { el = document.createElement("div"); el.id = "stat-tip"; el.className = "fixed z-[90] hidden pointer-events-none max-w-xs rounded-lg border border-slate-600 p-2.5 text-[11px] leading-snug shadow-xl"; el.style.background = "#0b1222"; document.body.appendChild(el); }
+      return el;
+    }
+    function showStatTip(target) {
+      const html = _statTips[target.dataset.statTip]; if (!html) return;
+      const el = statTipBox(); el.innerHTML = html; el.classList.remove("hidden");
+      const r = target.getBoundingClientRect(), w = el.offsetWidth, hh = el.offsetHeight;
+      let x = r.left + r.width / 2 - w / 2, y = r.bottom + 6;
+      if (y + hh > innerHeight - 8) y = r.top - hh - 6;
+      el.style.left = Math.max(8, Math.min(innerWidth - w - 8, x)) + "px"; el.style.top = Math.max(8, y) + "px";
+    }
+    function hideStatTip() { const el = document.getElementById("stat-tip"); if (el) el.classList.add("hidden"); }
+    document.addEventListener("mouseover", e => { const t = e.target.closest && e.target.closest("[data-stat-tip]"); if (t) showStatTip(t); });
+    document.addEventListener("mouseout", e => { const t = e.target.closest && e.target.closest("[data-stat-tip]"); if (t && !t.contains(e.relatedTarget)) hideStatTip(); });
+    document.addEventListener("click", e => { const t = e.target.closest && e.target.closest("[data-stat-tip]"); if (t && !e.target.closest("button")) showStatTip(t); else hideStatTip(); });
+    window.addEventListener("scroll", hideStatTip, true);
+
     function renderHeroView() {
       const h = state.hero;
-      const tot = getHeroTotalStats();
+      const { tot, trace: _tr } = getHeroStatBreakdown();
+      _statTips = {
+        atk: statTipHtml("atk", "⚔️ Attaque (ATQ)", tot.atk, _tr),
+        def: statTipHtml("def", "🛡️ Défense (DEF)", tot.def, _tr),
+        pvMax: statTipHtml("pvMax", "❤️ PV Max", tot.pvMax, _tr),
+        pmMax: statTipHtml("pmMax", "💧 PM Max", tot.pmMax, _tr),
+        crit: statTipHtml("critChance", "🎯 Chance de critique", `${Math.round(tot.critChance * 1000) / 10} %`, _tr) + `<div class="mt-2"></div>` + statTipHtml("critMult", "💥 Dégâts critiques", `×${String(tot.critMult).replace(".", ",")}`, _tr),
+        lootBonusPct: statTipHtml("lootBonusPct", "🍀 Bonus Butin Rare", `+${tot.lootBonusPct} %`, _tr),
+        ult: ultTipHtml(),
+        force: statTipHtml("force", "⚔️ Force", tot.force, _tr),
+        agilite: statTipHtml("agilite", "💨 Agilité", tot.agilite, _tr),
+        esprit: statTipHtml("esprit", "🔮 Esprit", tot.esprit, _tr),
+        chance: statTipHtml("chance", "🍀 Chance", tot.chance, _tr)
+      };
 
       document.getElementById("hero-view-subtitle").textContent =
         `${UNIVERS_CONFIG.lignees[h.lignee].nom} • ${UNIVERS_CONFIG.classes[h.classe].nom}`;
@@ -12961,13 +13094,13 @@
       });
 
       document.getElementById("hero-combat-stats-grid").innerHTML = `
-        <div class="melvor-card p-3"><span class="text-slate-400 block">Attaque (ATQ)</span><b class="text-sm text-amber-300">${tot.atk}</b></div>
-        <div class="melvor-card p-3"><span class="text-slate-400 block">Défense (DEF)</span><b class="text-sm text-sky-300">${tot.def}</b></div>
-        <div class="melvor-card p-3"><span class="text-slate-400 block">PV Max</span><b class="text-sm text-emerald-400">${tot.pvMax}</b></div>
-        <div class="melvor-card p-3"><span class="text-slate-400 block">PM Max</span><b class="text-sm text-cyan-300">${tot.pmMax}</b></div>
-        <div class="melvor-card p-3"><span class="text-slate-400 block">Critique</span><b class="text-sm text-purple-300">${Math.round(tot.critChance * 100)}% (x${tot.critMult})</b></div>
-        <div class="melvor-card p-3"><span class="text-slate-400 block">Bonus Butin Rare</span><b class="text-sm text-amber-300">+${tot.lootBonusPct}%</b></div>
-        <div class="melvor-card p-3"><span class="text-slate-400 block">Jauge d'Ultime</span><b class="text-sm text-yellow-300">${Math.floor(h.ultCharge || 0)}%</b></div>
+        <div class="melvor-card p-3 cursor-help hover:border-slate-500" data-stat-tip="atk"><span class="text-slate-400 block">Attaque (ATQ) <span class="text-slate-600">ⓘ</span></span><b class="text-sm text-amber-300">${tot.atk}</b></div>
+        <div class="melvor-card p-3 cursor-help hover:border-slate-500" data-stat-tip="def"><span class="text-slate-400 block">Défense (DEF) <span class="text-slate-600">ⓘ</span></span><b class="text-sm text-sky-300">${tot.def}</b></div>
+        <div class="melvor-card p-3 cursor-help hover:border-slate-500" data-stat-tip="pvMax"><span class="text-slate-400 block">PV Max <span class="text-slate-600">ⓘ</span></span><b class="text-sm text-emerald-400">${tot.pvMax}</b></div>
+        <div class="melvor-card p-3 cursor-help hover:border-slate-500" data-stat-tip="pmMax"><span class="text-slate-400 block">PM Max <span class="text-slate-600">ⓘ</span></span><b class="text-sm text-cyan-300">${tot.pmMax}</b></div>
+        <div class="melvor-card p-3 cursor-help hover:border-slate-500" data-stat-tip="crit"><span class="text-slate-400 block">Critique <span class="text-slate-600">ⓘ</span></span><b class="text-sm text-purple-300">${Math.round(tot.critChance * 100)}% (x${tot.critMult})</b></div>
+        <div class="melvor-card p-3 cursor-help hover:border-slate-500" data-stat-tip="lootBonusPct"><span class="text-slate-400 block">Bonus Butin Rare <span class="text-slate-600">ⓘ</span></span><b class="text-sm text-amber-300">+${tot.lootBonusPct}%</b></div>
+        <div class="melvor-card p-3 cursor-help hover:border-slate-500" data-stat-tip="ult"><span class="text-slate-400 block">Jauge d'Ultime <span class="text-slate-600">ⓘ</span></span><b class="text-sm text-yellow-300">${Math.floor(h.ultCharge || 0)}%</b></div>
       `;
 
       document.getElementById("hero-view-free-pts").textContent = h.pointsLibres;
@@ -12981,7 +13114,7 @@
       attrBox.innerHTML = attrs.map(a => `
         <div class="melvor-card p-3 flex items-start justify-between gap-2">
           <div class="text-xs min-w-0">
-            <span class="font-semibold text-slate-200">${a.icone} ${a.nom} : <b class="text-white">${a.tot}</b></span>
+            <span class="font-semibold text-slate-200 cursor-help" data-stat-tip="${a.k}">${a.icone} ${a.nom} : <b class="text-white">${a.tot}</b> <span class="text-slate-600">ⓘ</span></span>
             <span class="text-[11px] text-slate-500 ml-1">(Base ${h.baseStats[a.k]})</span>
             <div class="text-[10px] text-amber-200/80 mt-1 font-semibold">${a.role}</div>
             <div class="text-[10px] text-slate-400 leading-snug">Par point : ${a.eff.join(" • ")}</div>
@@ -15955,6 +16088,16 @@ function wmDraw(ctx, t, opt) {
        12c. ULTIME DE CLASSE : JAUGE PERSISTANTE + ANIMATIONS PAR CLASSE
        ======================================================================= */
     let ultFx = null;
+
+    /* v1.62 : le combat auto garde l'ultime pour les ennemis qui le méritent (boss, élite, gardien, mannequin)
+       ou pour un ennemi qu'une attaque normale ne peut pas achever rapidement. Avant, il la lançait dès 100 %,
+       même sur un petit monstre tué au premier impact : la jauge retombait à 0 pour rien. */
+    function ultWorthIt(en, stats) {
+      if ((state.hero.ultCharge || 0) < 100 || !en || en.pv <= 0) return false;
+      if (en.boss || en.elite || en.guardian || en.dummy) return true;
+      const hit = Math.max(2, mitig(Math.max(stats.atk || 0, stats.magicAtk || 0), en.def, 1));
+      return en.pv > hit * 3;
+    }
 
     function addUltCharge(n) {
       const h = state.hero;
@@ -19332,7 +19475,7 @@ function wmDraw(ctx, t, opt) {
                 executePlayerCombatAction("potion");
               } else if (ai.actifs && healK && state.hero.pv < stats.pvMax * 0.5) {
                 executePlayerCombatAction("tskill", healK.id);
-              } else if ((state.hero.ultCharge || 0) >= 100) {
+              } else if (ultWorthIt(en, stats)) {
                 executePlayerCombatAction("ultimate");
               } else if (ai.actifs && buffK) {
                 executePlayerCombatAction("tskill", buffK.id);
@@ -19340,7 +19483,7 @@ function wmDraw(ctx, t, opt) {
                 executePlayerCombatAction("tskill", dmgK.id);
               } else if (false) {
                 executePlayerCombatAction("potion");
-              } else if ((state.hero.ultCharge || 0) >= 100) {
+              } else if (ultWorthIt(en, stats)) {
                 executePlayerCombatAction("ultimate");
               } else if (state.hero.pm >= sk.coutPm) {
                 executePlayerCombatAction("skill");
@@ -19966,8 +20109,18 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.61";
+    const GAME_VERSION = "1.63";
     const PATCH_NOTES = [
+      { v: "1.63", date: "21/11/2026", titre: "D'où viennent mes stats ?", items: [
+        "ⓘ Fiche du héros : survole (PC) ou touche (mobile) une statistique de combat (Attaque, Défense, PV, PM, Critique, Butin rare, Jauge d'Ultime) ou un attribut (Force, Agilité, Esprit, Chance) pour voir TOUT ce qui compose son total.",
+        "Le détail liste chaque source avec sa valeur : base, niveau, attributs, lignée, classe, chaque équipement (renforcement compris), panoplie, lames runiques, paliers de métiers, bestiaire, compétences passives, gravures, buffs actifs, blessure et plafonds.",
+        "🌟 La Jauge d'Ultime explique comment elle se remplit et affiche ta vitesse de charge."
+      ] },
+      { v: "1.62", date: "21/11/2026", titre: "Butin plus juste & ultime mieux utilisée", items: [
+        "⚔️ Rareté des équipements trouvés : les bonus (biome, difficulté, élite, boss, butin rare) augmentent maintenant TOUTES les raretés au lieu de se transformer presque entièrement en Légendaires. Le Légendaire redevient rare : environ 5 % sur un boss de l'Abysse en Cauchemar (contre 67 % avant), le Maître et le Rare montent davantage.",
+        "🌟 Combat automatique : l'ultime n'est plus gâchée sur un petit monstre tué en un coup. Elle est gardée pour les élites, gardiens, boss, le mannequin d'entraînement, ou un ennemi encore costaud. En combat manuel, rien ne change.",
+        "🐲 Dragon Ancestral : chance d'apparition sur le boss abaissée de 6 % à 2,5 %, pour rester la monture légendaire la plus rare."
+      ] },
       { v: "1.61", date: "21/11/2026", titre: "Rééquilibrage des métiers", items: [
         "🍀 Anti-malchance (Pêche, Minage, Récolte, Mine d'Éclats) : après 8 essais bredouilles d'affilée, la ressource la plus commune du lieu est garantie. Le compteur s'affiche dans l'onglet du métier.",
         "🎯 Taux de drop : le bonus de niveau de métier est maintenant en partie proportionnel au taux de base. Les ressources communes bougent peu, et les ressources rares d'un lieu restent rares à haut niveau (ex. niv. 200 : 4 % → ~14 % au lieu de 25 %).",
