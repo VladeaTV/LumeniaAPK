@@ -18405,9 +18405,98 @@ function wmDraw(ctx, t, opt) {
         ctx.globalCompositeOperation = "lighter"; rlGlow(ctx, 0, 8, 4 + pulse * 2.5, "#f5d0fe", 0.5); ctx.globalCompositeOperation = "source-over";
       }
     };
+    /* =======================================================================
+       v1.70 — LAMES RUNIQUES EN PIXEL ART « PREMIUM »
+       Les lames passent en pixel art (même DA que les autres armes) mais gardent un côté haut de gamme :
+       une forme par élément, des runes / effets animés pixel par pixel, un léger halo et des étincelles.
+       Grilles dessinées pointe vers le BAS (ligne 0 = pommeau) ; ancre = début de la lame (comme l'ancienne version).
+       RL_PIXEL = false pour revenir aux lames lisses.
+       ======================================================================= */
+    let RL_PIXEL = true;
+    const RLP_MAPS = {
+      // o contour • P pommeau • J gemme • g fusée • G garde • B/M/D lame claire→sombre • R rune / motif animé • W éclat
+      // v1.72 : lames longues et fines (3 px de lame, rune centrale, garde à ailettes)
+      blade: { ay: 8, m: ["..ooo..", ".oPJPo.", "..oPo..", "..ogo..", "..ogo..", "..ogo..", "oGGJGGo", "G.oGo.G", ".oBRDo.", ".oBMDo.", ".oBRDo.", ".oBMDo.", ".oBRDo.", ".oBMDo.", ".oBRDo.", ".oBMDo.", ".oBRDo.", ".oBMDo.", ".oBRDo.", ".oBMDo.", ".oBRDo.", ".oBMDo.", "..oBo..", "..oMo..", "..oMo..", "..oMo..", "...o..."] },
+      givre: { ay: 8, m: ["..ooo..", ".oPJPo.", "..oPo..", "W.ogo.W", ".Wogo W".replace(" ", "."), "..ogo..", "oGGJGGo", "W.oGo.W", ".oBRDo.", "WoBMDo.", ".oBRDo.", ".oBMDoW", ".oBRDo.", "WoBMDo.", ".oBRDo.", ".oBMDoW", ".oBRDo.", ".oBMDo.", ".oBRDo.", "WoBMDo.", ".oBRDo.", ".oBMDo.", "..oBo..", "..oMo..", "..oMo..", "..oMo..", "...o..."] },
+      poison: { ay: 8, m: ["..ooo..", ".oPJPo.", "..oPo..", "..ogo..", "..ogo..", "..ogo..", "oGGJGGo", "G.oGo.G", ".oBRDo.", "oBMDo..", ".oBRDo.", "..oBMDo", ".oBRDo.", "oBMDo..", ".oBRDo.", "..oBMDo", ".oBRDo.", "oBMDo..", ".oBRDo.", "..oBMDo", ".oBRDo.", ".oBMDo.", "..oBo..", "..oMo..", "..oMo..", "..oMo..", "...o..."] },
+      faux: { ay: 3, m: ["....oooooo...", "..ooBBBBMMo..", ".oBBMMoooDGo.", "oBMMo...ogo..", "oBMo....ogo..", "oMMo....ogo..", "oMo.....oGo..", "oDo.....ogo..", ".o......ogo..", "........ogo..", "........oGo..", "........ogo..", "........ogo..", "........ogo..", "........oGo..", "........ogo..", "........ogo..", "........ogo..", "........oGo..", "........ogo..", "........ogo..", "........oPo..", "........ooo.."] }
+    };
+    const RLP_PAL = {
+      arcane: { o: "#1a0b38", P: "#a78bfa", J: "#22d3ee", g: "#1e1b4b", G: "#a78bfa", B: "#ede9fe", M: "#a78bfa", D: "#5b21b6", R: "#67e8f9", W: "#ffffff" },
+      sang:   { o: "#18181b", P: "#7f1d1d", J: "#ef4444", g: "#450a0a", G: "#7f1d1d", B: "#e4e4e7", M: "#a1a1aa", D: "#52525b", R: "#dc2626", W: "#ffffff" },
+      faux:   { o: "#0a0505", P: "#b91c1c", J: "#ef4444", g: "#57301e", G: "#b91c1c", B: "#fecaca", M: "#ef4444", D: "#7f1d1d", R: "#dc2626", W: "#ffffff" },
+      givre:  { o: "#082f49", P: "#7dd3fc", J: "#f0f9ff", g: "#0c4a6e", G: "#bae6fd", B: "#f0f9ff", M: "#7dd3fc", D: "#0369a1", R: "#e0f2fe", W: "#e0f2fe" },
+      flamme: { o: "#3b0a0a", P: "#b45309", J: "#fde047", g: "#451a03", G: "#f59e0b", B: "#fef08a", M: "#fb923c", D: "#b91c1c", R: "#fde047", W: "#ffffff" },
+      foudre: { o: "#422006", P: "#ca8a04", J: "#fefce8", g: "#713f12", G: "#facc15", B: "#fefce8", M: "#fde047", D: "#a16207", R: "#ffffff", W: "#ffffff" },
+      poison: { o: "#0f1a03", P: "#4d7c0f", J: "#d9f99d", g: "#1a2e05", G: "#65a30d", B: "#d9f99d", M: "#a3e635", D: "#3f6212", R: "#bef264", W: "#ffffff" },
+      neant:  { o: "#c084fc", P: "#4c1d95", J: "#f5d0fe", g: "#07030f", G: "#6b21a8", B: "#3b0764", M: "#1e0b3b", D: "#07030f", R: "#f5d0fe", W: "#ffffff" }
+    };
+    const _rlpCache = {};
+    // sprite d'une lame pour un élément et une image d'animation (mis en cache)
+    function rlpSprite(el, shape, f) {
+      const key = el + ":" + shape + ":" + f; if (_rlpCache[key]) return _rlpCache[key];
+      const map = RLP_MAPS[shape].m, H = map.length, W = map[0].length, extra = 6;
+      const cv = document.createElement("canvas"); cv.width = W; cv.height = H + extra; const c = cv.getContext("2d");
+      const pal = { ...RLP_PAL[shape === "faux" ? "faux" : el] };
+      const on = (x, y, col) => { c.fillStyle = col; c.fillRect(x, y, 1, 1); };
+      // runes / motifs qui pulsent ou défilent
+      const runeRows = []; map.forEach((r, y) => { if (r.includes("R")) runeRows.push(y); });
+      map.forEach((row, y) => { for (let x = 0; x < W; x++) { const ch = row[x]; if (ch === "." ) continue; let col = pal[ch];
+        if (ch === "R") {
+          if (el === "arcane") col = (runeRows.indexOf(y) + f) % 2 ? "#a5f3fc" : "#22d3ee";
+          else if (el === "foudre") col = (runeRows.indexOf(y) + f) % 2 ? "#ffffff" : "#fde047";
+          else if (el === "flamme") col = (runeRows.indexOf(y) + f) % 3 === 0 ? "#fef08a" : "#f97316";
+          else if (el === "neant") col = (runeRows.indexOf(y) * 3 + f) % 4 === 0 ? "#ffffff" : "#1e0b3b";
+          else if (el === "givre") col = (runeRows.indexOf(y) + f) % 3 === 0 ? "#ffffff" : "#bae6fd";
+        }
+        if (col) on(x, y, col); } });
+      const b0 = map.findIndex(r => r.includes("B")), b1 = H - 1 - [...map].reverse().findIndex(r => r.includes("B")), tip = H;   // lignes de la lame
+      const cx = (W - 1) / 2, xL = 0, xR = W - 1;   // colonne centrale et bords
+      // sang : coulures qui descendent le long de la lame + goutte qui tombe de la pointe
+      if (el === "sang" && shape === "blade") { const L = 4 + (f % 8); for (let k = 0; k < L; k++) on(cx - 1, b0 + k, "#991b1b"); for (let k = 0; k < ((f + 4) % 8) + 2; k++) on(cx + 1, b0 + k, "#991b1b"); on(cx, b0, "#7f1d1d"); on(cx, tip + (f % 5), "#dc2626"); }
+      if (shape === "faux") { const gx = 4 + (f % 7); if (gx <= 9) on(gx, 1, "#ffffff"); on(1, 9 + (f % 5), "#dc2626"); if (f % 3 === 0) on(2, 3, "#fecaca"); }
+      // flamme : langues de feu qui lèchent les bords de la lame
+      if (el === "flamme") { for (let y = b0; y < b1; y += 2) { const sd = (y + f) % 2 ? xL : xR; on(sd, y, (y + f) % 3 ? "#f97316" : "#fde047"); if ((y + f) % 4 === 0) on(sd, y - 1, "#b91c1c"); } on(cx, tip, f % 2 ? "#fde047" : "#f97316"); }
+      // foudre : arcs électriques qui sautent hors de la lame
+      if (el === "foudre") { const n = b1 - b0, y = b0 + (f * 3) % n; on(f % 2 ? xL : xR, y, "#ffffff"); on(f % 2 ? xL : xR, y + 1, "#fde047"); on(f % 2 ? xR : xL, b0 + (f * 5 + 4) % n, "#fde047"); }
+      // poison : goutte de venin à la pointe
+      if (el === "poison") { on(cx, tip + (f % 5), "#a3e635"); if (f % 2) on(cx, b0 + 5, "#d9f99d"); }
+      // néant : poussière d'étoiles autour de la lame
+      if (el === "neant") { [[xL, b0 + 1], [xR, b0 + 5], [xL, b0 + 9], [xR, b0 + 12]].forEach(([x, y], i) => { if ((i + f) % 2) on(x, y, i % 2 ? "#f5d0fe" : "#c084fc"); }); }
+      // reflet qui descend la lame (toutes les lames droites)
+      if (shape !== "faux") { const gx = map[b0].indexOf("B"), gy = b0 + ((f * 2) % 20); if (gy <= b1 && map[gy][gx] === "B") { on(gx, gy, "#ffffff"); if (gy > b0) on(gx, gy - 1, "rgba(255,255,255,0.5)"); } }
+      return (_rlpCache[key] = cv);
+    }
+    function drawRuneBladePx(ctx, el, x, y, ang, s, t, o) {
+      const E = RUNE_EL[el] || RUNE_EL.arcane, i = o.i || 0, S = i * 7.3 + 1.1, hb = o.hb || 0, ev = !!o.ev;
+      const shape = el === "sang" && i % 2 === 0 ? "faux" : (el === "givre" || el === "poison" ? el : "blade");
+      const map = RLP_MAPS[shape], f = Math.floor(t * 6 + i * 1.7) % 12;
+      // taille d'un pixel de lame : fixée par l'appelant (orbite, Autel) ou déduite de l'échelle — v1.71 : lames bien plus grandes
+      const cell = (o.cell || (s < 0.6 ? 1.2 : Math.max(2, Math.round(s * 3.6)))) * (1 + hb * 0.14);
+      const spr = rlpSprite(el, shape, f);
+      ctx.save();
+      if (o.alpha !== undefined) ctx.globalAlpha = o.alpha;
+      const snap = !!o.snap, rx = snap ? Math.round(x) : x, ry = snap ? Math.round(y) : y;
+      ctx.translate(rx, ry); if (!snap) ctx.rotate(ang - Math.PI / 2);
+      const W = spr.width, H = spr.height, ox = -W / 2 * cell, oy = -map.ay * cell, cy = (map.m.length / 2 - map.ay) * cell;
+      // halo premium (léger) + battement de cœur quand la lame gagne en puissance
+      ctx.globalCompositeOperation = "lighter";
+      rlGlow(ctx, 0, cy, (ev ? 11 : 8) * cell, E.glow, (ev ? 0.3 : 0.16) + 0.05 * Math.sin(t * 3 + S) + hb * 0.5);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(spr, snap ? Math.round(ox) : ox, snap ? Math.round(oy) : oy, W * cell, H * cell);
+      // étincelles pixel en orbite autour de la lame
+      ctx.globalCompositeOperation = "lighter";
+      for (let k = 0; k < (ev ? 6 : 3); k++) { const a = t * 2.3 + k * 2.1 + S, r = (2.6 + Math.sin(t * 3 + k)) * cell;
+        const px_ = Math.round((Math.cos(a) * r) / cell) * cell, py = Math.round((cy + Math.sin(a) * r * 1.8) / cell) * cell;
+        ctx.fillStyle = rlA(k % 2 ? E.core : E.col, 0.9); ctx.fillRect(px_ - cell / 2, py - cell / 2, cell, cell); }
+      if (ev) { for (let q = 0; q < 8; q++) { const a = t * 0.9 + q * Math.PI / 4; ctx.fillStyle = rlA(E.core, 0.85); ctx.fillRect(Math.round(Math.cos(a) * 5 * cell / cell) * cell - cell / 2, Math.round((cy + Math.sin(a) * 9 * cell) / cell) * cell - cell / 2, cell, cell); } }
+      ctx.restore();
+    }
     // Dessine une lame : (x,y) = garde, la pointe suit l'angle `ang` (π/2 = pointe vers le bas)
     function drawRuneBlade(ctx, el, x, y, ang, s, t, o) {
       o = o || {};
+      if (RL_PIXEL) { try { drawRuneBladePx(ctx, el, x, y, ang, s, t, o); return; } catch (e) { console.error(e); } }
       const E = RUNE_EL[el] || RUNE_EL.arcane, i = o.i || 0, S = i * 7.3 + 1.1, hb = o.hb || 0, ev = !!o.ev;
       const shape = el === "sang" && i % 2 === 0 ? "faux" : (RL_SHAPES[el] ? el : "arcane");
       ctx.save();
@@ -18441,7 +18530,7 @@ function wmDraw(ctx, t, opt) {
         const p = runeOrbitPos(s.i, n, t, cx, cy, rx, ry);
         if ((layer === "back") !== (p.d < 0)) return;
         const k = (0.86 + 0.14 * p.d) * sc, tilt = -Math.cos(p.th) * 0.22;
-        drawRuneBlade(ctx, s.el, p.x, p.y - 18 * k, Math.PI / 2 + tilt, k * 0.95, t, { i: s.i, ev, hb, alpha: layer === "back" ? 0.82 : 1 });
+        drawRuneBlade(ctx, s.el, p.x, p.y - 18 * k, Math.PI / 2 + tilt, k * 0.95, t, { i: s.i, ev, hb, alpha: layer === "back" ? 0.82 : 1, snap: true, cell: Math.max(2, Math.round(sc * 3.6)) });
       });
     }
     // Orbite dessinée DANS le portrait 128×128 (fiche, garde-robe, groupe, campement…)
@@ -18623,7 +18712,7 @@ function wmDraw(ctx, t, opt) {
         const E = RUNE_EL[s.el];
         c.globalCompositeOperation = "lighter"; rlGlow(c, 36, 90, 62, E.glow, 0.16 + hb * 0.3); c.globalCompositeOperation = "source-over";
         const faux = s.el === "sang" && i % 2 === 0, bob = Math.sin(t * 2 + i) * 2.5;
-        drawRuneBlade(c, s.el, faux ? 24 : 36, (faux ? 60 : 44) + bob, Math.PI / 2, faux ? 1.9 : 1.8, t, { i, ev, hb });
+        drawRuneBlade(c, s.el, faux ? 24 : 36, (faux ? 60 : 44) + bob, Math.PI / 2, faux ? 1.9 : 1.8, t, { i, ev, hb, snap: true, cell: faux ? 4 : 5 });
       });
       const pi = document.querySelector("canvas[data-pd-rune-ic]");
       if (pi) { const c = pi.getContext("2d"); c.clearRect(0, 0, 32, 32); const s0 = sw[0] || { el: "arcane" }; drawRuneBlade(c, s0.el, s0.el === "sang" ? 12 : 16, s0.el === "sang" ? 15 : 7, Math.PI / 2, s0.el === "sang" ? 0.58 : 0.46, t, { i: 0, ev, hb }); }
@@ -21164,8 +21253,22 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.69";
+    const GAME_VERSION = "1.72";
     const PATCH_NOTES = [
+      { v: "1.72", date: "21/11/2026", titre: "Lames runiques affinées", items: [
+        "🔮 Les lames du Runelame gardent leur grande taille mais sont plus fines : de longues lames élancées (3 pixels de large) avec une rune centrale, plus élégantes autour du héros."
+      ] },
+      { v: "1.71", date: "21/11/2026", titre: "Lames runiques grand format", items: [
+        "🔮 Les lames du Runelame sont bien plus grandes : de vraies épées flottantes, aussi hautes que le héros en combat, et nettement plus présentes sur la fiche et à l'Autel.",
+        "Lames élargies (5 pixels) avec une gouttière centrale où courent les runes et les effets d'élément, garde à ailettes, pointe effilée ; la faux de sang grandit aussi avec un large croissant.",
+        "Leur taille reste constante pendant qu'elles tournent autour du héros (seule la transparence indique la profondeur) pour garder des pixels nets."
+      ] },
+      { v: "1.70", date: "21/11/2026", titre: "Lames runiques en pixel art premium", items: [
+        "🔮 Les lames du Runelame passent en pixel art pour s'intégrer au reste du jeu, tout en restant les armes les plus raffinées : pixels plus fins, une forme par élément et des effets animés pixel par pixel.",
+        "Arcane : runes qui pulsent • Sang : coulures et gouttes, et la faux au croissant écarlate • Givre : garde hérissée de cristaux • Flamme : langues de feu sur les tranchants • Foudre : arcs électriques • Poison : lame ondulée et venin qui goutte • Néant : lame d'ombre cerclée de violet et poussière d'étoiles.",
+        "✨ Côté premium : léger halo, reflet qui descend la lame, étincelles en orbite, et un anneau de pixels lorsque l'Éveil est actif.",
+        "En orbite, les lames restent bien droites pour garder des pixels nets ; elles pivotent pendant les attaques."
+      ] },
       { v: "1.69", date: "21/11/2026", titre: "Retour au pixel art, en mieux", items: [
         "⚔️ Les armes et les objets de main gauche reviennent au pixel art, dans la même DA que le reste du jeu — mais redessinés pixel par pixel : contour sombre, ombrage en 3 tons, reflets, poignées et gardes détaillées.",
         "Épées, dagues, katanas, haches, marteaux, masses, lances, tridents, faux, glaives, arcs (avec flèche encochée pour les arcs rares), arbalètes, bâtons à orbe serti, baguettes, fioles, canon, et les armes de base de chaque classe.",
