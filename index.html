@@ -379,6 +379,10 @@
     .wm-lab.soon{border-style:dashed;border-color:rgba(148,163,184,.5);color:#cbd5e1;background:rgba(15,23,42,.55)}
     .wm-lab.on{border-color:#fbbf24;box-shadow:0 0 12px rgba(251,191,36,.6)}
     .wm-lab.hov{transform:translate(-50%,-50%) scale(1.12);box-shadow:0 0 14px rgba(255,255,255,.35)}
+    .wm-lab.train{pointer-events:auto;cursor:pointer;border-color:rgba(251,191,36,.8);color:#fde68a;font-size:7px}
+    .wm-lab.train:hover{transform:translate(-50%,-50%) scale(1.1)}
+    .wm-pin{position:absolute;width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:50%;background:#fbbf24;box-shadow:0 0 0 2px #7c2d12,0 0 10px #fbbf24;pointer-events:none;animation:wmPin 1.6s ease-in-out infinite}
+    @keyframes wmPin{50%{box-shadow:0 0 0 2px #7c2d12,0 0 18px 4px #fbbf24}}
     .wm-lab.camp{border-color:rgba(249,115,22,.7);color:#fdba74;font-size:7px}
     .wm-roll{position:absolute;left:-2%;right:-2%;height:14px;pointer-events:none;opacity:0;border-radius:7px;background:linear-gradient(180deg,#fde68a 0%,#b45309 45%,#78350f 70%,#451a03 100%);box-shadow:0 4px 14px rgba(0,0,0,.7),0 0 18px rgba(251,191,36,.5)}
     .wm-shine{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 48%,rgba(253,230,138,.25) 52%,transparent 70%);background-size:250% 100%}
@@ -3315,13 +3319,13 @@
     ];
 
     const RUNE_EL = {
-      arcane: { nom: "Arcane", ic: "🔷", col: "#a78bfa", core: "#ede9fe", dark: "#4c1d95", glow: "#8b5cf6", desc: e => `+${Math.round(8 * e)} % de dégâts sur chaque coup et +${Math.round(2 * e)} PM.` },
-      sang:   { nom: "Sang",   ic: "🩸", col: "#ef4444", core: "#fecaca", dark: "#450a0a", glow: "#dc2626", desc: (e, a) => `Saignement : ${Math.max(2, Math.round(a * 0.07 * e))} dégâts/s pendant 5 s.` },
+      arcane: { nom: "Arcane", ic: "🔷", col: "#a78bfa", core: "#ede9fe", dark: "#4c1d95", glow: "#8b5cf6", desc: e => `+${Math.round(8 * e)} % de dégâts sur chaque coup, +${Math.round(2 * e)} PM • CANALISATION : chaque coup remplit l'Ultime de +3 %.` },
+      sang:   { nom: "Sang",   ic: "🩸", col: "#ef4444", core: "#fecaca", dark: "#450a0a", glow: "#dc2626", desc: (e, a) => `HÉMORRAGIE : saignement de ${Math.max(2, Math.round(a * 0.07 * e))} dégâts/s pendant 5 s, cumulable jusqu'à ×3 (chaque coup ajoute une charge).` },
       givre:  { nom: "Givre",  ic: "❄️", col: "#7dd3fc", core: "#f0f9ff", dark: "#0c4a6e", glow: "#38bdf8", desc: e => `Dégâts ×0,9 (×1,15 sur un ennemi gelé). Chaque coup Ralentit (vitesse d'attaque −25 %, dégâts −5 %, 4 s) • ${Math.round(Math.min(0.35, 0.10 * e) * 100)} % de chance de GELER l'ennemi, boss compris (il ne peut plus agir pendant 2 s + 0,1 s par rang d'Essence).` },
-      flamme: { nom: "Flamme", ic: "🔥", col: "#fb923c", core: "#fef08a", dark: "#7f1d1d", glow: "#f97316", desc: (e, a) => `Brûlure : ${Math.max(2, Math.round(a * 0.08 * e))} dégâts/s pendant 4 s.` },
-      foudre: { nom: "Foudre", ic: "⚡", col: "#fde047", core: "#fefce8", dark: "#713f12", glow: "#facc15", desc: e => `${Math.round(Math.min(0.6, 0.2 * e) * 100)} % de chance de déclencher un arc (+45 % de dégâts).` },
-      poison: { nom: "Poison", ic: "☠️", col: "#a3e635", core: "#d9f99d", dark: "#1a2e05", glow: "#65a30d", desc: (e, a) => `Venin : ${Math.max(2, Math.round(a * 0.05 * e))} dégâts/s pendant 8 s.` },
-      neant:  { nom: "Néant",  ic: "🌑", col: "#c084fc", core: "#f5d0fe", dark: "#07030f", glow: "#a855f7", desc: e => `Ignore 20 % de la DEF et vous soigne de ${(5 * e).toFixed(1).replace(".0", "")} % des dégâts infligés.` }
+      flamme: { nom: "Flamme", ic: "🔥", col: "#fb923c", core: "#fef08a", dark: "#7f1d1d", glow: "#f97316", desc: (e, a) => `Brûlure : ${Math.max(2, Math.round(a * 0.08 * e))} dégâts/s pendant 4 s • FONTE D'ARMURE : DEF de l'ennemi −15 % pendant 5 s (profite à tous tes coups).` },
+      foudre: { nom: "Foudre", ic: "⚡", col: "#fde047", core: "#fefce8", dark: "#713f12", glow: "#facc15", desc: e => `${Math.round(Math.min(0.6, 0.2 * e) * 100)} % de chance de déclencher un arc (+45 % de dégâts) • SURCHARGE : chaque coup fait démarrer ta prochaine jauge d'action à +8 % (max +30 %).` },
+      poison: { nom: "Poison", ic: "☠️", col: "#a3e635", core: "#d9f99d", dark: "#1a2e05", glow: "#65a30d", desc: (e, a) => `Venin : ${Math.max(2, Math.round(a * 0.05 * e))} dégâts/s pendant 8 s • AFFAIBLISSEMENT : l'ennemi empoisonné inflige −10 % de dégâts.` },
+      neant:  { nom: "Néant",  ic: "🌑", col: "#c084fc", core: "#f5d0fe", dark: "#07030f", glow: "#a855f7", desc: e => `Ignore 20 % de la DEF, vous soigne de ${(5 * e).toFixed(1).replace(".0", "")} % des dégâts infligés • BRISE-BOUCLIER : dégâts doublés contre les boucliers ennemis.` }
     };
     const RUNE_SWORD_LVLS = [1, 20, 45];
     const RUNE_RANK_MAX = 15;
@@ -3404,9 +3408,21 @@
     function runeProc(en, stats, s, dmg, crit, delay) {
       if (en.pv <= 0) return 0;
       const f = s.f, D = Math.round((delay || 0) * 1000) + 230; let extra = 0;
-      if (s.el === "sang") runeDot(en, "bleed", Math.max(2, Math.round(stats.atk * 0.07 * f)), 5, "🩸", "Saignement runique");
-      else if (s.el === "flamme") runeDot(en, "burn", Math.max(2, Math.round(stats.atk * 0.08 * f)), 4, "🔥", "Brûlure runique");
-      else if (s.el === "poison") runeDot(en, "poison", Math.max(2, Math.round(stats.atk * 0.05 * f)), 8, "☠️", "Venin runique");
+      if (s.el === "sang") {
+        const has = (en.dots || []).some(d => d.kind === "bleed" && d.ticksLeft > 0);
+        en._bst = has ? Math.min(3, (en._bst || 1) + 1) : 1;
+        runeDot(en, "bleed", Math.max(2, Math.round(stats.atk * 0.07 * f)) * en._bst, 5, "🩸", `Hémorragie ×${en._bst}`);
+      }
+      else if (s.el === "flamme") {
+        runeDot(en, "burn", Math.max(2, Math.round(stats.atk * 0.08 * f)), 4, "🔥", "Brûlure runique");
+        const was = en.melt > 0; en.melt = 5; recomputeEnemyDef(en);
+        if (!was) setTimeout(() => addCanvasFloat("enemy", "🔥 DEF −15%", "#fdba74"), D + 60);
+      }
+      else if (s.el === "poison") {
+        runeDot(en, "poison", Math.max(2, Math.round(stats.atk * 0.05 * f)), 8, "☠️", "Venin runique");
+        if (!(en.weak > 0)) setTimeout(() => addCanvasFloat("enemy", "☠️ AFFAIBLI", "#bef264"), D + 60);
+        en.weak = 8;
+      }
       else if (s.el === "givre") {
         en.chill = FROST_SLOW_DUR;
         if (!frostFrozen(en) && !((en.frzCd || 0) > 0) && Math.random() < Math.min(0.35, 0.10 * f)) {
@@ -3420,11 +3436,14 @@
           extra = Math.max(1, Math.round(dmg * 0.45)); en.pv = Math.max(0, en.pv - extra);
           setTimeout(() => addCanvasFloat("enemy", `⚡ -${extra}`, "#fde047"), D + 90);
         }
+        { const c = state.expedition.combat; if (c) c.atbBonus = Math.min(30, (c.atbBonus || 0) + 8); }
       } else if (s.el === "neant") {
+        if (en.shield > 0) { const b = Math.min(en.shield, Math.round(dmg)); en.shield -= b; if (b > 0) setTimeout(() => addCanvasFloat("enemy", `🌑 🛡️-${b}`, "#e9d5ff"), D + 90); }
         const h = Math.round(dmg * 0.05 * f);
         if (h > 0) { state.hero.pv = Math.min(stats.pvMax, state.hero.pv + h); setTimeout(() => addCanvasFloat("hero", `+${h} PV`, "#d8b4fe"), D); }
       } else if (s.el === "arcane") {
         state.hero.pm = Math.min(stats.pmMax, state.hero.pm + Math.round(2 * f));
+        addUltCharge(3);
       }
       const se = stats.setEffect;
       if (se && se.id === "fantome" && crit && en.pv > 0) {
@@ -8954,7 +8973,7 @@
         walkAnimDistance += dt * 78;
       }
 
-      const drawTheme = state.expedition.sub ? "mines" : biome.theme;
+      const drawTheme = state.expedition.sub ? "mines" : ((state.expedition.training || (!state.expedition.active && state.expedition.trainSel)) ? "training" : biome.theme);
       const palettes = {
         cave: {
           skyTop: "#05050a", skyBot: "#14101f",
@@ -9100,7 +9119,7 @@
 
       }
 
-      if (!state.expedition.sub && ["forest", "swamp", "citadel"].includes(drawTheme)) dcOverlay(ctx, _DC, 0, 0, W, 210, "neutral");
+      if (!state.expedition.sub && ["forest", "swamp", "citadel", "training"].includes(drawTheme)) dcOverlay(ctx, _DC, 0, 0, W, 210, "neutral");
       // 5. Dessin du Héros en marche ou en combat
       const _rlS = state.hero.classe === "runelame";
       RUNE_NO_ORBIT = _rlS;
@@ -13125,7 +13144,8 @@
       scSky(ctx, W, DC, ["#0b2230", "#1d4a43", "#2f5a3a"], ["#4f9fd8", "#9fd6ee", "#d6f0e4"], ["#3b2a5a", "#c76b5a", "#f2b07a"]);
       scSkyBodies(ctx, W, DC, t, "254,240,138");
       const tile = (sp, w, f) => { const o = (walk * sp) % w; for (let x = -w; x < W + w; x += w) f(x - o); };
-      tile(0.08, 320, x => { ctx.fillStyle = dcMix("#1a3a3a", "#5d8aa0", DC.day * 0.6); ctx.beginPath(); ctx.moveTo(x, 150); ctx.lineTo(x + 70, 92); ctx.lineTo(x + 120, 120); ctx.lineTo(x + 190, 82); ctx.lineTo(x + 260, 124); ctx.lineTo(x + 320, 100); ctx.lineTo(x + 320, 150); ctx.fill(); });
+      tile(0.08, 320, x => { ctx.fillStyle = dcMix("#1a3a3a", "#5d8aa0", DC.day * 0.6); ctx.beginPath(); ctx.moveTo(x, 158); ctx.lineTo(x, 100); ctx.lineTo(x + 70, 92); ctx.lineTo(x + 120, 120); ctx.lineTo(x + 190, 82); ctx.lineTo(x + 260, 124); ctx.lineTo(x + 320, 100); ctx.lineTo(x + 320.5, 158); ctx.closePath(); ctx.fill(); });
+      ctx.fillStyle = dcMix("#10261d", "#2a4f3b", DC.day * 0.5); ctx.fillRect(0, 140, W, 18);   /* bande de sous-bois : plus de ciel visible entre les sapins */
       tile(0.2, 160, x => { for (let i = 0; i < 9; i++) scPine(ctx, x + i * 18 + scR(i, 1) * 6, 152, 34 + scR(i, 2) * 16, dcMix("#163226", "#2f5d44", DC.day * 0.5)); });
       for (let k = 0; k < 2; k++) { const fy = 128 + k * 12, off = (t * (5 + k * 3)) % W; for (const dx of [0, -W]) { const fg = ctx.createLinearGradient(0, fy - 7, 0, fy + 7); fg.addColorStop(0, "rgba(220,252,231,0)"); fg.addColorStop(0.5, `rgba(220,252,231,${0.08 + 0.06 * DC.day})`); fg.addColorStop(1, "rgba(220,252,231,0)"); ctx.fillStyle = fg; ctx.fillRect(off + dx, fy - 7, W, 14); } }
       if (!DC.off && DC.day > 0.05) { ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let i = 0; i < 4; i++) { const x0 = ((i * 170 + t * 4) % (W + 200)) - 100, a = 0.07 * DC.day * (0.6 + 0.4 * Math.sin(t * 0.7 + i));
@@ -13239,7 +13259,62 @@
         const a = 0.3 + 0.5 * Math.abs(Math.sin(t * 1.5 + tx * 0.05)); ctx.fillStyle = `rgba(232,121,249,${a})`; ctx.fillRect(tx + 17, 175, 6, 1); ctx.fillRect(tx + 19, 173, 2, 5); ctx.fillStyle = `rgba(34,211,238,${a * 0.7})`; ctx.fillRect(tx + 10, 194, 3, 3); }
       ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let i = 0; i < 16; i++) { const ph = (t * 0.3 + scR(i, 51)) % 1, x = ((scR(i, 52) * W - walk * 0.6) % W + W) % W; ctx.fillStyle = `rgba(${i % 2 ? "232,121,249" : "34,211,238"},${Math.sin(ph * Math.PI)})`; ctx.fillRect(x, 200 - ph * 120, 2, 2); } ctx.restore();
     }
-    const BIOME_SCENES = { forest: drawForestScene, swamp: (ctx, W, t, walk, DC) => drawSwampScene(ctx, W, t, walk, DC), mines: drawMinesScene, citadel: drawCitadelScene, "void": drawVoidScene };
+    // ---------------- TERRAIN D'ENTRAÎNEMENT (clairière de la Forêt des Murmures) ----------------
+    function drawTrainingScene(ctx, W, t, walk, DC) {
+      drawForestScene(ctx, W, t, 0, DC);
+      const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
+      const day = DC && !DC.off ? DC.day : 0;
+      // sol de terre battue de la clairière
+      let g = ctx.createLinearGradient(0, 166, 0, 210); g.addColorStop(0, "#8a6a45"); g.addColorStop(1, "#4a3622"); ctx.fillStyle = g; ctx.fillRect(0, 166, W, 44);
+      R(0, 166, W, 2, "#3b2a18");
+      for (let x = 6; x < W; x += 37) { R(x, 176 + (x % 5), 8, 2, "#6b4f33"); R(x + 18, 192 + (x % 7), 5, 2, "#a3845c"); }
+      for (let x = 20; x < W; x += 90) { R(x, 200, 26, 3, "#5b432b"); }
+      // palissade en rondins
+      for (let x = -4; x < W + 8; x += 13) {
+        const h = 30 + ((x * 7) % 5);
+        R(x, 160 - h, 10, h + 6, "#5b3a1f"); R(x + 1, 160 - h, 3, h + 6, "#7c5230"); R(x, 160 - h - 3, 10, 3, "#3f2812");
+        R(x + 2, 160 - h - 5, 6, 2, "#3f2812");
+      }
+      R(0, 136, W, 4, "#4a3018"); R(0, 152, W, 4, "#4a3018"); R(0, 136, W, 1, "#8b5e34"); R(0, 152, W, 1, "#8b5e34");
+      // bannières aux couleurs du Fief
+      [W * 0.06, W * 0.94].forEach((bx, i) => {
+        R(bx - 1, 70, 3, 96, "#3f2812"); R(bx - 4, 68, 9, 3, "#fbbf24");
+        const wv = Math.sin(t * 2.2 + i) * 2;
+        ctx.fillStyle = "#991b1b"; ctx.beginPath(); ctx.moveTo(bx + 2, 74); ctx.lineTo(bx + 26 + wv, 76); ctx.lineTo(bx + 24 + wv * 1.4, 104); ctx.lineTo(bx + 14 + wv, 98); ctx.lineTo(bx + 2, 106); ctx.closePath(); ctx.fill();
+        R(bx + 4, 76, 18, 2, "#fbbf24"); R(bx + 10, 84, 6, 6, "#fbbf24"); R(bx + 12, 86, 2, 2, "#991b1b");
+      });
+      // cibles de tir à l'arc
+      [W * 0.2, W * 0.83].forEach((tx, i) => {
+        R(tx - 9, 150, 3, 18, "#5b3a1f"); R(tx + 7, 150, 3, 18, "#5b3a1f");
+        ctx.fillStyle = "#e7d3a8"; ctx.beginPath(); ctx.arc(tx, 140, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#b91c1c"; ctx.beginPath(); ctx.arc(tx, 140, 10, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#f8fafc"; ctx.beginPath(); ctx.arc(tx, 140, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#b91c1c"; ctx.beginPath(); ctx.arc(tx, 140, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#fbbf24"; ctx.beginPath(); ctx.arc(tx, 140, 1.6, 0, Math.PI * 2); ctx.fill();
+        R(tx + 2 + i * 3, 134 + i * 6, 12, 1, "#78350f"); R(tx + 12 + i * 3, 133 + i * 6, 3, 3, "#e5e7eb");
+      });
+      // râtelier d'armes
+      const rx = W * 0.5;
+      R(rx - 22, 132, 44, 3, "#5b3a1f"); R(rx - 22, 150, 44, 3, "#5b3a1f"); R(rx - 22, 128, 3, 40, "#3f2812"); R(rx + 19, 128, 3, 40, "#3f2812");
+      R(rx - 14, 118, 2, 46, "#94a3b8"); R(rx - 15, 116, 4, 3, "#e2e8f0");
+      R(rx - 4, 122, 2, 42, "#78350f"); R(rx - 7, 118, 8, 6, "#cbd5e1");
+      R(rx + 6, 120, 2, 44, "#64748b"); R(rx + 4, 116, 6, 2, "#e2e8f0"); R(rx + 6, 114, 2, 2, "#e2e8f0");
+      R(rx + 13, 126, 3, 38, "#a16207");
+      // ballots de paille
+      [[W * 0.34, 0], [W * 0.66, 1]].forEach(([hx, k]) => {
+        R(hx - 12, 156, 24, 12, "#d6b56a"); R(hx - 12, 156, 24, 2, "#f0d78c"); R(hx - 12, 161, 24, 1, "#a16207"); R(hx - 5, 156, 2, 12, "#a16207"); R(hx + 4, 156, 2, 12, "#a16207");
+        if (k) { R(hx - 8, 147, 16, 9, "#d6b56a"); R(hx - 8, 147, 16, 2, "#f0d78c"); R(hx - 1, 147, 2, 9, "#a16207"); }
+      });
+      // panneau
+      R(W * 0.5 - 1, 96, 3, 20, "#3f2812");
+      R(W * 0.5 - 42, 86, 84, 13, "#7c5230"); R(W * 0.5 - 42, 86, 84, 2, "#a16207"); R(W * 0.5 - 42, 97, 84, 2, "#4a3018");
+      ctx.fillStyle = "#fde68a"; ctx.font = "bold 7px monospace"; ctx.textAlign = "center"; ctx.fillText("ENTRAÎNEMENT", W * 0.5, 95); ctx.textAlign = "left";
+      // poussière dorée dans la lumière
+      if (day > 0.05) { ctx.save(); ctx.globalCompositeOperation = "lighter";
+        for (let i = 0; i < 14; i++) { const px = (i * 53 + t * 9) % W, py = 110 + (i * 29) % 50 + Math.sin(t * 1.7 + i) * 4; ctx.fillStyle = `rgba(253,230,138,${(0.25 + 0.25 * Math.sin(t * 3 + i)) * day})`; ctx.fillRect(px, py, 1.5, 1.5); }
+        ctx.restore(); }
+    }
+    const BIOME_SCENES = { training: drawTrainingScene, forest: drawForestScene, swamp: (ctx, W, t, walk, DC) => drawSwampScene(ctx, W, t, walk, DC), mines: drawMinesScene, citadel: drawCitadelScene, "void": drawVoidScene };
 
     // v1.44 — Scène du Marais Brumeux : arbres morts à mousse pendante, roseaux, eau stagnante, ponton de planches, feux follets
     function swampDeadTree(ctx, x, y, h, col, w, moss, t) {
@@ -13323,6 +13398,13 @@
     function drawBiomeSplashes(t) {
       const cvs = document.querySelectorAll("canvas[data-biome-splash]"); if (!cvs.length) return;
       cvs.forEach(cv => {
+        if (cv.dataset.biomeSplash === "training") {
+          if (!_splashCache.training) { const o = document.createElement("canvas"); o.width = 480; o.height = 210; const ox = o.getContext("2d"); ox.imageSmoothingEnabled = false;
+            drawTrainingScene(ox, 480, 3, 0, { p: 0.33, day: 1, night: 0, glow: 0, name: "Jour", icon: "☀️", left: 0, off: false, sun: { s: 0.5 }, moon: null }); _splashCache.training = o; }
+          const x = cv.getContext("2d"); x.imageSmoothingEnabled = false; x.drawImage(_splashCache.training, 0, 0, 480, 210, 0, 0, 320, 140);
+          for (let i = 0; i < 8; i++) { const px = (i * 41 + t * 7) % 320, py = 60 + (i * 23) % 40 + Math.sin(t * 2 + i) * 3; x.fillStyle = `rgba(253,230,138,${(0.35 + 0.3 * Math.sin(t * 3 + i)).toFixed(2)})`; x.fillRect(Math.round(px), Math.round(py), 2, 2); }
+          return;
+        }
         const b = UNIVERS_CONFIG.biomes.find(z => z.id === cv.dataset.biomeSplash); if (!b) return;
         const th = b.theme || "forest", bg = _splashCache[th] || (_splashCache[th] = paintBiomeSplash(th));
         const x = cv.getContext("2d"); x.imageSmoothingEnabled = false; x.drawImage(bg, 0, 0);
@@ -13357,6 +13439,7 @@ const WM_REGIONS = [
 ];
 const WM_ROUTE = [[150, 132], [118, 160], [100, 185], [150, 205], [190, 222], [200, 170], [205, 125], [250, 122], [282, 150], [318, 166], [356, 140], [398, 132]];
 const WM_CAMP = [150, 128];
+const WM_TRAIN = [112, 146];
 
 function wmNoise(x, y) { const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return s - Math.floor(s); }
 function wmSmooth(x, y, f) { const xi = Math.floor(x * f), yi = Math.floor(y * f), xf = x * f - xi, yf = y * f - yi;
@@ -13664,7 +13747,10 @@ function wmDraw(ctx, t, opt) {
         const cls = "wm-lab" + (r.soon ? " soon" : lock ? " lock" : "") + (r.id === sel ? " on" : "") + (_wmHover === r.id ? " hov" : "");
         const txt = r.soon ? `❔ ???<small>Terre inexplorée</small>` : `${lock ? "🔒" : r.ic} ${r.nom}<small>Niv. ${r.lvl}+</small>`;
         return `<div class="${cls}" data-wm-lab="${r.id}" style="left:${a / 4.8}%;top:${b / 3}%;animation-delay:${0.55 + i * 0.05}s">${txt}</div>`;
-      }).join("") + `<div class="wm-lab camp" style="left:${WM_CAMP[0] / 4.8}%;top:${(WM_CAMP[1] - 11) / 3}%;animation-delay:.5s">🏕️ Le Fief</div>`;
+      }).join("") + `<div class="wm-lab camp" style="left:${WM_CAMP[0] / 4.8}%;top:${(WM_CAMP[1] - 11) / 3}%;animation-delay:.5s">🏕️ Le Fief</div>`
+        + `<div class="wm-lab train${(state.expedition.training || (!state.expedition.active && state.expedition.trainSel)) ? " on" : ""}" data-wm-train style="left:${WM_TRAIN[0] / 4.8}%;top:${WM_TRAIN[1] / 3}%;animation-delay:.6s">🎯 Entraînement<small>Tous niveaux</small></div>`
+        + `<div class="wm-pin" style="left:${WM_TRAIN[0] / 4.8}%;top:${(WM_TRAIN[1] + 13) / 3}%"></div>`;
+      const tl = box.querySelector("[data-wm-train]"); if (tl) tl.onclick = () => selectTraining();
     }
     function wmHoverLabels() { document.querySelectorAll("[data-wm-lab]").forEach(el => el.classList.toggle("hov", el.dataset.wmLab === _wmHover)); }
     function wmPick(r) {
@@ -13672,7 +13758,7 @@ function wmDraw(ctx, t, opt) {
       if (r.soon) { RetroAudio.cursor(); showToast(`🌫️ ${r.desc} — Région pas encore explorée…`); return; }
       if (state.hero.niveau < r.lvl) { showToast(`🔒 ${r.nom} : le brouillard se lèvera au niveau ${r.lvl}.`); return; }
       if (state.expedition.active) { showToast("Interrompez l'expédition en cours avant de changer de biome."); return; }
-      RetroAudio.cursor(); state.expedition.biomeId = r.id; renderExpeditionView(); saveGame();
+      RetroAudio.cursor(); state.expedition.biomeId = r.id; state.expedition.trainSel = false; renderExpeditionView(); saveGame();
     }
     function wmBind() {
       const cv = document.getElementById("wm-canvas"); if (!cv || cv._wmBound) return; cv._wmBound = true;
@@ -13704,8 +13790,16 @@ function wmDraw(ctx, t, opt) {
       const selOk = state.hero.niveau >= selB.niveauReq;
       // v1.25 : grandes cartes illustrées (splash art) + carrés de difficulté
       const curD = getExpDifficulty(selB);
+      const trainSel = !!(state.expedition.training || (!state.expedition.active && state.expedition.trainSel));
+      const trainCard = `<div class="bs-card ${trainSel ? "bs-card-on" : ""}" data-train-card role="button" tabindex="0">
+          <canvas data-biome-splash="training" width="320" height="140" class="bs-canvas"></canvas>
+          <div class="bs-shade"></div>
+          <div class="bs-lvl">Tous niveaux • 🌲 Forêt</div>
+          <div class="bs-name">Terrain d'entraînement<span style="display:block;font-family:inherit;font-size:8px;color:#fde68a;margin-top:3px">🎯 MANNEQUIN • COMPTEUR DE DPS</span></div>
+          <div class="bs-diffs"><div class="bs-diff ${trainSel ? "bs-diff-on" : ""}" style="width:auto;padding:0 8px;flex-direction:row;gap:5px"><span class="bs-diff-ic">🎯</span><span class="bs-diff-tx">Entrer</span></div></div>
+        </div>`;
       let html = `<div class="biome-splash-grid">` + UNIVERS_CONFIG.biomes.map(b => {
-        const unlocked = state.hero.niveau >= b.niveauReq, selected = selB.id === b.id;
+        const unlocked = state.hero.niveau >= b.niveauReq, selected = !trainSel && selB.id === b.id;
         const diffs = (b.difficultes || []).map(d => {
           const ok = unlocked && state.hero.niveau >= d.heroReq && !(d.heroMax && state.hero.niveau > d.heroMax);
           const on = selected && curD && curD.id === d.id;
@@ -13719,24 +13813,26 @@ function wmDraw(ctx, t, opt) {
           <div class="bs-lvl">${unlocked ? "" : "🔒 "}Niv. ${b.niveauReq}+${(() => { const dd = selected && curD ? curD : (b.difficultes || []).find(x => !x.heroMax && !x.solo) || (b.difficultes || [])[0]; const rc = diffRecLevel(b, dd); return rc ? ` • 🎯 ${rc[0]}–${rc[1]}` : ""; })()}</div>
           <div class="bs-name">${b.nom}${unlocked ? `<span style="display:block;font-family:inherit;font-size:8px;color:#7dd3fc;margin-top:3px">📈 ZONE NIV. ${zoneState(b.id).lvl}${zoneState(b.id).lvl >= ZONE_MAX ? " MAX" : ""}</span>` : ""}</div>
           ${unlocked ? `<div class="bs-diffs">${diffs}</div>` : `<div class="bs-locktxt">Débloqué au niveau ${b.niveauReq}</div>`}
-        </div>`;
+        </div>` + (b.id === "foret_murmures" ? trainCard : "");
       }).join("") + `</div>`;
       const curRc = diffRecLevel(selB, curD), L0 = state.hero.niveau;
       const recTxt = curRc ? `<span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${L0 < curRc[0] ? "bg-rose-950 text-rose-300 border border-rose-700/50" : L0 > curRc[1] ? "bg-sky-950 text-sky-300 border border-sky-700/50" : "bg-emerald-950 text-emerald-300 border border-emerald-700/50"}">🎯 Niveau conseillé : ${curRc[0]}–${curRc[1]} ${L0 < curRc[0] ? "(tu es en dessous : prudence !)" : L0 > curRc[1] ? "(facile pour toi : essaie plus dur)" : "(idéal pour toi)"}</span>` : "";
       const zS = zoneState(selB.id), zB = zoneBonus(selB.id);
       const zoneTxt = `<div class="mt-1.5 melvor-card p-2"><div class="flex items-center justify-between text-[11px]"><b class="text-sky-300">📈 Niveau de zone ${zS.lvl}${zS.lvl >= ZONE_MAX ? " (MAX)" : ` / ${ZONE_MAX}`}<button type="button" data-lvl-info="zone:${selB.id}" title="Que donne ce niveau ?" class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-sky-900/70 border border-sky-500/60 text-sky-200 text-[10px] font-bold leading-none hover:bg-sky-700 align-middle">i</button></b><span class="text-emerald-300">Quantité : +${Math.round(zB.common * 100)} % communs • +${Math.round(zB.rare * 100)} % rares</span></div>
         ${zS.lvl < ZONE_MAX ? `<div class="h-1.5 bg-slate-900 rounded-full overflow-hidden mt-1"><div class="h-full bg-sky-400" style="width:${zS.xp / zoneXpReq(zS.lvl) * 100}%"></div></div><div class="text-[10px] text-slate-500 mt-0.5">${Math.floor(zS.xp)} / ${zoneXpReq(zS.lvl)} XP de zone • monstre +1, élite +3, boss +10, expédition terminée +5</div>` : ""}</div>`;
-      html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}${zoneTxt}${selB.id === "foret_murmures" ? `<button type="button" data-train-start class="ui-btn mt-1.5 w-full px-3 py-2 rounded-lg bg-amber-700/80 hover:bg-amber-600 border border-amber-400/60 text-amber-50 font-semibold text-xs">🎯 Terrain d'entraînement — tester mon build sur un mannequin</button>` : ""}</div>`;
+      if (trainSel) html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">🎯 Terrain d'entraînement</b> — <b class="text-amber-200">clairière de la Forêt des Murmures</b><br>Une clairière aménagée près du Fief : frappe un mannequin immortel pour tester ton build. Il ne riposte pas et ne donne ni butin ni XP. Compteur de DPS en direct, niveau (DEF) et type (Monstre / Élite / Boss) réglables.<br><button type="button" data-train-start class="ui-btn mt-1.5 w-full px-3 py-2 rounded-lg bg-amber-700/80 hover:bg-amber-600 border border-amber-400/60 text-amber-50 font-semibold text-xs">🎯 Entrer sur le terrain</button></div>`;
+      else html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}${zoneTxt}</div>`;
       listBox.innerHTML = html;
 
       listBox.querySelectorAll("[data-train-start]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); startTraining(); }));
+      listBox.querySelectorAll("[data-train-card]").forEach(b => b.addEventListener("click", () => selectTraining()));
       listBox.querySelectorAll("[data-biome-diff]").forEach(btn => {
         btn.addEventListener("click", e => {
           e.stopPropagation();
           if (state.expedition.active) { showToast("Interrompez l'expédition en cours avant de changer de difficulté."); return; }
           RetroAudio.cursor();
           const [bid, did] = btn.dataset.biomeDiff.split(":");
-          state.expedition.biomeId = bid; if (did) state.expedition.difficulte = did;
+          state.expedition.biomeId = bid; if (did) state.expedition.difficulte = did; state.expedition.trainSel = false;
           renderExpeditionView();
           saveGame();
         });
@@ -13751,16 +13847,17 @@ function wmDraw(ctx, t, opt) {
             return;
           }
           RetroAudio.cursor();
-          state.expedition.biomeId = btn.dataset.biomeId;
+          state.expedition.biomeId = btn.dataset.biomeId; state.expedition.trainSel = false;
           renderExpeditionView();
         });
       });
 
       const biome = UNIVERS_CONFIG.biomes.find(b => b.id === state.expedition.biomeId) || UNIVERS_CONFIG.biomes[0];
-      document.getElementById("exp-biome-icon").textContent = biome.icone;
-      document.getElementById("exp-biome-title").textContent = biome.nom;
+      const _trH = state.expedition.training || (!state.expedition.active && state.expedition.trainSel);
+      document.getElementById("exp-biome-icon").textContent = _trH ? "🎯" : biome.icone;
+      document.getElementById("exp-biome-title").textContent = _trH ? "Terrain d'entraînement" : biome.nom;
       const curDiff = getExpDifficulty(biome);
-      document.getElementById("exp-biome-subtitle").textContent = biome.desc + (curDiff ? `  [Difficulté : ${curDiff.icone} ${curDiff.court}]` : "");
+      document.getElementById("exp-biome-subtitle").textContent = _trH ? "Clairière de la Forêt des Murmures — teste ton build sur un mannequin, sans risque." : biome.desc + (curDiff ? `  [Difficulté : ${curDiff.icone} ${curDiff.court}]` : "");
 
       const btnStart = document.getElementById("btn-exp-start");
       const btnStop = document.getElementById("btn-exp-stop");
@@ -13789,6 +13886,7 @@ function wmDraw(ctx, t, opt) {
       } else {
         btnStart.classList.remove("hidden");
         btnStop.classList.add("hidden");
+        btnStart.textContent = _trH ? "🎯 Entrer sur le terrain" : "▶ Lancer l'Expédition";
         pill.textContent = "Au campement (Feu de camp)";
         pill.className = "text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-800 text-orange-200 border border-slate-600";
       }
@@ -14572,7 +14670,7 @@ function wmDraw(ctx, t, opt) {
     function recomputeEnemyDef(en) {
       if (en.baseDef === undefined) en.baseDef = en.def;
       const acid = en.debuffs && en.debuffs.def ? en.debuffs.def.pct : 0;
-      en.def = Math.max(0, Math.round(en.baseDef * (1 - 0.04 * (en.corro || 0)) * (1 - acid)));
+      en.def = Math.max(0, Math.round(en.baseDef * (1 - 0.04 * (en.corro || 0)) * (1 - acid) * (en.melt > 0 ? 0.85 : 1)));
     }
     const DOT_POW = 0.07;   // v1.38 : les altérations des compétences suivent la puissance (ATQ / Magie) du héros
     function applyEnemyDot(en, kind, dps, dur, icon, nom) {
@@ -14611,6 +14709,8 @@ function wmDraw(ctx, t, opt) {
       (en.dots || []).forEach(d => out.push(`${d.icon} ${d.dps}/s (${d.ticksLeft}s)`));
       if (en.debuffs && en.debuffs.def) out.push(`🧪 DEF −${Math.round(en.debuffs.def.pct * 100)}% (${Math.ceil(en.debuffs.def.left)}s)`);
       if (en.debuffs && en.debuffs.atk) out.push(`🧪 ATQ −${Math.round(en.debuffs.atk.pct * 100)}% (${Math.ceil(en.debuffs.atk.left)}s)`);
+      if (en.melt > 0) out.push(`🔥 Fonte d'armure DEF −15% (${Math.ceil(en.melt)}s)`);
+      if (en.weak > 0) out.push(`☠️ Affaibli −10% dégâts (${Math.ceil(en.weak)}s)`);
       if (en.frz > 0) out.push(`❄️ Gelé (${en.frz.toFixed(1).replace(".", ",")}s)`);
       if (en.chill > 0) out.push(`🧊 Ralenti −25% vit. / −5% dégâts (${Math.ceil(en.chill)}s)`);
       if (en.stun > 0) out.push(`💫 Étourdi (${en.stun} tour${en.stun > 1 ? "s" : ""})`);
@@ -14835,7 +14935,7 @@ function wmDraw(ctx, t, opt) {
       }
 
       // v1.50 : l'ennemi n'agit plus automatiquement après chaque action du héros : il a sa propre jauge d'action
-      c.turn = "PLAYER"; c.atb = 0;
+      c.turn = "PLAYER"; c.atb = Math.min(30, c.atbBonus || 0); c.atbBonus = 0;
       updateCombatUI();
     }
     // Vitesse d'action des monstres (indépendante de celle du héros)
@@ -14857,7 +14957,7 @@ function wmDraw(ctx, t, opt) {
           cur.turn = "PLAYER"; updateCombatUI();
           return;
         }
-        let atkNow = Math.round(en.atk * (1 - (en.debuffs && en.debuffs.atk ? en.debuffs.atk.pct : 0)) * (en.chill > 0 ? 1 - FROST_SLOW_DMG : 1)), heavy = 1;
+        let atkNow = Math.round(en.atk * (1 - (en.debuffs && en.debuffs.atk ? en.debuffs.atk.pct : 0)) * (en.chill > 0 ? 1 - FROST_SLOW_DMG : 1) * (en.weak > 0 ? 0.9 : 1)), heavy = 1;
         if ((en.boss || en.guardian) && !en.ai && en.pv < en.pvMax * 0.3) {
           atkNow = Math.round(atkNow * 1.25);
           if (!cur.enraged) { cur.enraged = true; addExpLog(`🔥 ${en.nom} entre en RAGE ! (+25% ATQ)`, "text-orange-400 font-bold"); }
@@ -15056,6 +15156,10 @@ function wmDraw(ctx, t, opt) {
         pvMax: 1e12, pv: 1e12, atk: 0, def, baseDef: def, xp: 0, or: 0, lootComp: null, spriteType: "dummy", sprite: "", spd: 1, dummy: true };
     }
     function trainResetStats(c) { c = c || state.expedition.combat; if (c) c.train = { dmg: 0, el: 0, max: 0, hits: 0, started: false }; }
+    function selectTraining() {
+      if (state.expedition.active && !state.expedition.training) { showToast("Interrompez l'expédition en cours avant de changer de destination."); return; }
+      RetroAudio.cursor(); state.expedition.trainSel = true; state.expedition.biomeId = "foret_murmures"; renderExpeditionView(); saveGame();
+    }
     function startTraining() {
       if (state.expedition.active) { showToast("Termine ou abandonne l'expédition en cours avant d'aller t'entraîner."); return; }
       RetroAudio.confirm();
@@ -19133,7 +19237,7 @@ function wmDraw(ctx, t, opt) {
           tickCombatStatuses(c, dt);
           if (!state.expedition.combat) return requestAnimationFrame(gameLoop);
           if (c.enemy && c.enemy.dummy) trainTick(c, dt);
-          { const E = c.enemy; if (E.frz > 0) E.frz = Math.max(0, E.frz - dt); if (E.chill > 0) E.chill = Math.max(0, E.chill - dt); if (E.frzCd > 0) E.frzCd = Math.max(0, E.frzCd - dt); }
+          { const E = c.enemy; if (E.melt > 0) { E.melt -= dt; if (E.melt <= 0) { E.melt = 0; recomputeEnemyDef(E); } } if (E.weak > 0) E.weak = Math.max(0, E.weak - dt); if (E.frz > 0) E.frz = Math.max(0, E.frz - dt); if (E.chill > 0) E.chill = Math.max(0, E.chill - dt); if (E.frzCd > 0) E.frzCd = Math.max(0, E.frzCd - dt); }
           if (c.turn === "PLAYER" && c.enemy.pv > 0 && !c.enemy.dummy) {   // jauge d'action du monstre (se remplit en même temps que la tienne ; bloquée si gelé)
             if (!(c.enemy.frz > 0)) c.eatb = Math.min(100, (c.eatb === undefined ? -12 : c.eatb) + dt * 52 * enemySpeed(c.enemy));
             const eb = document.getElementById("combat-enemy-atb-bar"); if (eb) { eb.style.width = `${Math.max(0, c.eatb)}%`; eb.style.filter = c.enemy.frz > 0 ? "grayscale(1) brightness(1.6) hue-rotate(180deg)" : ""; }
@@ -19795,8 +19899,21 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.56";
+    const GAME_VERSION = "1.58";
     const PATCH_NOTES = [
+      { v: "1.58", date: "21/11/2026", titre: "Correctif du décor de la forêt", items: [
+        "🌲 Le décor de la Forêt des Murmures et du Terrain d'entraînement n'est plus coupé : les montagnes du fond se raccordent sans cassure, et le ciel ne passe plus entre les sapins au ras de l'herbe (bien visible de jour)."
+      ] },
+      { v: "1.57", date: "21/11/2026", titre: "Terrain d'entraînement & éléments runiques", items: [
+        "🎯 Le Terrain d'entraînement devient une vraie destination : une carte dans la liste des Destinations, et sa position sur la carte du monde (clairière près du Fief).",
+        "🏟️ Nouveau décor dédié : palissade, cibles, râtelier d'armes, bottes de paille et bannières du Fief (plus de fond coupé).",
+        "🩸 Sang — HÉMORRAGIE : le saignement se cumule jusqu'à ×3 (chaque coup ajoute une charge).",
+        "🔥 Flamme — FONTE D'ARMURE : DEF de l'ennemi −15 % pendant 5 s, pour tous tes coups.",
+        "⚡ Foudre — SURCHARGE : chaque coup fait démarrer ta prochaine jauge d'action à +8 % (max +30 %).",
+        "☠️ Poison — AFFAIBLISSEMENT : l'ennemi empoisonné inflige −10 % de dégâts.",
+        "🌑 Néant — BRISE-BOUCLIER : dégâts doublés contre les boucliers des boss.",
+        "🔷 Arcane — CANALISATION : chaque coup remplit l'Ultime de +3 %."
+      ] },
       { v: "1.56", date: "21/11/2026", titre: "Terrain d'entraînement", items: [
         "🎯 Nouveau Terrain d'entraînement dans la Forêt des Murmures (bouton sous la description de la forêt, dans Destinations).",
         "Frappe un mannequin immortel qui ne riposte pas, pour tester ton build sans risque : ni butin, ni XP, ni niveau de zone.",
@@ -20268,6 +20385,7 @@ function wmDraw(ctx, t, opt) {
 
       // Expédition & Campement
       document.getElementById("btn-exp-start").addEventListener("click", () => {
+        if (state.expedition.trainSel) { startTraining(); return; }
         if (state.hero.pv <= 1) {
           showToast("⚠️ Vos PV sont critiques ! Utilisez un Coupon de Repos au campement ou attendez la régénération.");
         }
