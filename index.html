@@ -7274,7 +7274,7 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 ${BUCH_TREES.map(t => { const ok = b.niveau >= t.lvl, on = t.id === b.treeId, r = UNIVERS_CONFIG.ressources[t.res];
                   return `<button type="button" data-buch-tree="${t.id}" ${ok ? "" : "disabled"} class="ui-btn text-left p-3.5 rounded-lg border ${on ? "bg-slate-800 border-amber-400" : "bg-slate-900/70 border-slate-700 hover:border-slate-500"}">
-                    <div class="flex items-center justify-between"><span class="text-xs font-bold text-white">${t.icone} ${t.nom} ${ok ? `<span class="text-[10px] text-sky-300 font-semibold">📈${spotState("buch_" + t.id).lvl}</span>` : ""}</span>
+                    <div class="flex items-center justify-between"><span class="text-xs font-bold text-white">${t.icone} ${t.nom} ${ok ? `<span class="text-[10px] text-sky-300 font-semibold" data-spot-badge="buch_${t.id}">📈${spotState("buch_" + t.id).lvl}</span>` : ""}</span>
                     <span class="text-[10px] px-2 py-0.5 rounded-full ${ok ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"}">Niv.${t.lvl} • +${t.xp} XP</span></div>
                     <div class="text-[11px] text-slate-400 mt-1.5">${r.icone} ${r.nom} (100%) • 🍯 Résine (12%) • ${t.duree}s</div></button>`; }).join("")}
               </div>
@@ -9895,9 +9895,56 @@
       while (z.lvl < SPOT_MAX && z.xp >= spotXpReq(z.lvl)) { z.xp -= spotXpReq(z.lvl); z.lvl++; up = true; }
       if (z.lvl >= SPOT_MAX) z.xp = 0;
       if (up && !silentGather) showToast(`📈 ${nom} : niveau de lieu ${z.lvl}${z.lvl >= SPOT_MAX ? " (MAX)" : ""} ! (+${Math.round(z.lvl / SPOT_MAX * 25)} % butin commun)`);
+      refreshSpotLvl(id);
     }
+    /* Met à jour en direct la barre et les badges d'un lieu (sans re-rendre la vue) */
+    function refreshSpotLvl(id) {
+      const z = spotState(id);
+      document.querySelectorAll(`[data-spot-lvl="${id}"]`).forEach(el => { el.outerHTML = spotLvlHtml(id); });
+      document.querySelectorAll(`[data-spot-badge="${id}"]`).forEach(el => { el.textContent = "📈" + z.lvl; });
+    }
+
+    function openLvlInfo(key) {
+      const [kind, id] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)];
+      const isZ = kind === "zone", MAX = isZ ? ZONE_MAX : SPOT_MAX;
+      const z = isZ ? zoneState(id) : spotState(id), req = isZ ? zoneXpReq : spotXpReq;
+      let nom = id;
+      if (isZ) { const bb = (UNIVERS_CONFIG.biomes || []).find(x => x.id === id); if (bb) nom = (bb.icone || "") + " " + bb.nom; }
+      else if (id.startsWith("buch_")) { const t = (typeof BUCH_TREES !== "undefined" ? BUCH_TREES : []).find(x => "buch_" + x.id === id); if (t) nom = "🪓 " + t.nom; }
+      else { for (const k in UNIVERS_CONFIG.metiers) { const f = (UNIVERS_CONFIG.metiers[k].spots || []).find(x => x.id === id); if (f) nom = (f.icone ? f.icone + " " : "") + f.nom; } }
+      const pc = l => [Math.round(l / MAX * 250) / 10, Math.round(l / MAX * 100) / 10];
+      const [c0, r0] = pc(z.lvl), [c1, r1] = pc(Math.min(MAX, z.lvl + 1));
+      let rest = 0; if (z.lvl < MAX) { rest = req(z.lvl) - z.xp; for (let l = z.lvl + 1; l < MAX; l++) rest += req(l); }
+      const ex = Math.round(4 * (1 + c0 / 100) * 100) / 100;
+      const rows = [1, 10, 20, 30, 40, 50].map(l => { const [c, r] = pc(l); return `<tr class="border-t border-slate-800 ${l <= z.lvl ? "text-emerald-300" : "text-slate-400"}"><td class="py-1">${l <= z.lvl ? "✓" : ""} Niv. ${l}</td><td class="py-1 text-right">+${c} %</td><td class="py-1 text-right">+${r} %</td></tr>`; }).join("");
+      const what = isZ
+        ? `<div>• <b class="text-slate-200">Communs</b> : matériaux lâchés par les monstres et composants de boss.</div><div>• <b class="text-slate-200">Rares</b> : objets spéciaux des modes Facile / Difficile / Cauchemar.</div>`
+        : `<div>• <b class="text-slate-200">Communs</b> : les ressources fréquentes du lieu (${id.startsWith("buch_") ? "bûches" : "chance de drop ≥ 7 %"}).</div><div>• <b class="text-slate-200">Rares</b> : les trouvailles rares (${id.startsWith("buch_") ? "résine" : "chance de drop < 7 %"}).</div>`;
+      const gain = isZ ? "Monstre vaincu +1 • Élite / gardien +3 • Boss +10 • Expédition terminée +5" : "Chaque essai de récolte +1 XP (manuel ou automatique avec les ouvriers)";
+      let m = document.getElementById("lvl-info-modal");
+      if (!m) { m = document.createElement("div"); m.id = "lvl-info-modal"; document.body.appendChild(m); }
+      m.className = "fixed inset-0 z-[80] flex items-center justify-center p-3 bg-black/70";
+      m.innerHTML = `<div class="melvor-panel w-full max-w-md max-h-[90vh] overflow-y-auto p-4 space-y-3 text-xs" style="background:#0f172a">
+        <div class="flex items-start justify-between gap-3"><div><div class="text-base font-bold text-white">📈 ${isZ ? "Niveau de zone" : "Niveau de lieu"}</div><div class="text-[11px] text-slate-400">${nom} — niveau <b class="text-sky-300">${z.lvl} / ${MAX}</b></div></div>
+          <button type="button" data-li-close class="ui-btn px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs">✕</button></div>
+        <div class="melvor-card p-3 space-y-1 text-slate-300 leading-snug"><div class="font-bold text-amber-200">Ça sert à quoi ?</div>
+          <div>Plus tu ${isZ ? "farmes cette zone" : "récoltes à cet endroit"}, plus son niveau monte, et plus tu ramasses <b class="text-white">d'exemplaires</b> à chaque drop.</div>
+          <div class="text-amber-300">⚠️ Ça n'augmente PAS la chance d'obtenir un objet, seulement la quantité quand il tombe. Aucune stat du héros n'est modifiée.</div></div>
+        <div class="melvor-card p-3 space-y-1"><div class="font-bold text-emerald-300">Bonus actuel</div>
+          <div class="text-slate-200">+${c0} % de quantité sur les objets communs</div><div class="text-slate-200">+${r0} % de quantité sur les objets rares</div>
+          ${z.lvl < MAX ? `<div class="text-slate-500">Au niveau ${z.lvl + 1} : +${c1} % / +${r1} %</div>` : `<div class="text-amber-300">Niveau maximum atteint !</div>`}
+          <div class="text-[11px] text-slate-400 pt-1">Exemple : un drop de 4 objets communs en donne en moyenne <b class="text-white">${ex}</b>. Les décimales se jouent au hasard (ex. 0,4 = 40 % de chance d'en avoir 1 de plus).</div></div>
+        <div class="melvor-card p-3 space-y-1 text-slate-400 leading-snug"><div class="font-bold text-sky-200">Communs ou rares ?</div>${what}</div>
+        <div class="melvor-card p-3"><div class="font-bold text-sky-200 mb-1">Progression</div>
+          <table class="w-full"><thead><tr class="text-slate-500 text-[10px]"><th class="text-left font-normal">Niveau</th><th class="text-right font-normal">Communs</th><th class="text-right font-normal">Rares</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div class="melvor-card p-3 space-y-1 text-slate-400"><div class="font-bold text-sky-200">Comment monter ?</div><div>${gain}</div>
+          ${z.lvl < MAX ? `<div>XP : <b class="text-white">${Math.floor(z.xp)} / ${req(z.lvl)}</b> • encore <b class="text-white">${Math.ceil(rest)}</b> XP avant le niveau ${MAX}</div>` : ""}</div>
+      </div>`;
+      m.onclick = e => { if (e.target === m || e.target.closest("[data-li-close]")) m.remove(); };
+    }
+    document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-lvl-info]"); if (!b) return; e.preventDefault(); e.stopPropagation(); openLvlInfo(b.dataset.lvlInfo); }, true);
     function spotLvlHtml(id) { const z = spotState(id), b = spotBonus(id);
-      return `<div class="mt-1.5"><div class="flex items-center justify-between text-[10px]"><b class="text-sky-300">📈 Lieu niv. ${z.lvl}${z.lvl >= SPOT_MAX ? " (MAX)" : ""}</b><span class="text-emerald-300">+${Math.round(b.common * 100)} % commun • +${Math.round(b.rare * 100)} % rare</span></div>${z.lvl < SPOT_MAX ? `<div class="h-1 bg-slate-950 rounded-full overflow-hidden mt-0.5"><div class="h-full bg-sky-400" style="width:${z.xp / spotXpReq(z.lvl) * 100}%"></div></div>` : ""}</div>`; }
+      return `<div class="mt-1.5" data-spot-lvl="${id}"><div class="flex items-center justify-between text-[10px]"><b class="text-sky-300">📈 Lieu niv. ${z.lvl}${z.lvl >= SPOT_MAX ? " (MAX)" : ""}<button type="button" data-lvl-info="spot:${id}" title="Que donne ce niveau ?" class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-sky-900/70 border border-sky-500/60 text-sky-200 text-[10px] font-bold leading-none hover:bg-sky-700 align-middle">i</button></b><span class="text-emerald-300">Quantité : +${Math.round(b.common * 100)} % communs • +${Math.round(b.rare * 100)} % rares</span></div>${z.lvl < SPOT_MAX ? `<div class="h-1 bg-slate-950 rounded-full overflow-hidden mt-0.5"><div class="h-full bg-sky-400" style="width:${z.xp / spotXpReq(z.lvl) * 100}%"></div></div>` : ""}</div>`; }
 
     function performGatherAttempt(profKey, isAuto = false) {
       const cfg = UNIVERS_CONFIG.metiers[profKey];
@@ -11215,7 +11262,7 @@
                     <button type="button" data-prof-spot="${sp.id}" ${!unlocked ? "disabled" : ""}
                       class="ui-btn text-left p-3.5 rounded-lg border ${active ? "bg-slate-800 border-amber-400" : "bg-slate-900/70 border-slate-700 hover:border-slate-500"}">
                       <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-white">${sp.nom} ${unlocked ? `<span class="text-[10px] text-sky-300 font-semibold">📈${spotState(sp.id).lvl}</span>` : ""}</span>
+                        <span class="text-xs font-bold text-white">${sp.nom} ${unlocked ? `<span class="text-[10px] text-sky-300 font-semibold" data-spot-badge="${sp.id}">📈${spotState(sp.id).lvl}</span>` : ""}</span>
                         <span class="text-[10px] px-2 py-0.5 rounded-full ${unlocked ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"}">
                           Niv.${sp.niveauReq} • +${sp.xp} XP
                         </span>
@@ -13669,7 +13716,7 @@ function wmDraw(ctx, t, opt) {
       const curRc = diffRecLevel(selB, curD), L0 = state.hero.niveau;
       const recTxt = curRc ? `<span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${L0 < curRc[0] ? "bg-rose-950 text-rose-300 border border-rose-700/50" : L0 > curRc[1] ? "bg-sky-950 text-sky-300 border border-sky-700/50" : "bg-emerald-950 text-emerald-300 border border-emerald-700/50"}">🎯 Niveau conseillé : ${curRc[0]}–${curRc[1]} ${L0 < curRc[0] ? "(tu es en dessous : prudence !)" : L0 > curRc[1] ? "(facile pour toi : essaie plus dur)" : "(idéal pour toi)"}</span>` : "";
       const zS = zoneState(selB.id), zB = zoneBonus(selB.id);
-      const zoneTxt = `<div class="mt-1.5 melvor-card p-2"><div class="flex items-center justify-between text-[11px]"><b class="text-sky-300">📈 Niveau de zone ${zS.lvl}${zS.lvl >= ZONE_MAX ? " (MAX)" : ` / ${ZONE_MAX}`}</b><span class="text-emerald-300">+${Math.round(zB.common * 100)} % butin commun • +${Math.round(zB.rare * 100)} % rare</span></div>
+      const zoneTxt = `<div class="mt-1.5 melvor-card p-2"><div class="flex items-center justify-between text-[11px]"><b class="text-sky-300">📈 Niveau de zone ${zS.lvl}${zS.lvl >= ZONE_MAX ? " (MAX)" : ` / ${ZONE_MAX}`}<button type="button" data-lvl-info="zone:${selB.id}" title="Que donne ce niveau ?" class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-sky-900/70 border border-sky-500/60 text-sky-200 text-[10px] font-bold leading-none hover:bg-sky-700 align-middle">i</button></b><span class="text-emerald-300">Quantité : +${Math.round(zB.common * 100)} % communs • +${Math.round(zB.rare * 100)} % rares</span></div>
         ${zS.lvl < ZONE_MAX ? `<div class="h-1.5 bg-slate-900 rounded-full overflow-hidden mt-1"><div class="h-full bg-sky-400" style="width:${zS.xp / zoneXpReq(zS.lvl) * 100}%"></div></div><div class="text-[10px] text-slate-500 mt-0.5">${Math.floor(zS.xp)} / ${zoneXpReq(zS.lvl)} XP de zone • monstre +1, élite +3, boss +10, expédition terminée +5</div>` : ""}</div>`;
       html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}${zoneTxt}</div>`;
       listBox.innerHTML = html;
@@ -19631,8 +19678,17 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.51";
+    const GAME_VERSION = "1.53";
     const PATCH_NOTES = [
+      { v: "1.53", date: "21/11/2026", titre: "Barre de niveau de lieu en direct", items: [
+        "📈 La barre d'XP du niveau de lieu (métiers et bûcheron) se met à jour à chaque récolte, même en récoltant très vite, sans avoir à rafraîchir la page.",
+        "Le badge 📈 sur les cartes des lieux et des arbres suit aussi le niveau en direct."
+      ] },
+      { v: "1.52", date: "21/11/2026", titre: "Infos sur les niveaux de zone et de lieu", items: [
+        "Nouveau bouton « i » à côté des niveaux de zone (biomes) et des niveaux de lieu (métiers).",
+        "Il explique ce que le niveau apporte : bonus de quantité actuel et au niveau suivant, tableau de progression, objets communs ou rares, et façon de gagner de l'XP.",
+        "Rappel : ces niveaux augmentent la QUANTITÉ ramassée, pas la chance de drop ni les stats du héros."
+      ] },
       { v: "1.51", date: "21/11/2026", titre: "Niveaux de lieu pour les métiers", items: [
         "📈 Pêche, Minage, Récolte, Mine d'Éclats et Bûcheron : chaque lieu (rivière, filon, champ, arbre…) a son propre niveau, de 1 à 50. Chaque tentative (la tienne ou celle de tes travailleurs) lui donne de l'XP.",
         "🎁 Comme pour les zones, le niveau de lieu augmente la QUANTITÉ récoltée sans toucher aux chances : jusqu'à +25 % sur les ressources communes et peu communes, et +10 % sur les rares (ou la Résine pour le Bûcheron).",
