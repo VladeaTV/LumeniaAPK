@@ -517,6 +517,32 @@
     #pd-tip.c-commun .t-name { color: #e2e8f0; } #pd-tip.c-rare .t-name { color: #38bdf8; } #pd-tip.c-maitre .t-name { color: #c084fc; } #pd-tip.c-legendaire .t-name { color: #fbbf24; } #pd-tip.c-set .t-name { color: #4ade80; }
     #pd-tip.c-rare { border-color: #0369a1; } #pd-tip.c-maitre { border-color: #7e22ce; } #pd-tip.c-legendaire { border-color: #b45309; } #pd-tip.c-set { border-color: #15803d; }
     @media (max-width: 420px) { .pd-box { width: 52px; height: 52px; } .pd-box canvas { width: 42px; height: 42px; } .pd-slot { width: 56px; } .pd-hint { display: none; } }
+
+    /* v1.34 — sélecteur d'équipement */
+    #pd-picker { position: fixed; inset: 0; z-index: 93; display: none; }
+    #pd-picker.show { display: block; }
+    #pd-picker .pk-back { position: absolute; inset: 0; background: rgba(2,6,23,.7); backdrop-filter: blur(2px); }
+    #pd-picker .pk-panel { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: min(560px, calc(100% - 16px)); max-height: min(82vh, 760px); display: flex; flex-direction: column;
+      background: linear-gradient(180deg, #1a1408, #0b0a08); border: 1px solid #b45309; border-radius: 16px; box-shadow: 0 0 0 1px #000, 0 20px 60px rgba(0,0,0,.8), inset 0 0 0 1px rgba(251,191,36,.15); animation: mobSheet .2s ease-out; }
+    #pd-picker .pk-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px 10px; border-bottom: 1px solid #3b2a14; }
+    #pd-picker .pk-title { font-family: "Press Start 2P", monospace; font-size: 11px; color: #fde68a; }
+    #pd-picker .pk-x { width: 32px; height: 32px; border-radius: 8px; background: #1e293b; color: #cbd5e1; font-weight: 700; }
+    #pd-picker .pk-cur { margin: 10px 12px 4px; padding: 10px 12px; border-radius: 10px; border: 1px solid #b45309; background: rgba(251,191,36,.06); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 8px; }
+    #pd-picker .pk-cur > div:first-child { flex: 1; min-width: 0; }
+    #pd-picker .pk-list { overflow-y: auto; padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 8px; overscroll-behavior: contain; }
+    #pd-picker .pk-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(15,23,42,.8); border: 1px solid #334155; }
+    #pd-picker .pk-best { border-color: #22c55e; box-shadow: 0 0 12px rgba(34,197,94,.25); }
+    #pd-picker .pk-name { font-weight: 800; font-size: 13px; }
+    #pd-picker .pk-delta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; font-size: 10px; font-weight: 700; }
+    #pd-picker .pk-btn { flex-shrink: 0; padding: 8px 12px; border-radius: 8px; background: #16a34a; color: #fff; font-weight: 800; font-size: 12px; }
+    #pd-picker .pk-btn:hover { background: #22c55e; } #pd-picker .pk-sec { background: #334155; } #pd-picker .pk-sec:hover { background: #475569; }
+    .rarity-txt-commun { color: #e2e8f0; } .rarity-txt-rare { color: #38bdf8; } .rarity-txt-maitre { color: #c084fc; } .rarity-txt-legendaire { color: #fbbf24; } .rarity-txt-set { color: #4ade80; }
+    @media (max-width: 640px) { #pd-picker .pk-panel { top: auto; bottom: 0; left: 0; transform: none; width: 100%; max-height: 86vh; border-radius: 18px 18px 0 0; padding-bottom: env(safe-area-inset-bottom); } }
+
+    /* v1.35 — icônes d'emplacement de la Forge */
+    .forge-ic { flex-shrink: 0; width: 38px; height: 38px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+      background: linear-gradient(180deg, #1f2937, #0b1120); border: 2px solid #9a3412; box-shadow: inset 0 0 10px rgba(0,0,0,.8); }
+    .forge-ic canvas { width: 30px; height: 30px; image-rendering: pixelated; }
 </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -1134,6 +1160,7 @@
                 <button type="button" data-forge-cat="Armures" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🛡️ Armures</button>
                 <button type="button" data-forge-cat="Accessoires" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">💍 Accessoires</button>
                 <button type="button" data-forge-cat="Composants" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🧱 Composants</button>
+                <button type="button" data-forge-cat="Retravail" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">✒️ Retravail</button>
                 <button type="button" data-forge-cat="Renforcement" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">⚒️ Renforcement</button>
 
                 <button type="button" data-forge-cat="Skins d'Armes" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🗡️ Skins d'Armes</button>
@@ -1141,6 +1168,7 @@
                 <button type="button" data-forge-cat="Casques, Capes & Ailes" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🦇 Casques, Capes &amp; Ailes</button>
               </div>
 
+              <div id="forge-slot-filter" class="flex flex-wrap gap-1.5"></div>
               <div id="forge-recipes-list" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 scroll-pane"></div>
 
               <div class="melvor-card p-4 flex flex-wrap items-center justify-between gap-3">
@@ -1248,7 +1276,7 @@
                   </div>
                   <div class="pd-col" id="pd-right"></div>
                 </div>
-                <div class="text-[10px] text-slate-500 text-center mt-3 pd-hint">Survole un emplacement pour voir ses statistiques • clique pour les options</div>
+                <div class="text-[10px] text-slate-500 text-center mt-3 pd-hint">Survole un emplacement pour voir ses statistiques • clique pour choisir parmi tes objets</div>
               </div>
 
               <div class="space-y-2.5">
@@ -3008,7 +3036,7 @@
       const xpMult = 1 + (lin.bonuses.xpMult || 0) + chance * 0.002 + _bb.xp;
       const atbSpeedMult = 1 + (cls.bonuses.speedBonus || 0) + agilite * 0.008;
 
-      return applySetEffects(applySkillPassives(applyCombatBuffs({
+      return applyEngravings(applySetEffects(applySkillPassives(applyCombatBuffs({
         force, agilite, esprit, chance, setEffect, setCount,
         pvMax, pmMax, atk, magicAtk, def,
         critChance, critMult, lootBonusPct, xpMult, atbSpeedMult,
@@ -3017,8 +3045,21 @@
         forgeLegBonus: bMinage.forgeLegBonus,
         forgeDiscount: bRecolte.forgeDiscount,
         potionBonus: (cls.bonuses.potionMult || 0) + bRecolte.potionBonus
-      })));
+      }))));
     }
+    const GRAVURES = {
+      vampire: { nom: "Vampirique", ic: "🩸", desc: "Vous soigne de 3 % des dégâts infligés.", apply: o => { o.lifesteal = (o.lifesteal || 0) + 0.03; } },
+      rempart: { nom: "Rempart", ic: "🛡️", desc: "−4 % de dégâts subis.", apply: o => { o.dmgReduc = Math.min(0.6, (o.dmgReduc || 0) + 0.04); } },
+      celerite: { nom: "Célérité", ic: "💨", desc: "+5 % de vitesse de jauge ATB.", apply: o => { o.atbSpeedMult = (o.atbSpeedMult || 1) + 0.05; } },
+      ferocite: { nom: "Férocité", ic: "💥", desc: "+0,15 aux dégâts critiques.", apply: o => { o.critMult = +((o.critMult || 1.6) + 0.15).toFixed(2); } },
+      fortune: { nom: "Fortune", ic: "🍀", desc: "+6 % de butin rare.", apply: o => { o.lootBonusPct = (o.lootBonusPct || 0) + 6; } },
+      sagesse: { nom: "Sagesse", ic: "📘", desc: "+5 % d'expérience.", apply: o => { o.xpMult = (o.xpMult || 1) + 0.05; } }
+    };
+    function applyEngravings(out) {
+      Object.values(state.equipementPorte || {}).forEach(it => { if (it && it.grav && !it.setId && GRAVURES[it.grav]) GRAVURES[it.grav].apply(out); });
+      return out;
+    }
+    function gravLine(it) { const g = it && it.grav && GRAVURES[it.grav]; return g ? `${g.ic} Gravure ${g.nom} : ${g.desc}` : ""; }
     function applySetEffects(out) {
       const se = out.setEffect; if (!se) return out;
       if (se.id === "carnage") {
@@ -4645,6 +4686,7 @@
       return best;
     }
     function setTagHtml(it) {
+      if (it && it.grav && !it.setId) return `<div class="text-[11px] text-amber-300 mt-0.5">${gravLine(it)}</div>`;
       if (!it || !it.setId) return "";
       const pan = getAllSets().find(p => p.id === it.setId);
       if (!pan) return "";
@@ -8682,7 +8724,7 @@
         if (!it.fav && ord <= av.recycleSeuil && ord < 4) {
           const n = RECYCLE_SHARDS[it.rarete] || 1;
           shards += n; count++;
-          state.metiers.forge.xp += 4 * n;
+          forgeXp(4 * n);
         } else kept.push(it);
       });
       if (!count) return;
@@ -8712,6 +8754,15 @@
       return true;
     }
 
+    // v1.34 — Équilibrage : le butin suit une courbe calée SOUS les séries forgées (qui restent sous les panoplies en effets)
+    const SERIES_CURVE = [[1, 12], [4, 20], [5, 24], [7, 32], [9, 38], [11, 48], [20, 60], [32, 105], [80, 160], [120, 195]];
+    function seriesPowerAt(L) {
+      if (L <= 1) return 12; const C = SERIES_CURVE;
+      for (let i = 1; i < C.length; i++) if (L <= C[i][0]) { const [a, pa] = C[i - 1], [b, pb] = C[i]; return pa + (pb - pa) * (L - a) / (b - a); }
+      return 195 + (L - 120) * 0.9;
+    }
+    const DROP_MULT = { commun: 1.0, rare: 1.15, maitre: 1.3, legendaire: 1.5 };
+    function dropBasePower(L) { return seriesPowerAt(L) * 0.65; }
     function generateEquipment({ slot, level = 1, bonusTier = 0, fixedName = null, fixedQuality = null, basePower = null, provenance = "Butin d'expédition", setId = null, setNom = null, classeReq = null, extraStats = null }) {
       const slots = ["arme", "armure", "casque", "anneau"];
       const chosenSlot = slot || slots[Math.floor(Math.random() * slots.length)];
@@ -8743,7 +8794,8 @@
       const baseName = fixedName || `${poolNames[chosenSlot][Math.floor(Math.random() * poolNames[chosenSlot].length)]} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
       const fullName = qualityLabel && qualityLabel !== "Commun" ? `${baseName} [${qualityLabel}]` : baseName;
 
-      const power = (basePower || (4 + level * 2.4)) * qualityMult;
+      if (!basePower) qualityMult = DROP_MULT[rareteKey] || 1;   // butin / marchand : multiplicateurs de rareté resserrés
+      const power = (basePower || dropBasePower(level)) * qualityMult;
       const stats = {};
 
       if (chosenSlot === "arme") {
@@ -10587,16 +10639,25 @@
       const leg = Math.min(25 + mleg, Math.max(0, (fLvl - 5) * 0.3 + stats.forgeLegBonus + nainBonus * 0.5 + mleg));
       const maitre = Math.min(38, Math.max(2, 2 + (fLvl - 1) * 0.5 + nainBonus));
       const trempe = Math.min(40, 12 + fLvl * 0.5);
-      const std = Math.max(5, 100 - leg - maitre - trempe);
+      const std = 0;   // v1.34 : tout objet forgé est au moins Rare
 
       return {
         standard: Math.round(std),
-        trempe: Math.round(trempe),
+        trempe: Math.round(100 - leg - maitre),
         maitre: Math.round(maitre),
         legendaire: Math.round(leg)
       };
     }
 
+    // XP de Forge avec rattrapage : tant que la Forge est sous le niveau du héros, elle progresse beaucoup plus vite
+    function forgeXp(n) {
+      const f = state.metiers.forge, gap = Math.max(0, (state.hero.niveau || 1) - f.niveau);
+      const mult = Math.min(4, 1 + gap * 0.1);
+      f.xp += Math.round(n * mult); let up = 0;
+      while (f.niveau < MAX_PROF_LEVEL && f.xp >= getProfXpReq(f.niveau)) { f.xp -= getProfXpReq(f.niveau); f.niveau++; up++; }
+      if (up) { try { RetroAudio.levelUp(); } catch (e) {} showToast(`🔨 Forge passe Niveau ${f.niveau} !`); }
+      return mult;
+    }
     function rollForgeQuality() {
       const w = getForgeQualityWeights();
       const total = w.standard + w.trempe + w.maitre + w.legendaire;
@@ -10643,13 +10704,7 @@
       if (econProc) addExpLog(`♻️ Maîtrise de Forge : ${rec.nom} forgé sans consommer d'ingrédients !`, "text-orange-300");
 
       const forge = state.metiers.forge;
-      forge.xp += rec.xpForge;
-      while (forge.niveau < MAX_PROF_LEVEL && forge.xp >= getProfXpReq(forge.niveau)) {
-        forge.xp -= getProfXpReq(forge.niveau);
-        forge.niveau++;
-        RetroAudio.levelUp();
-        showToast(`🔨 Forge passe Niveau ${forge.niveau} !`);
-      }
+      forgeXp(rec.xpForge);
 
       RetroAudio.confirm();
       forgeFx = { t0: performance.now() / 1000, dur: 2.4, text: `🔨 ${rec.nom}` };
@@ -10709,6 +10764,80 @@
       const eq = Object.entries(state.equipementPorte).filter(([, it]) => it).map(([sl, it]) => ({ it, where: "Équipé" }));
       return eq.concat(state.inventaireEquip.map(it => ({ it, where: "Sac" })));
     }
+
+    /* =======================================================================
+       v1.34 — ✒️ RETRAVAIL : remonter un objet à son niveau, relancer ses stats, graver un effet
+       ======================================================================= */
+    let rtSel = null, rtGrav = "vampire";
+    function rtItems() { return allRenfortItems().filter(x => !x.it.setId); }
+    function rtIsForged(it) { return /^Forgé/.test(it.provenance || ""); }
+    function rtCosts(it) {
+      const L = state.hero.niveau, ord = (UNIVERS_CONFIG.raretes[it.rarete] || {}).ordre || 1;
+      return {
+        up: { lvl: L, or: 25 * L, eclats: 2 + Math.ceil(Math.max(0, L - it.niveau) / 3) },
+        reroll: { or: 15 * it.niveau, eclats: 2 + ord },
+        grav: { or: 40 * it.niveau, eclats: [0, 4, 7, 11, 16][ord] }
+      };
+    }
+    function rtRegen(it, level, keepPrimary) {
+      const nw = generateEquipment({ slot: it.slot, level, fixedQuality: { rarete: it.rarete, nom: it.qualite, mult: 1 }, fixedName: it.nom.replace(/ \[[^\]]+\]$/, ""), provenance: it.provenance });
+      if (keepPrimary) {   // relance : seules les stats secondaires (FOR/AGI/ESP/CHA) changent, la puissance de l'objet reste la même
+        const prim = {}; ["atk", "def", "pvMax", "pmMax", "critChance"].forEach(k => { if (it.stats[k]) prim[k] = it.stats[k]; });
+        const sec = {}; ["force", "agilite", "esprit", "chance"].forEach(k => { if (nw.stats[k]) sec[k] = nw.stats[k]; });
+        const oldSec = ["force", "agilite", "esprit", "chance"].reduce((a, k) => a + (it.stats[k] || 0), 0), newSec = Object.values(sec).reduce((a, v) => a + v, 0);
+        if (newSec > 0 && oldSec > 0) Object.keys(sec).forEach(k => { sec[k] = Math.max(1, Math.round(sec[k] * oldSec / newSec)); });
+        it.stats = { ...prim, ...sec }; return;
+      }
+      it.stats = nw.stats; it.niveau = level;
+    }
+    function rtPay(c) {
+      if (state.or < c.or || (state.ressources.eclat_forge || 0) < c.eclats) { showToast(`Il te faut ${c.or.toLocaleString("fr-FR")} 🪙 et ${c.eclats} 🔸 Éclats.`); return false; }
+      state.or -= c.or; state.ressources.eclat_forge -= c.eclats; forgeXp(10 + c.eclats * 6); return true;
+    }
+    function renderRetravailView(grid) {
+      const items = rtItems();
+      if (!rtSel || !items.some(x => x.it.uid === rtSel)) rtSel = items.length ? items[0].it.uid : null;
+      const sel = items.find(x => x.it.uid === rtSel), ico = { arme: "⚔️", armure: "🛡️", casque: "🪖", anneau: "💍" };
+      const list = items.map(({ it, where }) => `<button type="button" data-rt="${it.uid}" class="ui-btn text-left p-2.5 rounded-lg border ${it.uid === rtSel ? "bg-slate-800 border-amber-400" : "bg-slate-900/60 border-slate-700 hover:border-slate-500"} rarity-${it.rarete}">
+          <div class="flex items-center justify-between gap-2 text-xs"><span class="font-semibold truncate flex items-center gap-1.5"><canvas width="16" height="16" data-forge-ic="${it.slot}:${it.setId ? "set" : it.rarete}" style="width:20px;height:20px;image-rendering:pixelated"></canvas>${it.nom}</span><span class="shrink-0 text-[10px] text-slate-400">Niv.${it.niveau}</span></div>
+          <div class="text-[10px] text-slate-400">${where} • ${(UNIVERS_CONFIG.raretes[it.rarete] || {}).nom || it.rarete}${it.grav ? " • " + GRAVURES[it.grav].ic + " " + GRAVURES[it.grav].nom : ""}</div></button>`).join("");
+      let panel = `<div class="text-xs text-slate-400 p-6 text-center">Aucun équipement à retravailler (les pièces de panoplie ne se retravaillent pas : utilise le Renforcement).</div>`;
+      if (sel) {
+        const it = sel.it, c = rtCosts(it), E = state.ressources.eclat_forge || 0, L = state.hero.niveau;
+        const pill = (ok, t) => `<span class="px-2 py-1 rounded bg-slate-900 border ${ok ? "border-emerald-500/40 text-emerald-300" : "border-rose-500/40 text-rose-300"} tabular-nums">${t}</span>`;
+        const cost = x => pill(state.or >= x.or, `🪙 ${x.or.toLocaleString("fr-FR")}`) + pill(E >= x.eclats, `🔸 ${x.eclats} (${E})`);
+        const canUp = !rtIsForged(it) && it.niveau < L;
+        const prev = (() => { if (!canUp) return ""; const p = generateEquipment({ slot: it.slot, level: L, fixedQuality: { rarete: it.rarete, nom: it.qualite, mult: 1 }, provenance: "aperçu" }); return formatEquipStatsLine(p.stats); })();
+        panel = `<div class="space-y-3">
+          <div><div class="text-sm font-bold text-amber-300">${it.nom}</div><div class="text-[11px] text-slate-300">${formatEquipStatsLine(it.stats)}</div>${it.grav ? `<div class="text-[11px] text-amber-300">${gravLine(it)}</div>` : ""}</div>
+          <div class="melvor-card p-3 space-y-2"><div class="text-xs font-bold text-white">⬆️ Remonter au niveau ${L}</div>
+            ${rtIsForged(it) ? `<div class="text-[11px] text-slate-400">Les objets forgés gardent leur puissance de recette : reforge-le plutôt à la Forge.</div>` : it.niveau >= L ? `<div class="text-[11px] text-emerald-300">Déjà à ton niveau.</div>` :
+            `<div class="text-[11px] text-slate-400">Aperçu (stats relancées au niveau ${L}) : <span class="text-slate-200">${prev}</span></div><div class="flex flex-wrap gap-1.5 text-[11px]">${cost(c.up)}</div>
+             <button type="button" data-rt-act="up" class="ui-btn w-full py-2 rounded-lg text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white">Remonter l'objet</button>`}</div>
+          <div class="melvor-card p-3 space-y-2"><div class="text-xs font-bold text-white">🎲 Relancer les statistiques</div>
+            <div class="text-[11px] text-slate-400">Nouveau tirage des stats secondaires (Force, Agilité, Esprit, Chance) : même total, répartition différente.</div><div class="flex flex-wrap gap-1.5 text-[11px]">${cost(c.reroll)}</div>
+            <button type="button" data-rt-act="reroll" class="ui-btn w-full py-2 rounded-lg text-xs font-bold bg-slate-700 hover:bg-slate-600 text-white">Relancer</button></div>
+          <div class="melvor-card p-3 space-y-2"><div class="text-xs font-bold text-white">✒️ Graver un effet <span class="text-[10px] text-slate-400 font-normal">(1 par objet, remplace l'actuel)</span></div>
+            <div class="grid grid-cols-2 gap-1.5">${Object.entries(GRAVURES).map(([k, g]) => `<button type="button" data-rt-grav="${k}" class="ui-btn text-left p-2 rounded-md border text-[11px] ${rtGrav === k ? "bg-amber-500/15 border-amber-400 text-amber-200" : "bg-slate-900 border-slate-700 text-slate-300"}"><b>${g.ic} ${g.nom}</b><br><span class="text-[10px] text-slate-400">${g.desc}</span></button>`).join("")}</div>
+            <div class="flex flex-wrap gap-1.5 text-[11px]">${cost(c.grav)}</div>
+            <button type="button" data-rt-act="grav" class="ui-btn w-full py-2 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white">Graver ${GRAVURES[rtGrav].nom}</button></div>
+        </div>`;
+      }
+      grid.innerHTML = `<div class="col-span-full grid grid-cols-1 lg:grid-cols-5 gap-4">
+          <div class="lg:col-span-2 space-y-2"><div class="text-[11px] font-bold uppercase tracking-wider text-amber-300">Équipement (hors panoplies)</div><div class="space-y-1.5 max-h-[520px] overflow-y-auto pr-1">${list}</div></div>
+          <div class="lg:col-span-3">${panel}</div></div>`;
+      drawForgeIcons();
+      grid.querySelectorAll("[data-rt]").forEach(b => b.addEventListener("click", () => { rtSel = b.dataset.rt; RetroAudio.cursor(); renderRetravailView(grid); }));
+      grid.querySelectorAll("[data-rt-grav]").forEach(b => b.addEventListener("click", () => { rtGrav = b.dataset.rtGrav; RetroAudio.cursor(); renderRetravailView(grid); }));
+      grid.querySelectorAll("[data-rt-act]").forEach(b => b.addEventListener("click", () => {
+        if (!sel) return; const it = sel.it, c = rtCosts(it), a = b.dataset.rtAct;
+        if (a === "up") { if (!rtPay(c.up)) return; rtRegen(it, state.hero.niveau); showToast(`⬆️ ${it.nom} remonté au niveau ${it.niveau} !`); }
+        else if (a === "reroll") { if (!rtPay(c.reroll)) return; rtRegen(it, it.niveau, true); showToast(`🎲 Nouvelles stats : ${formatEquipStatsLine(it.stats)}`); }
+        else if (a === "grav") { if (!rtPay(c.grav)) return; it.grav = rtGrav; showToast(`✒️ Gravure ${GRAVURES[rtGrav].nom} appliquée sur ${it.nom} !`); }
+        RetroAudio.confirm(); updateGlobalHUD(); renderForgeView(); saveGame();
+      }));
+    }
+
     function renderRenfortView(grid) {
       const items = allRenfortItems();
       if (!renfortSel || !items.some(x => x.it.uid === renfortSel)) renfortSel = items.length ? items[0].it.uid : null;
@@ -10785,13 +10914,23 @@
 
       const fmb = document.getElementById("forge-mastery-box");
       if (fmb) { fmb.innerHTML = craftPaliersHtml("forge"); bindPalToggle(fmb); }
+      { const fb = document.getElementById("forge-slot-filter"); if (fb && (state.forgeCat === "Renforcement" || state.forgeCat === "Retravail")) fb.innerHTML = ""; }
       if (state.forgeCat === "Renforcement") { renderRenfortView(document.getElementById("forge-recipes-list")); return; }
+      if (state.forgeCat === "Retravail") { renderRetravailView(document.getElementById("forge-recipes-list")); return; }
       const list = UNIVERS_CONFIG.recettesForge.filter(r => r.cat === state.forgeCat && !r.legacy)
         .sort((a, b) => (a.niveauForgeReq - b.niveauForgeReq) || ((a.niveauPersoReq || 0) - (b.niveauPersoReq || 0)));
       let lastHdr = "";
       const grid = document.getElementById("forge-recipes-list");
 
-      grid.innerHTML = list.map(rec => {
+      const slotsHere = [...new Set(list.map(forgeRecSlot))].filter(Boolean);
+      if (state.forgeSlot && !slotsHere.includes(state.forgeSlot)) state.forgeSlot = null;
+      const fbar = document.getElementById("forge-slot-filter");
+      if (fbar) {
+        fbar.innerHTML = slotsHere.length > 1 ? [[null, "Tous"], ...slotsHere.map(k => [k, FORGE_SLOT_LBL[k]])].map(([k, l]) => `<button type="button" data-fslot-f="${k || ""}" class="ui-btn flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border ${state.forgeSlot === k ? "bg-orange-500/20 border-orange-400 text-orange-200" : "bg-slate-900 border-slate-700 text-slate-300"}">${k ? `<canvas width="16" height="16" data-forge-ic="${k}:forge" style="width:18px;height:18px;image-rendering:pixelated"></canvas>` : "✦"} ${l}</button>`).join("") : "";
+        fbar.querySelectorAll("[data-fslot-f]").forEach(b => b.addEventListener("click", () => { state.forgeSlot = b.dataset.fslotF || null; RetroAudio.cursor(); renderForgeView(); }));
+      }
+      const listF = state.forgeSlot ? list.filter(r => forgeRecSlot(r) === state.forgeSlot) : list;
+      grid.innerHTML = listF.map(rec => {
         const forgeOk = forge.niveau >= rec.niveauForgeReq;
         const heroOk = !rec.niveauPersoReq || state.hero.niveau >= rec.niveauPersoReq;
         const unlocked = forgeOk && heroOk;
@@ -10819,11 +10958,13 @@
           </span>`;
         }).join(" ");
 
+        const rSlot = forgeRecSlot(rec), slotLbl = FORGE_SLOT_LBL[rSlot] || "";
         return hdr + `
-          <div class="melvor-card p-4 flex flex-col justify-between gap-4">
+          <div class="melvor-card p-4 flex flex-col justify-between gap-4" data-fslot="${rSlot}">
             <div class="space-y-2">
               <div class="flex items-center justify-between gap-2">
-                <span class="text-sm font-bold text-white flex items-center gap-1.5">${rec.nom}
+                <span class="text-sm font-bold text-white flex items-center gap-2 min-w-0"><span class="forge-ic"><canvas width="16" height="16" data-forge-ic="${rSlot}:${rec.setId ? "set" : rec.type === "skin" ? "maitre" : "forge"}"></canvas></span>
+                  <span class="min-w-0">${slotLbl ? `<span class="block text-[9px] uppercase tracking-wider text-orange-300/80 font-bold">${slotLbl}</span>` : ""}${rec.nom}</span>
                   ${rec.type === "equipement" ? `<button type="button" data-forge-info="${rec.id}" title="Stats possibles de cet équipement"
                     class="ui-btn w-5 h-5 rounded-full bg-sky-900/70 hover:bg-sky-700 border border-sky-500/60 text-[11px] font-bold text-sky-200 leading-none">i</button>` : ""}
                 </span>
@@ -10852,7 +10993,17 @@
       grid.querySelectorAll("[data-craft-id]").forEach(btn => {
         btn.addEventListener("click", () => craftRecipe(btn.dataset.craftId));
       });
+      drawForgeIcons();
     }
+    // v1.35 — icônes d'emplacement dans la Forge
+    const FORGE_SLOT_LBL = { casque: "Tête", armure: "Torse", anneau: "Anneau", arme: "Arme", bouclier: "Bouclier", cape: "Cape", aura: "Aura", potion: "Consommable", composant: "Composant" };
+    function forgeRecSlot(rec) {
+      if (rec.type === "equipement") return rec.slot;
+      if (rec.type === "skin") { const k = (typeof SKIN_CATALOG !== "undefined") && SKIN_CATALOG.find(x => x.id === rec.skinId); return k ? (k.slot === "arme" ? "arme" : k.slot) : ""; }
+      if (rec.type === "consommable") return rec.cat === "Composants" ? "composant" : "potion";
+      return "";
+    }
+    function drawForgeIcons() { document.querySelectorAll("canvas[data-forge-ic]").forEach(cv => { const [k, key] = cv.dataset.forgeIc.split(":"); if (k) drawSlotIcon(cv, k, key); else cv.style.display = "none"; }); }
 
     // ===== ✨ PERFECTIONNER : relancer les statistiques d'un équipement avec des Éclats de Forge =====
     const PERFECT_MIN_LVL = 20;
@@ -11226,7 +11377,7 @@
         if (it.rarete === "commun" && !it.fav) {
           count++;
           state.ressources.eclat_forge = (state.ressources.eclat_forge || 0) + 1;
-          state.metiers.forge.xp += 10;
+          forgeXp(10);
         } else {
           kept.push(it);
         }
@@ -11379,8 +11530,7 @@
         const uids = new Set(S.eqs.filter(i => !i.data.fav).map(i => i.data.uid)); if (!uids.size) return;
         state.inventaireEquip = state.inventaireEquip.filter(e => !uids.has(e.uid));
         state.ressources.eclat_forge = (state.ressources.eclat_forge || 0) + S.shards;
-        state.metiers.forge.xp += 12 * S.shards;
-        while (state.metiers.forge.niveau < MAX_PROF_LEVEL && state.metiers.forge.xp >= getProfXpReq(state.metiers.forge.niveau)) { state.metiers.forge.xp -= getProfXpReq(state.metiers.forge.niveau); state.metiers.forge.niveau++; }
+        forgeXp(12 * S.shards);
         S.eqs.forEach(i => invPick.delete(i.key));
         RetroAudio.confirm(); showToast(`♻️ ${uids.size} équipement(s) recyclé(s) : +${S.shards} Éclat(s) de Forge !`);
       } else {
@@ -11407,13 +11557,18 @@
     let respecArmed = false;
     function respecCost(h) { return 50 + 20 * ((h || state.hero).niveau || 1); }
     const PD_SLOTS = { left: [["casque", "Tête"], ["armure", "Torse"]], right: [["anneau", "Doigt"], ["arme", "Arme"]] };
-    const PD_PAL = { commun: ["#e2e8f0", "#94a3b8", "#475569"], rare: ["#bae6fd", "#38bdf8", "#0369a1"], maitre: ["#f5d0fe", "#c084fc", "#7e22ce"], legendaire: ["#fef3c7", "#fbbf24", "#b45309"], set: ["#bbf7d0", "#4ade80", "#15803d"], empty: ["#475569", "#334155", "#1e293b"] };
+    const PD_PAL = { forge: ["#fed7aa", "#fb923c", "#9a3412"], commun: ["#e2e8f0", "#94a3b8", "#475569"], rare: ["#bae6fd", "#38bdf8", "#0369a1"], maitre: ["#f5d0fe", "#c084fc", "#7e22ce"], legendaire: ["#fef3c7", "#fbbf24", "#b45309"], set: ["#bbf7d0", "#4ade80", "#15803d"], empty: ["#475569", "#334155", "#1e293b"] };
     function drawSlotIcon(cv, slot, key) {
       const x = cv.getContext("2d"); x.clearRect(0, 0, 16, 16); const [L, M, D] = PD_PAL[key] || PD_PAL.commun;
       const p = (a, b, w, h, c) => { x.fillStyle = c; x.fillRect(a, b, w, h); };
       if (slot === "arme") { for (let i = 0; i < 9; i++) { p(11 - i, 1 + i, 2, 1, i < 1 ? L : M); p(12 - i, 1 + i, 1, 1, L); } p(3, 9, 5, 1, D); p(4, 8, 1, 3, D); p(5, 10, 1, 1, D); p(3, 11, 2, 2, "#78350f"); p(1, 13, 2, 2, M); p(7, 8, 1, 1, L); }
       else if (slot === "armure") { p(3, 3, 10, 10, M); p(2, 3, 3, 3, D); p(11, 3, 3, 3, D); p(6, 2, 4, 2, D); p(4, 4, 3, 8, L); p(7, 5, 2, 7, D); p(3, 12, 10, 2, D); p(7, 8, 2, 1, L); }
       else if (slot === "casque") { p(4, 3, 8, 2, M); p(3, 5, 10, 6, M); p(4, 4, 3, 3, L); p(3, 9, 10, 1, D); p(5, 10, 2, 3, D); p(9, 10, 2, 3, D); p(7, 1, 2, 3, L); p(5, 7, 6, 1, "#0f172a"); }
+      else if (slot === "bouclier") { p(3, 2, 10, 9, D); p(4, 2, 8, 9, M); p(4, 11, 8, 1, D); p(5, 12, 6, 1, D); p(6, 13, 4, 1, D); p(7, 14, 2, 1, D); p(5, 12, 6, 1, M); p(6, 13, 4, 1, M); p(5, 3, 2, 7, L); p(7, 4, 2, 7, D); p(4, 6, 8, 1, D); p(7, 6, 2, 2, L); }
+      else if (slot === "cape") { p(5, 2, 6, 2, D); p(4, 4, 8, 3, M); p(3, 7, 10, 4, M); p(2, 11, 12, 3, M); p(4, 4, 2, 9, L); p(10, 6, 2, 8, D); p(7, 3, 2, 1, L); }
+      else if (slot === "aura") { for (let a = 0; a < 6.3; a += 0.5) { p(Math.round(8 + Math.cos(a) * 6), Math.round(8 + Math.sin(a) * 6), 1, 1, M); p(Math.round(8 + Math.cos(a + 0.25) * 3.5), Math.round(8 + Math.sin(a + 0.25) * 3.5), 1, 1, L); } p(7, 7, 2, 2, L); }
+      else if (slot === "potion") { p(6, 1, 4, 2, D); p(7, 3, 2, 2, L); p(4, 5, 8, 8, M); p(3, 7, 10, 5, M); p(5, 8, 6, 4, D); p(5, 6, 2, 2, L); p(4, 13, 8, 1, D); }
+      else if (slot === "composant") { p(4, 4, 8, 8, M); p(5, 3, 6, 1, L); p(3, 5, 1, 6, L); p(12, 5, 1, 6, D); p(5, 12, 6, 1, D); p(6, 6, 2, 2, L); p(9, 9, 2, 2, D); }
       else { x.fillStyle = M; for (let a = 0; a < 6.3; a += 0.25) p(Math.round(8 + Math.cos(a) * 4.5), Math.round(9 + Math.sin(a) * 4.5), 1, 1, M); for (let a = 3.6; a < 5; a += 0.3) p(Math.round(8 + Math.cos(a) * 4.5), Math.round(9 + Math.sin(a) * 4.5), 1, 1, L); p(6, 1, 4, 4, L); p(7, 2, 2, 2, "#22d3ee"); p(7, 5, 2, 1, D); }
     }
     function pdTipHtml(slotK, it) {
@@ -11431,7 +11586,7 @@
       return `<div class="t-name">${it.nom}${it.renfort ? ` <span style="color:#fbbf24">+${it.renfort}</span>` : ""}</div>
         <div class="t-lvl">Niveau d'objet ${it.niveau}</div>
         <div class="t-sub"><span>${lab}</span><span>${it.setId ? "Panoplie" : rar.nom}</span></div>
-        <div class="t-hr"></div>${prim}${sec ? `<div style="margin-top:4px">${sec}</div>` : ""}${setHtml}
+        <div class="t-hr"></div>${prim}${sec ? `<div style="margin-top:4px">${sec}</div>` : ""}${it.grav ? `<div style="color:#fbbf24;font-size:11px;margin-top:4px">${gravLine(it)}</div>` : ""}${setHtml}
         ${it.desc ? `<div class="t-desc">« ${it.desc} »</div>` : ""}
         <div class="t-hr"></div><div class="t-off" style="font-size:10px">Valeur : ${(rar.valeurOr || 0) + it.niveau * 5} 🪙</div>`;
     }
@@ -11456,6 +11611,52 @@
     function pdHide(force) { if (_pdPinned && !force) return; _pdPinned = null; const t = document.getElementById("pd-tip"); if (t) { t.classList.remove("show", "pinned"); } }
     document.addEventListener("click", e => { if (!_pdPinned) return; if (e.target.closest && (e.target.closest("#pd-tip") || e.target.closest("[data-pd-slot]"))) return; pdHide(true); });
     window.addEventListener("scroll", () => { if (!_pdPinned) pdHide(); }, { passive: true });
+
+    // ---- Sélecteur d'équipement : tous les objets de l'emplacement + différence de stats si on l'équipe ----
+    const PD_CMP = [["atk", "ATQ"], ["magicAtk", "Magie"], ["def", "DEF"], ["pvMax", "PV"], ["pmMax", "PM"], ["critChance", "Crit"], ["force", "FOR"], ["agilite", "AGI"], ["esprit", "ESP"], ["chance", "CHA"]];
+    function pdStatsWith(slot, item) {
+      const cur = state.equipementPorte[slot]; state.equipementPorte[slot] = item;
+      let st; try { st = getHeroTotalStats(); } finally { state.equipementPorte[slot] = cur; }
+      return st;
+    }
+    function pdDeltaHtml(base, nw) {
+      const out = PD_CMP.map(([k, lab]) => {
+        let d = (nw[k] || 0) - (base[k] || 0); if (k === "critChance") d = Math.round(d * 1000) / 10; else d = Math.round(d);
+        if (!d) return ""; const up = d > 0;
+        return `<span class="px-1.5 py-0.5 rounded ${up ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"}">${up ? "▲ +" : "▼ "}${d}${k === "critChance" ? " %" : ""} ${lab}</span>`;
+      }).filter(Boolean);
+      return out.length ? out.join(" ") : `<span class="text-slate-500">Aucun changement</span>`;
+    }
+    function pdScore(base, nw) { return (nw.atk - base.atk) * 1 + (nw.magicAtk - base.magicAtk) * 0.6 + (nw.def - base.def) * 1.2 + (nw.pvMax - base.pvMax) * 0.25 + (nw.pmMax - base.pmMax) * 0.15 + (nw.critChance - base.critChance) * 300; }
+    function openPdPicker(slot) {
+      let m = document.getElementById("pd-picker"); if (!m) { m = document.createElement("div"); m.id = "pd-picker"; document.body.appendChild(m); }
+      const lab = { arme: "Armes", armure: "Armures (torse)", casque: "Casques", anneau: "Anneaux" }[slot];
+      const cur = state.equipementPorte[slot], base = getHeroTotalStats(), noneSt = pdStatsWith(slot, null);
+      const list = state.inventaireEquip.filter(e => e.slot === slot).map(e => { const st = pdStatsWith(slot, e); return { e, st, sc: pdScore(base, st) }; }).sort((a, b) => b.sc - a.sc);
+      const card = (e, extra) => `<div class="pk-name rarity-txt-${e.setId ? "set" : e.rarete}">${e.nom}${e.renfort ? ` <span class="text-amber-300">+${e.renfort}</span>` : ""}${e.fav ? " ★" : ""}</div>
+        <div class="text-[10px] text-slate-400">Niv.${e.niveau} • ${e.setId ? "Panoplie " + (e.setNom || "") : (UNIVERS_CONFIG.raretes[e.rarete] || {}).nom || e.rarete}</div>
+        <div class="text-[11px] text-slate-300 mt-0.5">${formatEquipStatsLine(e.stats)}</div>${extra || ""}`;
+      m.innerHTML = `<div class="pk-back" data-pk-close></div><div class="pk-panel">
+        <div class="pk-head"><div><div class="pk-title">${lab}</div><div class="text-[11px] text-slate-400">${list.length} objet${list.length > 1 ? "s" : ""} dans ton sac • triés du meilleur au moins bon</div></div><button type="button" class="ui-btn pk-x" data-pk-close>✕</button></div>
+        <div class="pk-cur">${cur ? `<div><div class="text-[10px] uppercase tracking-wider text-amber-300 font-bold mb-1">Équipé actuellement</div>${card(cur, `${cur.grav ? `<div class="text-[11px] text-amber-300">${gravLine(cur)}</div>` : ""}<div class="pk-delta"><span class="text-slate-400">Si tu le retires :</span> ${pdDeltaHtml(base, noneSt)}</div>`)}</div>
+          <button type="button" class="ui-btn pk-btn pk-sec" data-pk-unequip>Retirer</button>` : `<div class="text-[11px] text-slate-400">Emplacement vide.</div>`}</div>
+        <div class="pk-list">${list.length ? list.map(({ e, st }, i) => `<div class="pk-row ${i === 0 && pdScore(base, st) > 0 ? "pk-best" : ""}">
+            <div class="min-w-0 flex-1">${card(e, `${e.grav ? `<div class="text-[11px] text-amber-300">${gravLine(e)}</div>` : ""}<div class="pk-delta">${pdDeltaHtml(base, st)}</div>`)}</div>
+            <button type="button" class="ui-btn pk-btn" data-pk-equip="${e.uid}">Équiper</button></div>`).join("") : `<div class="text-xs text-slate-400 p-6 text-center">Aucun autre objet de ce type dans ton sac.</div>`}</div></div>`;
+      m.classList.add("show"); document.body.classList.add("pk-open");
+      m.querySelectorAll("[data-pk-close]").forEach(b => b.addEventListener("click", closePdPicker));
+      const ub = m.querySelector("[data-pk-unequip]"); if (ub) ub.addEventListener("click", () => { const c = state.equipementPorte[slot]; if (!c) return; state.equipementPorte[slot] = null; addEquipmentToInventory(c); RetroAudio.cursor(); showToast(`Retiré : ${c.nom}`); afterPdChange(slot); });
+      m.querySelectorAll("[data-pk-equip]").forEach(b => b.addEventListener("click", () => {
+        const idx = state.inventaireEquip.findIndex(i => i.uid === b.dataset.pkEquip); if (idx < 0) return;
+        const e = state.inventaireEquip[idx], prev = state.equipementPorte[slot];
+        state.inventaireEquip.splice(idx, 1); if (prev) state.inventaireEquip.push(prev); state.equipementPorte[slot] = e;
+        RetroAudio.confirm(); showToast(`Équipé : ${e.nom}`); afterPdChange(slot);
+      }));
+    }
+    function afterPdChange(slot) { const st = getHeroTotalStats(); state.hero.pv = Math.min(state.hero.pv, st.pvMax); state.hero.pm = Math.min(state.hero.pm, st.pmMax); updateGlobalHUD(); renderHeroView(); saveGame(); openPdPicker(slot); }
+    function closePdPicker() { const m = document.getElementById("pd-picker"); if (m) m.classList.remove("show"); document.body.classList.remove("pk-open"); }
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closePdPicker(); });
+
     function renderPaperdoll() {
       const mk = ([k, lab]) => { const it = state.equipementPorte[k], key = it ? (it.setId ? "set" : it.rarete) : "empty";
         return `<div class="pd-slot"><div class="pd-box ${it ? "r-" + key : "empty"} ${it && it.setId ? "inv-set" : ""}" data-pd-slot="${k}" role="button" tabindex="0"><canvas width="16" height="16" data-pd-icon="${k}:${key}"></canvas>${it && it.renfort ? `<span class="pd-rf">+${it.renfort}</span>` : ""}</div><span class="pd-lab">${lab}</span></div>`; };
@@ -11468,7 +11669,7 @@
         const k = b.dataset.pdSlot;
         b.addEventListener("mouseenter", () => { if (!_pdPinned && matchMedia("(hover: hover)").matches) pdShow(k, b, false); });
         b.addEventListener("mouseleave", () => pdHide());
-        b.addEventListener("click", () => { RetroAudio.cursor(); if (_pdPinned === k) { pdHide(true); return; } _pdPinned = k; pdShow(k, b, true); });
+        b.addEventListener("click", () => { RetroAudio.cursor(); pdHide(true); openPdPicker(k); });
       });
     }
 
@@ -11665,7 +11866,7 @@
           const shards = RECYCLE_SHARDS[eq.rarete] || 1;
           state.inventaireEquip.splice(idx, 1);
           state.ressources.eclat_forge = (state.ressources.eclat_forge || 0) + shards;
-          state.metiers.forge.xp += 12 * shards;
+          forgeXp(12 * shards);
           RetroAudio.confirm();
           showToast(`♻️ Recyclé en +${shards} Éclat(s) de Forge !`);
           renderInventoryView();
@@ -13721,8 +13922,10 @@ function wmDraw(ctx, t, opt) {
 
     // Butin du monstre : peut tomber en plusieurs exemplaires (x2, x3)
     function rollMobMaterial(enemy, stats) {
-      const base = Math.min(0.85, (enemy.boss ? 1 : 0.42) + stats.chance * 0.003 + stats.lootBonusPct * 0.002);
-      if (Math.random() >= base) return "";
+      const base = Math.min(0.9, (enemy.boss ? 1 : 0.55) + stats.chance * 0.003 + stats.lootBonusPct * 0.002);
+      let extra = "";
+      if (enemy.niveau <= 14 && !enemy.boss && Math.random() < 0.12) { const u0 = state.expedition.unsecuredLoot; u0.ressources.cuir_epais = (u0.ressources.cuir_epais || 0) + 1; extra = ", +1 🧶 Cuir Épais"; }
+      if (Math.random() >= base) return extra;
       const bonus = stats.lootBonusPct * 0.004;
       const p2 = (enemy.elite ? 0.36 : 0.24) + bonus;
       const p3 = (enemy.elite ? 0.15 : 0.08) + bonus * 0.5;
@@ -13731,7 +13934,7 @@ function wmDraw(ctx, t, opt) {
       const comp = UNIVERS_CONFIG.ressources[enemy.lootComp];
       const u = state.expedition.unsecuredLoot;
       u.ressources[enemy.lootComp] = (u.ressources[enemy.lootComp] || 0) + qty;
-      return `, +${qty} ${comp.icone} ${comp.nom}${qty > 1 ? ` (✨ ×${qty} !)` : ""}`;
+      return `, +${qty} ${comp.icone} ${comp.nom}${qty > 1 ? ` (✨ ×${qty} !)` : ""}${extra}`;
     }
 
     function updateCaveUI() {
@@ -13787,6 +13990,7 @@ function wmDraw(ctx, t, opt) {
     }
 
     function completeExpedition() {
+      try { const bz = UNIVERS_CONFIG.biomes.find(b => b.id === state.expedition.biomeId); forgeXp(15 + (bz ? bz.niveauReq : 1) * 3); } catch (e) {}
       questEvent("exped", 1);
       const biome = UNIVERS_CONFIG.biomes.find(b => b.id === state.expedition.biomeId);
       const stats = getHeroTotalStats();
@@ -16716,7 +16920,7 @@ function wmDraw(ctx, t, opt) {
 
       document.querySelectorAll(".game-view").forEach(v => v.classList.add("hidden"));
       document.querySelectorAll("[data-mtab]").forEach(b => b.classList.toggle("on", b.dataset.mtab === viewId));
-      try { pdHide(true); } catch (e) {}
+      try { pdHide(true); closePdPicker(); } catch (e) {}
       document.body.classList.toggle("inv-multi-on", viewId === "inventaire" && typeof invMulti !== "undefined" && invMulti);
       { const imb = document.getElementById("inv-multi-bar"); if (imb && viewId !== "inventaire") imb.classList.add("hidden"); }
       if (window.innerWidth < 1024) { mobMenu(false); try { window.scrollTo({ top: 0 }); } catch (e) {} }
@@ -17874,8 +18078,21 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.33";
+    const GAME_VERSION = "1.35";
     const PATCH_NOTES = [
+      { v: "1.35", date: "21/11/2026", titre: "Forge plus lisible", items: [
+        "🔨 Forge : chaque recette affiche une icône et son emplacement (Tête, Torse, Anneau, Arme, Bouclier, Cape, Aura, Consommable…).",
+        "🔎 Forge : nouveaux filtres par emplacement en haut de la liste pour n'afficher, par exemple, que les casques.",
+        "✒️ Retravail : les objets de la liste ont aussi leur icône aux couleurs de leur rareté."
+      ] },
+      { v: "1.34", date: "21/11/2026", titre: "La Forge reprend sa place", items: [
+        "⚖️ Rééquilibrage : le butin des monstres et du marchand est désormais plafonné sous les séries forgées, et les raretés trop fortes sont resserrées. La hiérarchie devient : butin < séries forgées (stats brutes) < panoplies (bonus 2 et 4 pièces). Tes objets actuels ne changent pas.",
+        "🔨 Tout objet forgé est au moins Rare.",
+        "📈 La Forge progresse bien plus vite tant qu'elle est sous ton niveau de héros (jusqu'à ×4), et gagne de l'XP à chaque expédition réussie et à chaque recyclage.",
+        "✒️ Nouvel onglet Forge « Retravail » : remonte un objet ramassé à ton niveau, relance ses statistiques ou grave-lui un effet (Vampirique, Rempart, Célérité, Férocité, Fortune, Sagesse). Les gravures restent plus modestes que les bonus de panoplie, qui ne peuvent pas être gravés.",
+        "🧶 Ingrédients plus fréquents sur les monstres, et le Cuir Épais tombe maintenant sur toutes les créatures de bas niveau.",
+        "🛡️ Fiche d'équipement : clique sur un emplacement pour voir tous les objets de ce type dans ton sac, triés du meilleur au moins bon, avec ce que chacun changerait à tes statistiques (▲ / ▼). Tu équipes en un clic."
+      ] },
       { v: "1.33", date: "21/11/2026", titre: "Héros, sac et potions", items: [
         "🛡️ Nouvelle fiche d'équipement façon MMORPG dans l'onglet Héros : tes 4 emplacements entourent ton portrait. Survole un objet pour voir sa fiche complète (niveau, statistiques, panoplie). Clique dessus pour le retirer.",
         "📖 Les attributs sont expliqués : ce que donnent un point de Force, d'Agilité, d'Esprit et de Chance.",
