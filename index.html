@@ -639,7 +639,7 @@
                 <div><label for="creator-hair-select" class="cr-label">COIFFURE</label>
                   <select id="creator-hair-select" class="cr-input w-full">
                     <option value="court">Court Hérissé</option><option value="queue">Queue de Cheval</option><option value="carre">Carré</option>
-                    <option value="milong">Mi-Long Noble</option><option value="long">Long Ondulé</option><option value="tresse">Tresse Guerrière</option><option value="chauve">Crâne Rasé</option>
+                    <option value="milong">Mi-Long Noble</option><option value="long">Long Ondulé</option><option value="tresse">Tresse Guerrière</option><option value="chignon">Chignon Noble</option><option value="couettes">Couettes</option><option value="crete">Crête Rebelle</option><option value="meche">Mèche Rebelle</option><option value="boucles">Boucles Volumineuses</option><option value="chauve">Crâne Rasé</option>
                   </select></div>
               </div>
               <div class="space-y-3">
@@ -4082,6 +4082,10 @@
         else if (hero.cheveux === "carre") P(11, 6, 3, 7, hc);
         else if (hero.cheveux === "tresse") { P(11, 6, 3, 5, hc); P(10, 10, 2, 9, hc); P(10, 18, 2, 1, "#ffd54f"); }
         else if (hero.cheveux === "queue") { P(11, 6, 3, 4, hc); P(8, 7, 3, 2, hc); P(7, 9, 2, 6, hc); }
+        else if (hero.cheveux === "chignon") { P(11, 6, 3, 3, hc); P(9, 4, 3, 3, hc); }
+        else if (hero.cheveux === "couettes") { P(11, 6, 3, 4, hc); P(9, 8, 2, 6, hc); P(9, 8, 2, 1, "#f472b6"); }
+        else if (hero.cheveux === "boucles") { P(10, 4, 5, 8, hc); }
+        else if (hero.cheveux === "meche") P(11, 6, 3, 4, hc);
       }
 
       // ---------- BRAS ARRIÈRE (rênes) ----------
@@ -4203,6 +4207,9 @@
         if (!fem) { P(12, 4, 9, 2, hc); P(11, 5, 4, 5, hc); P(19, 5, 2, 1, hc); }
         if (hero.cheveux === "court") P(12, 3, 7, 1, hc);
         if (hero.cheveux === "carre") P(19, 5, 2, 3, hc);
+        if (hero.cheveux === "crete") P(13, 2, 7, 2, hc);
+        if (hero.cheveux === "meche") P(19, 5, 2, 2, hc);
+        if (hero.cheveux === "boucles") P(12, 3, 8, 2, hc);
         if (fem) { spans([[3, 14, 18], [4, 12, 20], [5, 11, 20], [6, 11, 15], [7, 11, 14], [8, 11, 14], [9, 11, 13]], hc); P(18, 6, 2, 1, hc); P(20, 6, 1, 2, hc); P(13, 10, 2, 4, hc); }
       }
 
@@ -6197,7 +6204,7 @@
     let wardrobeTab = "apparence";
     const WARD_TABS = [["apparence", "🧬 Apparence"], ...Object.entries(SKIN_SLOTS).map(([id, l]) => [id, `${SKIN_SLOT_ICONS[id]} ${l}`])];
     const GENDER_OPTS = [["homme", "♂ Homme"], ["femme", "♀ Femme"]];
-    const HAIR_OPTS = [["queue", "Queue de Cheval"], ["carre", "Carré"], ["court", "Court Hérissé"], ["milong", "Mi-Long Noble"], ["long", "Long Ondulé"], ["tresse", "Tresse Guerrière"], ["chauve", "Crâne Rasé"]];
+    const HAIR_OPTS = [["queue", "Queue de Cheval"], ["carre", "Carré"], ["court", "Court Hérissé"], ["milong", "Mi-Long Noble"], ["long", "Long Ondulé"], ["tresse", "Tresse Guerrière"], ["chignon", "Chignon Noble"], ["couettes", "Couettes"], ["crete", "Crête Rebelle"], ["meche", "Mèche Rebelle"], ["boucles", "Boucles Volumineuses"], ["chauve", "Crâne Rasé"]];
     const BEARD_OPTS = [["aucune", "Rasé"], ["moustache", "Moustache"], ["barbe", "Barbe"]];
     const MARK_OPTS = [["aucune", "Aucune"], ["cicatrice", "Cicatrice"], ["peinture", "Peinture de guerre"], ["taches", "Taches de rousseur"]];
     const EYE_COLORS = ["#0f172a", "#1d4ed8", "#15803d", "#b45309", "#7f1d1d", "#a855f7", "#14b8a6"];
@@ -6500,8 +6507,24 @@
         px(21, 7 + yOff, 2, 12, hc);
       } else if (hero.cheveux === "queue") {
         px(11, 4 + yOff, 10, 3, hc); px(10, 6 + yOff, 2, 3, hc); px(20, 6 + yOff, 2, 3, hc); px(21, 7 + yOff, 3, 3, hc); px(22, 10 + yOff, 2, 6, hc);
-      } else if (hero.cheveux === "carre") {
-        px(10, 4 + yOff, 12, 3, hc); px(10, 7 + yOff, 2, 6, hc); px(20, 7 + yOff, 2, 6, hc); px(10, 12 + yOff, 12, 1, hc);
+      } else if (hero.cheveux === "carre") {   // carré net : frange droite, côtés jusqu'à la mâchoire, pointes rentrées
+        px(10, 4 + yOff, 12, 3, hc); px(10, 7 + yOff, 1, 7, hc); px(21, 7 + yOff, 1, 7, hc); px(11, 7 + yOff, 1, 6, hc); px(20, 7 + yOff, 1, 6, hc);
+        px(11, 13 + yOff, 1, 1, hc); px(20, 13 + yOff, 1, 1, hc);
+      } else if (hero.cheveux === "chignon") {
+        px(11, 4 + yOff, 10, 3, hc); px(14, 1 + yOff, 4, 3, hc); px(15, 0 + yOff, 2, 1, hc); px(10, 6 + yOff, 1, 3, hc); px(21, 6 + yOff, 1, 3, hc); px(13, 3 + yOff, 6, 1, "#fbbf24");
+      } else if (hero.cheveux === "couettes") {
+        px(10, 4 + yOff, 12, 3, hc); px(10, 7 + yOff, 1, 3, hc); px(21, 7 + yOff, 1, 3, hc);
+        px(8, 6 + yOff, 2, 2, hc); px(22, 6 + yOff, 2, 2, hc);
+        px(7, 8 + yOff, 3, 8, hc); px(22, 8 + yOff, 3, 8, hc); px(8, 16 + yOff, 2, 1, hc); px(22, 16 + yOff, 2, 1, hc);
+        px(7, 8 + yOff, 3, 1, "#f472b6"); px(22, 8 + yOff, 3, 1, "#f472b6");
+      } else if (hero.cheveux === "crete") {
+        px(14, 1 + yOff, 4, 6, hc); px(15, 0 + yOff, 2, 1, hc); px(11, 5 + yOff, 3, 1, hc); px(18, 5 + yOff, 3, 1, hc);
+      } else if (hero.cheveux === "meche") {
+        px(11, 4 + yOff, 10, 3, hc); px(11, 7 + yOff, 5, 1, hc); px(12, 8 + yOff, 3, 1, hc); px(10, 6 + yOff, 1, 4, hc); px(21, 6 + yOff, 1, 3, hc);
+      } else if (hero.cheveux === "boucles") {
+        px(9, 3 + yOff, 14, 4, hc); px(10, 2 + yOff, 3, 1, hc); px(14, 1 + yOff, 4, 2, hc); px(19, 2 + yOff, 3, 1, hc);
+        px(8, 5 + yOff, 2, 7, hc); px(22, 5 + yOff, 2, 7, hc); px(10, 7 + yOff, 1, 3, hc); px(21, 7 + yOff, 1, 3, hc);
+        px(12, 3 + yOff, 1, 1, "rgba(255,255,255,0.25)"); px(17, 2 + yOff, 1, 1, "rgba(255,255,255,0.25)");
       } else if (hero.cheveux === "tresse") {
         px(11, 4 + yOff, 10, 3, hc);
         px(9, 11 + yOff, 2, 8, hc);
@@ -13286,18 +13309,21 @@ function wmDraw(ctx, t, opt) {
         const diffs = (b.difficultes || []).map(d => {
           const ok = unlocked && state.hero.niveau >= d.heroReq && !(d.heroMax && state.hero.niveau > d.heroMax);
           const on = selected && curD && curD.id === d.id;
-          return `<button type="button" data-biome-diff="${b.id}:${d.id}" ${ok ? "" : "disabled"} title="${d.nom}${ok ? "" : d.heroMax && state.hero.niveau > d.heroMax ? " (Niv. 1-" + d.heroMax + ")" : " (🔒 Niv. " + d.heroReq + ")"}"
+          const rc = diffRecLevel(b, d);
+          return `<button type="button" data-biome-diff="${b.id}:${d.id}" ${ok ? "" : "disabled"} title="${d.nom}${ok ? "" : d.heroMax && state.hero.niveau > d.heroMax ? " (Niv. 1-" + d.heroMax + ")" : " (🔒 Niv. " + d.heroReq + ")"} • 🎯 Conseillé : niv. ${rc[0]}–${rc[1]}"
             class="bs-diff ${on ? "bs-diff-on" : ""} ${ok ? "" : "bs-diff-lock"}"><span class="bs-diff-ic">${ok ? d.icone : "🔒"}</span><span class="bs-diff-tx">${d.court || d.nom}</span></button>`;
         }).join("") || `<button type="button" data-biome-diff="${b.id}:" title="Difficulté unique" class="bs-diff ${selected ? "bs-diff-on" : ""}"><span class="bs-diff-ic">⚔️</span><span class="bs-diff-tx">Normal</span></button>`;
         return `<div class="bs-card ${selected ? "bs-card-on" : ""} ${unlocked ? "" : "bs-card-lock"}" data-biome-id="${b.id}" role="button" tabindex="0">
           <canvas data-biome-splash="${b.id}" width="320" height="140" class="bs-canvas"></canvas>
           <div class="bs-shade"></div>
-          <div class="bs-lvl">${unlocked ? "" : "🔒 "}Niv. ${b.niveauReq}+</div>
+          <div class="bs-lvl">${unlocked ? "" : "🔒 "}Niv. ${b.niveauReq}+${(() => { const dd = selected && curD ? curD : (b.difficultes || []).find(x => !x.heroMax && !x.solo) || (b.difficultes || [])[0]; const rc = diffRecLevel(b, dd); return rc ? ` • 🎯 ${rc[0]}–${rc[1]}` : ""; })()}</div>
           <div class="bs-name">${b.nom}</div>
           ${unlocked ? `<div class="bs-diffs">${diffs}</div>` : `<div class="bs-locktxt">Débloqué au niveau ${b.niveauReq}</div>`}
         </div>`;
       }).join("") + `</div>`;
-      html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}</div>`;
+      const curRc = diffRecLevel(selB, curD), L0 = state.hero.niveau;
+      const recTxt = curRc ? `<span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${L0 < curRc[0] ? "bg-rose-950 text-rose-300 border border-rose-700/50" : L0 > curRc[1] ? "bg-sky-950 text-sky-300 border border-sky-700/50" : "bg-emerald-950 text-emerald-300 border border-emerald-700/50"}">🎯 Niveau conseillé : ${curRc[0]}–${curRc[1]} ${L0 < curRc[0] ? "(tu es en dessous : prudence !)" : L0 > curRc[1] ? "(facile pour toi : essaie plus dur)" : "(idéal pour toi)"}</span>` : "";
+      html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}</div>`;
       listBox.innerHTML = html;
 
       listBox.querySelectorAll("[data-biome-diff]").forEach(btn => {
@@ -14560,7 +14586,36 @@ function wmDraw(ctx, t, opt) {
       renderExpeditionView();
     }
 
-    // ---- Difficultés d'expédition (Forêt des Murmures) ----
+    // ---- v1.42 : Facile / Difficile / Cauchemar générés pour les biomes qui n'en avaient pas ----
+    (function genBiomeDiffs() {
+      const STEP = { marais_brumeux: [5, 11], mines_obsidienne: [6, 13], citadelle_cendree: [7, 15] };
+      UNIVERS_CONFIG.biomes.forEach(b => {
+        if (b.difficultes) return;
+        const L = b.niveauReq, st = STEP[b.id] || [5, 11], [r1, r2] = b.exclusiveRes || [];
+        const ex = (id, pn, pe, qb) => id && UNIVERS_CONFIG.ressources[id] ? [{ resId: id, pNormal: pn, pElite: pe, qBoss: qb }] : [];
+        const nR1 = r1 && UNIVERS_CONFIG.ressources[r1] ? UNIVERS_CONFIG.ressources[r1].nom : "ressources rares", nR2 = r2 && UNIVERS_CONFIG.ressources[r2] ? UNIVERS_CONFIG.ressources[r2].nom : "";
+        b.difficultes = [
+          { id: "facile", nom: "Facile — " + b.nom, court: "Facile", icone: "🌿", heroReq: L,
+            pv: 0.85, atk: 0.9, def: 0.9, xp: 1, or: 1, rewardMult: 1, lvlBonus: 0, bonusTier: 0, extra: [],
+            desc: "Monstres un peu affaiblis. Butin standard." },
+          { id: "difficile", nom: "Difficile — " + b.nom + " sauvage", court: "Difficile", icone: "🔥", heroReq: L + st[0],
+            pv: 1.7, atk: 1.5, def: 1.6, xp: 2.2, or: 2.4, rewardMult: 2.5, lvlBonus: 4, bonusTier: 1, extra: ex(r1, 0.3, 0.6, [2, 3]),
+            desc: `Monstres coriaces (×1,7 PV, ×1,5 ATQ). Butin : ${nR1} en plus, meilleurs équipements, récompenses ×2,5.` },
+          { id: "cauchemar", nom: "Cauchemar — " + b.nom + " maudit", court: "Cauchemar", icone: "💀", heroReq: L + st[1],
+            pv: 3.2, atk: 2.3, def: 2.4, xp: 4.5, or: 5, rewardMult: 5, lvlBonus: 8, bonusTier: 2, extra: ex(r1, 0.35, 0.7, [3, 4]).concat(ex(r2, 0.25, 0.55, [2, 3])),
+            desc: `Le biome corrompu (×3,2 PV, ×2,3 ATQ). Butin : ${nR1}${nR2 ? " + " + nR2 : ""}, équipements bien meilleurs, récompenses ×5.` }
+        ];
+      });
+    })();
+    // Niveau conseillé d'une difficulté : du seuil + 2 jusqu'au seuil suivant + 2
+    function diffRecLevel(b, d) {
+      if (!b || !d) return null;
+      if (d.heroMax) return [d.heroReq, d.heroMax];
+      const list = (b.difficultes || []).filter(x => !x.heroMax), i = list.indexOf(d), nx = list[i + 1];
+      const lo = d.heroReq + 2, hi = nx ? nx.heroReq + 2 : Math.round(d.heroReq * 1.35) + 3;
+      return [lo, Math.max(lo + 2, hi)];
+    }
+    // ---- Difficultés d'expédition ----
     function getExpDifficulty(biome) {
       if (!biome || !biome.difficultes) return null;
       let d = biome.difficultes.find(x => x.id === state.expedition.difficulte) || biome.difficultes[0];
@@ -19196,8 +19251,13 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.41";
+    const GAME_VERSION = "1.42";
     const PATCH_NOTES = [
+      { v: "1.42", date: "21/11/2026", titre: "Difficultés pour tous les biomes", items: [
+        "🔥 Marais Brumeux, Mines d'Obsidienne et Citadelle Cendrée ont maintenant leurs modes Facile, Difficile et Cauchemar, comme la Forêt des Murmures : monstres plus coriaces, meilleurs équipements, ressources exclusives en plus et récompenses ×2,5 ou ×5.",
+        "💇 Coiffure « Carré » corrigée (une barre de cheveux traversait le visage) et 5 nouvelles coiffures : Chignon Noble, Couettes, Crête Rebelle, Mèche Rebelle et Boucles Volumineuses.",
+        "🎯 Niveau conseillé affiché pour chaque zone et chaque difficulté : sur la carte du biome, au survol des boutons de difficulté et sous la description (vert = idéal, rouge = trop dur, bleu = trop facile)."
+      ] },
       { v: "1.41", date: "21/11/2026", titre: "Titre arc-en-ciel et Bûcheron niveau 200", items: [
         "🌈 Nouveau titre exclusif bêta « Pionnier de l'Aurore » avec un effet arc-en-ciel animé : il se débloque automatiquement avec le code Pionnier.",
         "🪓 Bûcheron : niveau maximum porté à 200, comme la Pêche, le Minage et la Récolte, avec la même courbe de progression (plus lente, mais plus d'XP par arbre à haut niveau).",
