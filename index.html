@@ -894,6 +894,7 @@
                     <button type="button" data-open-tuto="expedition" title="Tutoriel" class="ui-btn px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs text-sky-300">❓</button>
                   </div>
                 </div>
+                <div id="train-panel" class="hidden melvor-card p-2.5 border border-amber-500/40" style="background:linear-gradient(180deg,rgba(120,53,15,.18),rgba(15,23,42,.6))"></div>
 
                 <!-- Fenêtre d'animation + surcouches de combat -->
                 <div class="relative rounded-xl overflow-hidden border border-slate-700/70 bg-slate-950">
@@ -6962,6 +6963,13 @@
         px(9, 12 + bob, 14, 15, "#4c1d95"); px(8, 25, 16, 2, "#2e1065"); px(12, 4 + bob, 8, 8, "#e5e7eb"); px(13, 7 + bob, 2, 2, "#e879f9"); px(17, 7 + bob, 2, 2, "#e879f9");
         px(11, 2 + bob, 10, 2, "#fbbf24"); px(12, 0 + bob, 2, 2, "#fbbf24"); px(15, 0 + bob, 2, 2, "#fbbf24"); px(18, 0 + bob, 2, 2, "#fbbf24");
         px(24, 6 + bob, 2, 22, "#78350f"); px(22, 3 + bob, 6, 5, Math.sin(timeSec * 5) > 0 ? "#c084fc" : "#e9d5ff"); px(6, 14 + bob, 4, 3, "#4c1d95"); px(5, 16 + bob, 2, 2, "#e5e7eb"); px(15, 14 + bob, 2, 10, "#a78bfa");
+      } else if (t === "dummy") {   // mannequin d'entraînement : poteau, corps de paille, cible
+        const w = Math.sin(timeSec * 9) * (monster._hitT > 0 ? 1 : 0);
+        px(15, 6, 2, 26, "#78350f"); px(7, 12, 18, 2, "#92400e"); px(5, 11, 3, 4, "#d6b56a"); px(24, 11, 3, 4, "#d6b56a");
+        px(10 + w, 10, 12, 15, "#d6b56a"); px(11 + w, 11, 10, 13, "#e9cf8b"); px(10 + w, 17, 12, 1, "#a16207"); px(10 + w, 22, 12, 1, "#a16207");
+        px(12 + w, 13, 8, 8, "#f8fafc"); px(13 + w, 14, 6, 6, "#dc2626"); px(14 + w, 15, 4, 4, "#f8fafc"); px(15 + w, 16, 2, 2, "#dc2626");
+        px(12 + w, 2, 8, 8, "#d6b56a"); px(13 + w, 3, 6, 6, "#e9cf8b"); px(14 + w, 5, 1, 1, "#451a03"); px(17 + w, 5, 1, 1, "#451a03"); px(14 + w, 7, 4, 1, "#a16207");
+        px(11 + w, 1, 10, 2, "#57534e"); px(13, 28, 6, 3, "#57534e"); px(11, 30, 10, 2, "#44403c");
       } else if (t === "crystalgolem") {
         px(8, 10 + bob, 16, 15, "#0e7490"); px(4, 10 + bob, 5, 6, "#155e75"); px(23, 10 + bob, 5, 6, "#155e75");
         px(6, 6 + bob, 3, 6, "#22d3ee"); px(23, 6 + bob, 3, 6, "#22d3ee"); px(14, 4 + bob, 4, 7, "#67e8f9"); px(10, 6 + bob, 2, 4, "#a5f3fc");
@@ -13718,9 +13726,10 @@ function wmDraw(ctx, t, opt) {
       const zS = zoneState(selB.id), zB = zoneBonus(selB.id);
       const zoneTxt = `<div class="mt-1.5 melvor-card p-2"><div class="flex items-center justify-between text-[11px]"><b class="text-sky-300">📈 Niveau de zone ${zS.lvl}${zS.lvl >= ZONE_MAX ? " (MAX)" : ` / ${ZONE_MAX}`}<button type="button" data-lvl-info="zone:${selB.id}" title="Que donne ce niveau ?" class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-sky-900/70 border border-sky-500/60 text-sky-200 text-[10px] font-bold leading-none hover:bg-sky-700 align-middle">i</button></b><span class="text-emerald-300">Quantité : +${Math.round(zB.common * 100)} % communs • +${Math.round(zB.rare * 100)} % rares</span></div>
         ${zS.lvl < ZONE_MAX ? `<div class="h-1.5 bg-slate-900 rounded-full overflow-hidden mt-1"><div class="h-full bg-sky-400" style="width:${zS.xp / zoneXpReq(zS.lvl) * 100}%"></div></div><div class="text-[10px] text-slate-500 mt-0.5">${Math.floor(zS.xp)} / ${zoneXpReq(zS.lvl)} XP de zone • monstre +1, élite +3, boss +10, expédition terminée +5</div>` : ""}</div>`;
-      html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}${zoneTxt}</div>`;
+      html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}${zoneTxt}${selB.id === "foret_murmures" ? `<button type="button" data-train-start class="ui-btn mt-1.5 w-full px-3 py-2 rounded-lg bg-amber-700/80 hover:bg-amber-600 border border-amber-400/60 text-amber-50 font-semibold text-xs">🎯 Terrain d'entraînement — tester mon build sur un mannequin</button>` : ""}</div>`;
       listBox.innerHTML = html;
 
+      listBox.querySelectorAll("[data-train-start]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); startTraining(); }));
       listBox.querySelectorAll("[data-biome-diff]").forEach(btn => {
         btn.addEventListener("click", e => {
           e.stopPropagation();
@@ -13756,11 +13765,15 @@ function wmDraw(ctx, t, opt) {
       const btnStart = document.getElementById("btn-exp-start");
       const btnStop = document.getElementById("btn-exp-stop");
       const pill = document.getElementById("exp-status-pill");
+      try { renderTrainPanel(true); } catch (e) { console.error(e); }
 
       if (state.expedition.active) {
         btnStart.classList.add("hidden");
         btnStop.classList.remove("hidden");
-        if (state.expedition.combat) {
+        if (state.expedition.training) {
+          pill.textContent = "🎯 Entraînement";
+          pill.className = "text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/40";
+        } else if (state.expedition.combat) {
           pill.textContent = "En Combat !";
           pill.className = "text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40";
         } else if (state.expedition.pendingEvent) {
@@ -14004,7 +14017,7 @@ function wmDraw(ctx, t, opt) {
       if (!c) return;
       const e = c.enemy;
       document.getElementById("combat-enemy-hp-bar").style.width = `${Math.max(0, (e.pv / e.pvMax) * 100)}%`;
-      document.getElementById("combat-enemy-hp-text").textContent = `${e.pv}/${e.pvMax} PV${e.shield > 0 ? ` (+🛡️${e.shield})` : ""}`;
+      document.getElementById("combat-enemy-hp-text").textContent = e.dummy ? "∞ PV" : `${e.pv}/${e.pvMax} PV${e.shield > 0 ? ` (+🛡️${e.shield})` : ""}`;
       try { updateMobVitals(); } catch (er) {}
       document.getElementById("combat-atb-bar").style.width = `${Math.min(100, c.atb)}%`;
       { const eb = document.getElementById("combat-enemy-atb-bar"); if (eb) eb.style.width = `${Math.max(0, Math.min(100, c.eatb || 0))}%`; }
@@ -14533,6 +14546,7 @@ function wmDraw(ctx, t, opt) {
         setTimeout(resolveAfterPlayerAction, 350);
 
       } else if (action === "flee") {
+        if (enemy.dummy) { stopTraining(); return; }
         combat.turn = "BUSY";
         combat.atb = 0;
         if (enemy.boss || enemy.guardian) {
@@ -14827,6 +14841,7 @@ function wmDraw(ctx, t, opt) {
     // Vitesse d'action des monstres (indépendante de celle du héros)
     function enemySpeed(en) { return (en.chill > 0 ? 1 - FROST_SLOW_SPD : 1) * (en.spd || 1) * (1 + Math.min(0.45, (en.niveau || 1) * 0.004)) * (en.boss ? 1.12 : (en.elite || en.guardian) ? 1.06 : 1); }
     function startEnemyAction(c) {
+      if (c.enemy && c.enemy.dummy) { c.eatb = 0; return; }
       c.turn = "ENEMY"; c.eatb = 0; updateCombatUI();
       setTimeout(() => {
         const cur = state.expedition.combat;
@@ -15028,6 +15043,103 @@ function wmDraw(ctx, t, opt) {
       if (!d) return { ...t };
       return { ...t, pvMax: Math.round(t.pvMax * d.pv), atk: Math.round(t.atk * d.atk), def: Math.round(t.def * d.def),
         xp: Math.round(t.xp * d.xp), or: Math.round(t.or * d.or), niveau: t.niveau + d.lvlBonus };
+    }
+    /* =======================================================================
+       v1.56 — TERRAIN D'ENTRAÎNEMENT (Forêt des Murmures) : mannequin immortel + compteur de DPS
+       ======================================================================= */
+    const TRAIN_TYPES = { normal: { nom: "Monstre", def: 1, ic: "🎯" }, elite: { nom: "Élite", def: 1.25, ic: "⭐" }, boss: { nom: "Boss", def: 1.5, ic: "👑" } };
+    function trainCfg() { if (!state.trainCfg) state.trainCfg = { lvl: Math.max(1, state.hero.niveau | 0), type: "normal" }; return state.trainCfg; }
+    function trainDummyDef(lvl, type) { return Math.round((lvl * 1.5 + 8) * (TRAIN_TYPES[type] || TRAIN_TYPES.normal).def); }
+    function makeTrainDummy() {
+      const cfg = trainCfg(), T = TRAIN_TYPES[cfg.type] || TRAIN_TYPES.normal, def = trainDummyDef(cfg.lvl, cfg.type);
+      return { id: "mannequin", nom: `${T.ic} Mannequin d'entraînement (${T.nom})`, niveau: cfg.lvl, elite: cfg.type !== "normal", boss: cfg.type === "boss",
+        pvMax: 1e12, pv: 1e12, atk: 0, def, baseDef: def, xp: 0, or: 0, lootComp: null, spriteType: "dummy", sprite: "", spd: 1, dummy: true };
+    }
+    function trainResetStats(c) { c = c || state.expedition.combat; if (c) c.train = { dmg: 0, el: 0, max: 0, hits: 0, started: false }; }
+    function startTraining() {
+      if (state.expedition.active) { showToast("Termine ou abandonne l'expédition en cours avant d'aller t'entraîner."); return; }
+      RetroAudio.confirm();
+      state.expedition.biomeId = "foret_murmures";
+      state.expedition.active = true; state.expedition.training = true;
+      state.expedition.progress = 0; state.expedition.nextEventAt = 1e12;
+      state.expedition.pendingEvent = null; state.expedition.sub = null;
+      state.expedition.unsecuredLoot = { gold: 0, ressources: {}, equips: [] };
+      const st = getHeroTotalStats(); state.hero.pv = st.pvMax; state.hero.pm = st.pmMax;
+      state.expedition.combat = { enemy: makeTrainDummy(), turn: "PLAYER", atb: 60, enemyTurns: 0, eatb: 0 };
+      trainResetStats();
+      addExpLog("🎯 Terrain d'entraînement de la Forêt des Murmures : frappe le mannequin pour mesurer tes dégâts. Il ne riposte pas, ne meurt jamais et ne donne ni butin ni XP.", "text-amber-200 font-bold");
+      switchView("expedition"); renderExpeditionView();
+      setTimeout(() => { const tp = document.getElementById("train-panel"); if (tp) tp.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
+    }
+    function stopTraining(silent) {
+      const c = state.expedition.combat, T = c && c.train;
+      state.expedition.training = false; state.expedition.active = false; state.expedition.combat = null;
+      state.expedition.pendingEvent = null; state.expedition.sub = null; state.expedition.progress = 0;
+      state.expedition.nextEventAt = 18 + Math.random() * 10;
+      state.expedition.unsecuredLoot = { gold: 0, ressources: {}, equips: [] };
+      if (!silent && T && T.el > 0) addExpLog(`🎯 Fin de l'entraînement : ${fmtTrain(T.dmg)} dégâts en ${T.el.toFixed(1).replace(".", ",")} s — ${fmtTrain(T.dmg / T.el)} DPS.`, "text-amber-200");
+      const st = getHeroTotalStats(); state.hero.pv = st.pvMax; state.hero.pm = st.pmMax;
+      renderExpeditionView(); saveGame();
+    }
+    function fmtTrain(n) { n = Math.round(n || 0); return n.toLocaleString("fr-FR"); }
+    function trainApplyCfg() {
+      const c = state.expedition.combat; if (!c || !c.enemy.dummy) return;
+      const keep = { dots: c.enemy.dots, debuffs: c.enemy.debuffs };
+      c.enemy = Object.assign(makeTrainDummy(), {});
+      trainResetStats(c); updateCombatUI(); renderTrainPanel(true);
+    }
+    // Appelé à chaque image : mesure les dégâts subis par le mannequin puis le remet à 100 %
+    function trainTick(c, dt) {
+      const en = c.enemy, T = c.train || (trainResetStats(c), c.train);
+      const lost = en.pvMax - en.pv;
+      if (lost > 0) { T.dmg += lost; T.max = Math.max(T.max, lost); T.hits++; T.started = true; en.pv = en.pvMax; en._lp = en.pv; }
+      if (T.started) T.el += dt;
+      c.eatb = 0; en.stun = 0; en.charging = false;
+      const s = getHeroTotalStats(); if (state.hero.pv < s.pvMax) state.hero.pv = s.pvMax;
+      const ht = document.getElementById("combat-enemy-hp-text"); if (ht && ht.textContent !== "∞ PV") ht.textContent = "∞ PV";
+      const hb = document.getElementById("combat-enemy-hp-bar"); if (hb) hb.style.width = "100%";
+      trainUiT += dt; if (trainUiT > 0.25) { trainUiT = 0; renderTrainPanel(); }
+    }
+    let trainUiT = 0;
+    function renderTrainPanel(force) {
+      const box = document.getElementById("train-panel"); if (!box) return;
+      const c = state.expedition.combat, on = !!(state.expedition.training && c && c.enemy && c.enemy.dummy);
+      box.classList.toggle("hidden", !on); if (!on) { box.dataset.built = ""; return; }
+      const cfg = trainCfg();
+      if (!box.dataset.built || force) {
+        box.dataset.built = "1";
+        box.innerHTML = `<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div class="text-xs font-bold text-amber-200">🎯 Terrain d'entraînement</div>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-x-4 gap-y-1 text-[11px] flex-1 min-w-[16rem]">
+            <div><div class="text-slate-500 text-[10px]">DPS</div><b id="tr-dps" class="text-lg text-amber-300 tabular-nums">0</b></div>
+            <div><div class="text-slate-500 text-[10px]">Dégâts totaux</div><b id="tr-tot" class="text-white tabular-nums">0</b></div>
+            <div><div class="text-slate-500 text-[10px]">Durée</div><b id="tr-time" class="text-white tabular-nums">0,0 s</b></div>
+            <div><div class="text-slate-500 text-[10px]">Plus grosse action</div><b id="tr-max" class="text-rose-300 tabular-nums">0</b></div>
+            <div><div class="text-slate-500 text-[10px]">Moyenne / action</div><b id="tr-avg" class="text-sky-300 tabular-nums">0</b></div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-end gap-3 mt-2 pt-2 border-t border-slate-800 text-[11px]">
+          <label class="flex flex-col gap-0.5"><span class="text-slate-500 text-[10px]">Niveau du mannequin : <b id="tr-lvl-v" class="text-white">${cfg.lvl}</b> (DEF <b id="tr-def-v" class="text-white">${trainDummyDef(cfg.lvl, cfg.type)}</b>)</span>
+            <input id="tr-lvl" type="range" min="1" max="150" value="${cfg.lvl}" class="w-44 accent-amber-400"></label>
+          <div class="flex flex-col gap-0.5"><span class="text-slate-500 text-[10px]">Type (effets « contre élites / boss »)</span><div class="flex gap-1">
+            ${Object.entries(TRAIN_TYPES).map(([k, t]) => `<button type="button" data-tr-type="${k}" class="ui-btn px-2 py-1 rounded-md border text-[11px] ${cfg.type === k ? "bg-amber-500/20 border-amber-400 text-amber-200" : "bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800"}">${t.ic} ${t.nom}</button>`).join("")}</div></div>
+          <button type="button" data-tr-lvlme class="ui-btn px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-600">Mon niveau</button>
+          <button type="button" data-tr-reset class="ui-btn px-2.5 py-1 rounded-md bg-sky-800 hover:bg-sky-700 border border-sky-500/60 text-sky-100">↺ Remettre à zéro</button>
+          <button type="button" data-tr-quit class="ui-btn px-2.5 py-1 rounded-md bg-rose-800 hover:bg-rose-700 border border-rose-500/60 text-rose-100 ml-auto">✕ Quitter l'entraînement</button>
+        </div>
+        <div class="text-[10px] text-slate-500 mt-1.5">Le mannequin ne riposte pas, reste toujours à 100 % de PV (les effets « ennemi à faibles PV » ne se déclenchent pas) et ne donne ni butin, ni XP, ni niveau de zone. Le chrono démarre au premier coup.</div>`;
+        const sl = box.querySelector("#tr-lvl");
+        sl.oninput = () => { cfg.lvl = +sl.value; box.querySelector("#tr-lvl-v").textContent = cfg.lvl; box.querySelector("#tr-def-v").textContent = trainDummyDef(cfg.lvl, cfg.type); };
+        sl.onchange = () => { trainApplyCfg(); saveGame(); };
+        box.querySelectorAll("[data-tr-type]").forEach(b => b.onclick = () => { cfg.type = b.dataset.trType; RetroAudio.cursor(); trainApplyCfg(); saveGame(); });
+        box.querySelector("[data-tr-lvlme]").onclick = () => { cfg.lvl = Math.max(1, Math.min(150, state.hero.niveau | 0)); trainApplyCfg(); saveGame(); };
+        box.querySelector("[data-tr-reset]").onclick = () => { RetroAudio.cursor(); trainResetStats(); renderTrainPanel(); };
+        box.querySelector("[data-tr-quit]").onclick = () => { RetroAudio.cursor(); stopTraining(); };
+      }
+      const T = c.train || {}; const el = T.el || 0;
+      const set = (id, v) => { const e = document.getElementById(id); if (e && e.textContent !== v) e.textContent = v; };
+      set("tr-dps", fmtTrain(el > 0.3 ? T.dmg / el : 0)); set("tr-tot", fmtTrain(T.dmg)); set("tr-time", el.toFixed(1).replace(".", ",") + " s");
+      set("tr-max", fmtTrain(T.max)); set("tr-avg", fmtTrain(T.hits ? T.dmg / T.hits : 0));
     }
     function makeEnemy(t) {
       const biome = UNIVERS_CONFIG.biomes.find(b => b.id === state.expedition.biomeId);
@@ -19014,13 +19126,15 @@ function wmDraw(ctx, t, opt) {
       musicTick = (musicTick || 0) + dt; if (musicTick > 0.5) { musicTick = 0; updateMusic(); }
       achTick = (achTick || 0) + dt; if (achTick > 2) { achTick = 0; checkAchievements(); }
       // Progression de l'expédition & ATB combat
+      if (state.expedition.active && state.expedition.training && !state.expedition.combat) stopTraining(true);
       if (state.expedition.active) {
         if (state.expedition.combat) {
           const c = state.expedition.combat;
           tickCombatStatuses(c, dt);
           if (!state.expedition.combat) return requestAnimationFrame(gameLoop);
+          if (c.enemy && c.enemy.dummy) trainTick(c, dt);
           { const E = c.enemy; if (E.frz > 0) E.frz = Math.max(0, E.frz - dt); if (E.chill > 0) E.chill = Math.max(0, E.chill - dt); if (E.frzCd > 0) E.frzCd = Math.max(0, E.frzCd - dt); }
-          if (c.turn === "PLAYER" && c.enemy.pv > 0) {   // jauge d'action du monstre (se remplit en même temps que la tienne ; bloquée si gelé)
+          if (c.turn === "PLAYER" && c.enemy.pv > 0 && !c.enemy.dummy) {   // jauge d'action du monstre (se remplit en même temps que la tienne ; bloquée si gelé)
             if (!(c.enemy.frz > 0)) c.eatb = Math.min(100, (c.eatb === undefined ? -12 : c.eatb) + dt * 52 * enemySpeed(c.enemy));
             const eb = document.getElementById("combat-enemy-atb-bar"); if (eb) { eb.style.width = `${Math.max(0, c.eatb)}%`; eb.style.filter = c.enemy.frz > 0 ? "grayscale(1) brightness(1.6) hue-rotate(180deg)" : ""; }
             if (c.eatb >= 100) { startEnemyAction(c); return requestAnimationFrame(gameLoop); }
@@ -19681,8 +19795,14 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.55";
+    const GAME_VERSION = "1.56";
     const PATCH_NOTES = [
+      { v: "1.56", date: "21/11/2026", titre: "Terrain d'entraînement", items: [
+        "🎯 Nouveau Terrain d'entraînement dans la Forêt des Murmures (bouton sous la description de la forêt, dans Destinations).",
+        "Frappe un mannequin immortel qui ne riposte pas, pour tester ton build sans risque : ni butin, ni XP, ni niveau de zone.",
+        "Compteur en direct : DPS, dégâts totaux, durée, plus grosse action et moyenne par action. Tout est compté : coups, compétences, ultime, saignements, brûlures, poisons, effets des lames runiques.",
+        "Règle le niveau du mannequin (1 à 150, sa DEF suit) et son type (Monstre, Élite ou Boss) pour tester les effets « contre élites / boss ». Bouton ↺ pour remettre le compteur à zéro."
+      ] },
       { v: "1.55", date: "21/11/2026", titre: "Runelame : refonte des lames de Givre", items: [
         "❄️ Le Givre ne réduit plus l'attaque des boss de 20 %. À la place, chaque coup d'une lame de Givre RALENTIT l'ennemi pendant 4 s : vitesse d'attaque −25 % et dégâts −5 %.",
         "🧊 GEL : la jauge d'action du monstre ou du BOSS est bloquée pendant 2 s (+0,1 s par rang d'Essence, jusqu'à 3,5 s). Ensuite, il ne peut pas être regelé pendant 6 s.",
@@ -20167,6 +20287,7 @@ function wmDraw(ctx, t, opt) {
 
       document.getElementById("btn-exp-stop").addEventListener("click", () => {
         RetroAudio.cursor();
+        if (state.expedition.training) { stopTraining(); return; }
         const hadLoot = state.expedition.unsecuredLoot.gold > 0 ||
           Object.keys(state.expedition.unsecuredLoot.ressources).length > 0 ||
           state.expedition.unsecuredLoot.equips.length > 0;
