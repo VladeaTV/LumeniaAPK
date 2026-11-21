@@ -346,6 +346,7 @@
 
     /* v1.25 — cartes de biomes illustrées */
     .biome-splash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+    @media (min-width:1024px){#biome-cards-list .biome-splash-grid{grid-template-columns:1fr}#biome-cards-list .bs-card{aspect-ratio:auto;height:128px;min-height:0}}
     .bs-card{position:relative;border-radius:14px;overflow:hidden;border:2px solid #334155;cursor:pointer;aspect-ratio:320/140;min-height:120px;transition:transform .15s,border-color .15s,box-shadow .15s;background:#0b1020}
     .bs-card:hover{border-color:#64748b;transform:translateY(-1px)}
     .bs-card-on{border-color:#fbbf24;box-shadow:0 0 0 2px rgba(251,191,36,.35),0 8px 24px -8px rgba(251,191,36,.45)}
@@ -773,6 +774,7 @@
               <div class="flex flex-wrap items-center gap-2">
                 <span id="tb-hero-name" class="text-sm font-bold text-white">Aldric</span>
                 <span id="tb-hero-title" class="hidden text-[11px] italic font-semibold text-amber-200"></span>
+                <span id="tb-cycle" class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-900/70 border border-slate-700 text-slate-300 tabular-nums" title="Cycle jour / nuit (10 min)"></span>
                 <span id="tb-hero-lvl" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 tabular-nums">
                   Combat Niv. 1
                 </span>
@@ -1029,8 +1031,8 @@
                 <button type="button" data-exp-tab="opts" class="exp-tab-btn tab-btn">⚙️ Automatisation</button>
               </div>
 
-              <div id="exp-tab-dest" class="exp-tab-pane grid grid-cols-1 lg:grid-cols-5 gap-4">
-                <div id="wm-wrap" class="wm-wrap" style="grid-column:1/-1">
+              <div id="exp-tab-dest" class="exp-tab-pane grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_1fr] gap-4 items-start">
+                <div id="wm-wrap" class="wm-wrap lg:col-span-7 lg:order-2">
                   <div class="wm-frame">
                     <div class="wm-head"><span class="wm-title">🗺️ Carte de Lumenia</span><span id="wm-hint" class="wm-hint">Clique sur une région pour la choisir</span></div>
                     <div id="wm-box" class="wm-box">
@@ -1040,11 +1042,11 @@
                     </div>
                   </div>
                 </div>
-                <div class="lg:col-span-3 space-y-2">
-                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Biomes</h4>
+                <div class="lg:col-span-5 lg:order-1 lg:row-span-2 space-y-2">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Destinations</h4>
                   <div id="biome-cards-list" class="grid grid-cols-1 md:grid-cols-2 gap-2.5 items-start"></div>
                 </div>
-                <div class="lg:col-span-2 space-y-2">
+                <div class="lg:col-span-7 lg:order-3 space-y-2">
                   <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">📖 Bestiaire du biome</h4>
                   <div id="exp-bestiary" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
                 </div>
@@ -1053,6 +1055,7 @@
               <div id="exp-tab-opts" class="exp-tab-pane hidden grid grid-cols-1 md:grid-cols-2 gap-2.5 max-w-3xl text-xs">
                 <label class="melvor-card p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-slate-500"><span class="text-slate-300">Combat automatique (tour par tour)</span><input id="chk-exp-autocombat" type="checkbox" checked class="tgl" /></label>
                 <label class="melvor-card p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-slate-500"><span class="text-slate-300">Récolte automatique des découvertes</span><input id="chk-exp-autogather" type="checkbox" checked class="tgl" /></label>
+                <label class="melvor-card p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-slate-500" title="Le ciel passe de l'aube au jour, au crépuscule puis à la nuit toutes les 10 minutes"><span class="text-slate-300">🌗 Cycle jour / nuit (10 min)</span><input id="chk-daycycle" type="checkbox" checked class="tgl" /></label>
                 <label class="melvor-card p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-slate-500"><span class="text-slate-300">Boucle d'expédition automatique</span><input id="chk-exp-autoloop" type="checkbox" class="tgl" /></label>
                 <label class="melvor-card p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-slate-500" title="Arrête la boucle automatique quand un marchand ambulant s'installe au camp"><span class="text-slate-300">🛒 Stopper la boucle si un marchand arrive</span><input id="chk-exp-stopmerch" type="checkbox" checked class="tgl" /></label>
                 <label class="melvor-card p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-slate-500"><span class="text-slate-300">IA : utiliser les compétences de l'arbre</span><input id="chk-ai-actifs" type="checkbox" checked class="tgl" /></label>
@@ -8179,7 +8182,83 @@
      * avec ciel étoilé, tente, héros assis sur un rondin tournant une broche
      * avec un morceau de viande qui grille au-dessus d'un feu de camp animé.
      */
+
+    // =======================================================================
+    //  v1.45 — CYCLE JOUR / NUIT (10 min, horloge réelle : il continue hors ligne)
+    //  0–15 % aube • 15–50 % jour • 50–65 % crépuscule • 65–100 % nuit
+    // =======================================================================
+    const DAY_CYCLE_SEC = 600;
+    const DC_PHASES = [[0, 0.15, "Aube", "🌅"], [0.15, 0.5, "Jour", "☀️"], [0.5, 0.65, "Crépuscule", "🌇"], [0.65, 1, "Nuit", "🌙"]];
+    function dcSmooth(a, b, x) { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+    function dayCycle() {
+      if (state && state.cycleOff) return { p: 0.8, day: 0, night: 1, glow: 0, name: "Nuit", icon: "🌙", left: 0, off: true, sun: null, moon: { s: 0.5 } };
+      const p = ((Date.now() / 1000) % DAY_CYCLE_SEC) / DAY_CYCLE_SEC;
+      const day = dcSmooth(0.0, 0.15, p) * (1 - dcSmooth(0.5, 0.65, p));
+      const glow = Math.max(p < 0.15 ? Math.sin(p / 0.15 * Math.PI) : 0, p >= 0.5 && p < 0.65 ? Math.sin((p - 0.5) / 0.15 * Math.PI) : 0);
+      const ph = DC_PHASES.find(x => p >= x[0] && p < x[1]) || DC_PHASES[3];
+      const sunS = p < 0.65 ? p / 0.65 : null;
+      const mq = ((p - 0.5 + 1) % 1) / 0.65, moonS = mq <= 1 ? mq : null;
+      return { p, day, night: 1 - day, glow, name: ph[2], icon: ph[3], left: Math.round((ph[1] - p) * DAY_CYCLE_SEC), off: false, sun: sunS === null ? null : { s: sunS }, moon: moonS === null ? null : { s: moonS } };
+    }
+    function dcHex(h) { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+    function dcMix(a, b, k) { const A = dcHex(a), B = dcHex(b); return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, "0")).join(""); }
+    function dcSkyStops(DC) {
+      const N = ["#030617", "#0b1533", "#1b2147", "#3a2342"], D = ["#2f6db3", "#5a9fdc", "#9fd0f2", "#d8ecf7"], G = ["#251f4a", "#5b3f7e", "#d9735b", "#f6b27e"];
+      return N.map((c, i) => dcMix(dcMix(c, D[i], DC.day), G[i], DC.glow * 0.85));
+    }
+    function dcArc(s, x0, x1, yBase, hArc) { return { x: x0 + (x1 - x0) * s, y: yBase - Math.sin(s * Math.PI) * hArc }; }
+    function dcDrawSun(ctx, x, y, a) {
+      if (a <= 0) return;
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      const g = ctx.createRadialGradient(x, y, 4, x, y, 90); g.addColorStop(0, `rgba(255,236,170,${0.55 * a})`); g.addColorStop(0.3, `rgba(255,200,120,${0.22 * a})`); g.addColorStop(1, "rgba(255,200,120,0)");
+      ctx.fillStyle = g; ctx.fillRect(x - 90, y - 90, 180, 180); ctx.restore();
+      ctx.globalAlpha = a; ctx.fillStyle = "#fff4c2"; ctx.beginPath(); ctx.arc(x, y, 14, 0, 7); ctx.fill(); ctx.fillStyle = "#ffe08a"; ctx.beginPath(); ctx.arc(x, y, 11, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+    }
+    function dcOverlay(ctx, DC, x, y, w, h, base) {
+      if (DC.off) return;
+      ctx.save();
+      if (base === "night") {
+        if (DC.day > 0) {   // lumière de jour : peu de voile, teinte chaude, couleurs ravivées
+          ctx.globalCompositeOperation = "screen"; ctx.fillStyle = `rgba(70,95,60,${0.32 * DC.day})`; ctx.fillRect(x, y, w, h);
+          ctx.globalCompositeOperation = "soft-light"; ctx.fillStyle = `rgba(255,214,140,${0.65 * DC.day})`; ctx.fillRect(x, y, w, h);
+          ctx.globalCompositeOperation = "saturation"; ctx.fillStyle = `rgba(255,60,0,${0.22 * DC.day})`; ctx.fillRect(x, y, w, h); }
+      } else {
+        if (DC.night > 0) { ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = `rgba(6,10,38,${0.32 * DC.night})`; ctx.fillRect(x, y, w, h); }
+        if (DC.day > 0) { ctx.globalCompositeOperation = "soft-light"; ctx.fillStyle = `rgba(255,244,214,${0.35 * DC.day})`; ctx.fillRect(x, y, w, h); }
+      }
+      if (DC.glow > 0) { ctx.globalCompositeOperation = "soft-light"; ctx.fillStyle = `rgba(255,128,80,${0.5 * DC.glow})`; ctx.fillRect(x, y, w, h); }
+      ctx.restore();
+    }
+
+    // v1.47 — nuages qui dérivent (teintés selon l'heure) et oiseaux le jour au campement
+    function campSkyLife(ctx, DC, t, X0, XW) {
+      if (DC.off) return;
+      const cloudCol = dcMix(dcMix("#2a3358", "#ffffff", DC.day), "#f4a58a", DC.glow * 0.8), shade = dcMix(dcMix("#1c2240", "#cfdbe8", DC.day), "#b9708a", DC.glow * 0.8);
+      const ca = 0.35 + 0.6 * Math.max(DC.day, DC.glow);
+      const cloud = (cx, cy, sc) => {
+        ctx.globalAlpha = ca;
+        ctx.fillStyle = shade; [[-26, 6, 16], [0, 8, 20], [26, 6, 15]].forEach(([dx, dy, r]) => { ctx.beginPath(); ctx.ellipse(cx + dx * sc, cy + dy * sc, r * sc * 1.25, r * sc * 0.75, 0, 0, 7); ctx.fill(); });
+        ctx.fillStyle = cloudCol; [[-22, 0, 14], [-4, -6, 18], [16, -2, 15], [32, 3, 10]].forEach(([dx, dy, r]) => { ctx.beginPath(); ctx.ellipse(cx + dx * sc, cy + dy * sc, r * sc * 1.2, r * sc * 0.8, 0, 0, 7); ctx.fill(); });
+        ctx.globalAlpha = 1;
+      };
+      const span = XW + 300;
+      [[0, 34, 1.0, 7], [230, 18, 0.7, 4.5], [470, 52, 0.85, 6], [700, 26, 0.6, 3.5], [880, 46, 1.1, 8]].forEach(([o, y, sc, sp]) => {
+        const cx = X0 - 150 + (((o + t * sp) % span) + span) % span; cloud(cx, y, sc);
+      });
+      if (DC.day > 0.3) {
+        ctx.globalAlpha = Math.min(1, (DC.day - 0.3) * 2.5); ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 1.5; ctx.lineCap = "round";
+        for (let f = 0; f < 2; f++) {
+          const L = XW + 200, bx0 = X0 - 100 + (((f * 380 + t * (22 + f * 6)) % L) + L) % L, by0 = 40 + f * 26 + Math.sin(t * 0.5 + f) * 6;
+          for (let k = 0; k < 5; k++) {
+            const off = k === 0 ? 0 : Math.ceil(k / 2) * (k % 2 ? 1 : -1), bx = bx0 - Math.abs(off) * 12, by = by0 + off * 7, wing = Math.sin(t * 9 + k * 1.3 + f) * 3.5, s2 = 4 - (k ? 0.5 : 0);
+            ctx.beginPath(); ctx.moveTo(bx - s2, by - wing); ctx.lineTo(bx, by); ctx.lineTo(bx + s2, by - wing); ctx.stroke();
+          }
+        }
+        ctx.globalAlpha = 1; ctx.lineCap = "butt";
+      }
+    }
     function renderCampfireIdleScene(ctx, W, H, timeSec, dt, editor) {
+      const DC = dayCycle();
       const X0 = -CAMP_PAD, XW = 640 + CAMP_PAD * 2;                  // le monde du camp déborde de 160 px de chaque côté
       const t = timeSec, C = CAMP;
       const FX = 345, FY = 160;                                         // base du feu
@@ -8188,9 +8267,10 @@
       const R = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
       // ---------- 1. Ciel : dégradé profond + aurore boréale animée ----------
-      const sky = ctx.createLinearGradient(0, -120, 0, 160);
-      sky.addColorStop(0, "#030617"); sky.addColorStop(0.45, "#0b1533"); sky.addColorStop(0.8, "#1b2147"); sky.addColorStop(1, "#3a2342");
+      const sky = ctx.createLinearGradient(0, -120, 0, 160), SK = dcSkyStops(DC);
+      sky.addColorStop(0, SK[0]); sky.addColorStop(0.45, SK[1]); sky.addColorStop(0.8, SK[2]); sky.addColorStop(1, SK[3]);
       ctx.fillStyle = sky; ctx.fillRect(X0, -260, XW, 424);
+      ctx.globalAlpha = Math.max(0, DC.night - DC.glow * 0.5);
       ctx.save(); ctx.globalCompositeOperation = "lighter";
       for (let band = 0; band < 3; band++) {
         const col = ["52,211,153", "45,212,191", "167,139,250"][band];
@@ -8212,8 +8292,10 @@
         ctx.fillRect(sx, sy, i % 9 === 0 ? 2 : 1, i % 9 === 0 ? 2 : 1);
         if (i % 17 === 0 && tw > 0.9) { ctx.fillStyle = `rgba(255,255,255,${(tw - 0.9) * 4})`; ctx.fillRect(sx - 2, sy, 5, 1); ctx.fillRect(sx, sy - 2, 1, 5); }
       }
-      // étoile filante occasionnelle
-      if (!C.shoot && Math.random() < dt * 0.12) C.shoot = { x: 120 + Math.random() * 380, y: 10 + Math.random() * 40, life: 0 };
+      ctx.globalAlpha = 1;
+      if (DC.sun) { const sp = dcArc(DC.sun.s, 40, 600, 150, 128); dcDrawSun(ctx, sp.x, sp.y, Math.min(1, DC.sun.s * 6, (1 - DC.sun.s) * 6)); }
+      // étoile filante occasionnelle (la nuit seulement)
+      if (!C.shoot && DC.night > 0.8 && Math.random() < dt * 0.12) C.shoot = { x: 120 + Math.random() * 380, y: 10 + Math.random() * 40, life: 0 };
       if (C.shoot) {
         const s = C.shoot; s.life += dt; const p = s.life / 0.9;
         if (p >= 1) C.shoot = null; else {
@@ -8222,14 +8304,20 @@
           ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx - 40, hy - 15); ctx.lineTo(hx, hy); ctx.stroke();
         }
       }
-      // lune avec halo et cratères
-      ctx.save(); ctx.globalCompositeOperation = "lighter";
-      const mh = ctx.createRadialGradient(540, 38, 10, 540, 38, 70); mh.addColorStop(0, "rgba(254,243,199,0.22)"); mh.addColorStop(1, "rgba(254,243,199,0)");
-      ctx.fillStyle = mh; ctx.fillRect(470, -32, 140, 140); ctx.restore();
-      ctx.fillStyle = "#fef3c7"; ctx.beginPath(); ctx.arc(540, 38, 15, 0, 7); ctx.fill();
-      ctx.fillStyle = "#fde68a"; [[535, 33, 3], [545, 43, 2.5], [546, 31, 1.6]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); });
-      ctx.fillStyle = "rgba(11,21,51,0.85)"; ctx.beginPath(); ctx.arc(548, 34, 13, 0, 7); ctx.fill();
+      // lune avec halo et cratères (elle suit son arc dans le ciel)
+      if (DC.moon) {
+        const mp = DC.off ? { x: 540, y: 38 } : dcArc(DC.moon.s, 40, 600, 150, 120), MX = mp.x, MY = mp.y, ma = DC.off ? 1 : Math.min(1, DC.moon.s * 6, (1 - DC.moon.s) * 6) * (1 - DC.day * 0.6);
+        ctx.globalAlpha = ma;
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        const mh = ctx.createRadialGradient(MX, MY, 10, MX, MY, 70); mh.addColorStop(0, "rgba(254,243,199,0.22)"); mh.addColorStop(1, "rgba(254,243,199,0)");
+        ctx.fillStyle = mh; ctx.fillRect(MX - 70, MY - 70, 140, 140); ctx.restore();
+        ctx.fillStyle = "#fef3c7"; ctx.beginPath(); ctx.arc(MX, MY, 15, 0, 7); ctx.fill();
+        ctx.fillStyle = "#fde68a"; [[-5, -5, 3], [5, 5, 2.5], [6, -7, 1.6]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(MX + x, MY + y, r, 0, 7); ctx.fill(); });
+        ctx.fillStyle = SK[1]; ctx.globalAlpha = ma * 0.85; ctx.beginPath(); ctx.arc(MX + 8, MY - 4, 13, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
 
+      campSkyLife(ctx, DC, t, X0, XW);
       if (FL >= 5) drawCampEstate(ctx, FL, t, flick, FX, X0, XW, H);
       else {
       // ---------- 2. Relief en couches (perspective atmosphérique) ----------
@@ -8309,6 +8397,7 @@
       ctx.fillStyle = "#c2650a"; ctx.fillRect(214, 156, 8, 12); ctx.fillStyle = "#92400e"; ctx.fillRect(216, 159, 4, 5);
       }
       drawHero128(heroBufferCanvas, state.hero, timeSec, 0, false, true);
+      if (!DC.off && DC.day > 0.05) { ctx.fillStyle = `rgba(20,30,15,${0.35 * DC.day})`; ctx.beginPath(); ctx.ellipse(250, 167, 34, 5, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(FX + 6, FY + 8, 44, 6, 0, 0, 7); ctx.fill(); }
       ctx.drawImage(heroBufferCanvas, 194, 72, 100, 100);
       // lumière chaude sur le côté du héros tourné vers le feu
       ctx.save(); ctx.globalCompositeOperation = "lighter";
@@ -8474,10 +8563,11 @@
       ctx.restore();
 
       if (!editor && !window.__noCampLabel && state.marchand && state.marchand.present) drawMerchantCart(ctx, t);
+      dcOverlay(ctx, DC, X0 - 400, -400, XW + 800, H + 800, "night");
       if (editor || window.__campCam) return;
       // ---------- 12. Vignette cinématographique + étiquette en verre dépoli ----------
       const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, W * 0.62);
-      vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.55)");
+      vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, `rgba(0,0,0,${0.55 - 0.2 * DC.day})`);
       ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     }
 
@@ -8894,6 +8984,9 @@
       const cst = state.expedition.sub ? (CAVE_STYLES[state.expedition.sub.pathId] || null) : null;
       const pal = cst ? cst.pal : (state.expedition.sub ? palettes.cave : (palettes[biome.theme] || palettes.forest));
 
+      const _DC = dayCycle();
+      if (!state.expedition.sub && BIOME_SCENES[drawTheme]) BIOME_SCENES[drawTheme](ctx, W, timeSec, walkAnimDistance, _DC);
+      else {
       // 1. Ciel en dégradé
       const grad = ctx.createLinearGradient(0, 0, 0, 160);
       grad.addColorStop(0, pal.skyTop);
@@ -8993,6 +9086,9 @@
         ctx.fillRect(gx + 28, 190, 10, 4);
       }
 
+      }
+
+      if (!state.expedition.sub && ["forest", "swamp", "citadel"].includes(drawTheme)) dcOverlay(ctx, _DC, 0, 0, W, 210, "neutral");
       // 5. Dessin du Héros en marche ou en combat
       const _rlS = state.hero.classe === "runelame";
       RUNE_NO_ORBIT = _rlS;
@@ -12919,6 +13015,233 @@
         x.strokeStyle = "rgba(232,121,249,0.8)"; x.lineWidth = 1; x.beginPath(); x.moveTo(30, 130); x.lineTo(50, 124); x.lineTo(70, 132); x.lineTo(90, 126); x.stroke();
       }
       return c;
+    }
+
+
+    // =======================================================================
+    //  v1.46 — DÉCORS D'EXPÉDITION REFAITS (Forêt, Mines, Citadelle, Abysse) + ciel jour/nuit
+    // =======================================================================
+    function scR(i, s) { const v = Math.sin(i * 12.9898 + (s || 0) * 78.233) * 43758.5453; return v - Math.floor(v); }
+    function scGlow(ctx, x, y, r, rgb, a) { if (a <= 0) return; const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`); ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
+    // Soleil et lune sur leur arc, étoiles la nuit
+    function scSkyBodies(ctx, W, DC, t, moonCol, starA) {
+      if (!DC.off && DC.sun) { const p = dcArc(DC.sun.s, 30, W - 30, 150, 120); dcDrawSun(ctx, p.x, p.y, Math.min(1, DC.sun.s * 6, (1 - DC.sun.s) * 6)); }
+      const st = (DC.off ? 1 : Math.max(0, DC.night - DC.glow * 0.5)) * (starA === undefined ? 1 : starA);
+      if (st > 0) { ctx.fillStyle = "#fffbeb"; for (let i = 0; i < 40; i++) { ctx.globalAlpha = st * (0.25 + 0.6 * Math.abs(Math.sin(t * (0.8 + scR(i, 2)) + i))); ctx.fillRect(Math.floor(scR(i, 3) * W), Math.floor(scR(i, 4) * 90), i % 7 ? 1 : 2, i % 7 ? 1 : 2); } ctx.globalAlpha = 1; }
+      if (DC.moon) {
+        const p = DC.off ? { x: 500, y: 44 } : dcArc(DC.moon.s, 30, W - 30, 150, 112), a = DC.off ? 1 : Math.min(1, DC.moon.s * 6, (1 - DC.moon.s) * 6) * (1 - DC.day * 0.7);
+        if (a > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, p.x, p.y, 60, moonCol || "254,243,199", 0.22 * a); ctx.restore(); ctx.globalAlpha = a; ctx.fillStyle = "#fef9e7"; ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(160,150,120,0.35)"; ctx.beginPath(); ctx.arc(p.x - 4, p.y - 3, 3, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(p.x + 4, p.y + 4, 2, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+      }
+    }
+    function scSky(ctx, W, DC, N, D, G) {
+      const S = N.map((c, i) => dcMix(dcMix(c, D[i], DC.off ? 0 : DC.day), G[i], DC.off ? 0 : DC.glow * 0.8));
+      const g = ctx.createLinearGradient(0, 0, 0, 160); g.addColorStop(0, S[0]); g.addColorStop(0.6, S[1]); g.addColorStop(1, S[2]); ctx.fillStyle = g; ctx.fillRect(0, 0, W, 160); return S;
+    }
+    function scPine(ctx, x, base, h, col, hi) {
+      ctx.fillStyle = col; ctx.fillRect(x - h * 0.04, base - h * 0.25, h * 0.08, h * 0.25);
+      for (let k = 0; k < 4; k++) { const w = h * 0.34 * (1 - k * 0.2), y = base - h * 0.18 - k * h * 0.2;
+        ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x - w, y); ctx.lineTo(x, y - h * 0.34); ctx.lineTo(x + w, y); ctx.closePath(); ctx.fill();
+        if (hi) { ctx.fillStyle = hi; ctx.beginPath(); ctx.moveTo(x, y - h * 0.34); ctx.lineTo(x + w, y); ctx.lineTo(x + w * 0.55, y); ctx.closePath(); ctx.fill(); } }
+    }
+    // ---------------- FORÊT DES MURMURES ----------------
+    function drawForestScene(ctx, W, t, walk, DC) {
+      scSky(ctx, W, DC, ["#0b2230", "#1d4a43", "#2f5a3a"], ["#4f9fd8", "#9fd6ee", "#d6f0e4"], ["#3b2a5a", "#c76b5a", "#f2b07a"]);
+      scSkyBodies(ctx, W, DC, t, "254,240,138");
+      const tile = (sp, w, f) => { const o = (walk * sp) % w; for (let x = -w; x < W + w; x += w) f(x - o); };
+      tile(0.08, 320, x => { ctx.fillStyle = dcMix("#1a3a3a", "#5d8aa0", DC.day * 0.6); ctx.beginPath(); ctx.moveTo(x, 150); ctx.lineTo(x + 70, 92); ctx.lineTo(x + 120, 120); ctx.lineTo(x + 190, 82); ctx.lineTo(x + 260, 124); ctx.lineTo(x + 320, 100); ctx.lineTo(x + 320, 150); ctx.fill(); });
+      tile(0.2, 160, x => { for (let i = 0; i < 9; i++) scPine(ctx, x + i * 18 + scR(i, 1) * 6, 152, 34 + scR(i, 2) * 16, dcMix("#163226", "#2f5d44", DC.day * 0.5)); });
+      for (let k = 0; k < 2; k++) { const fy = 128 + k * 12, off = (t * (5 + k * 3)) % W; for (const dx of [0, -W]) { const fg = ctx.createLinearGradient(0, fy - 7, 0, fy + 7); fg.addColorStop(0, "rgba(220,252,231,0)"); fg.addColorStop(0.5, `rgba(220,252,231,${0.08 + 0.06 * DC.day})`); fg.addColorStop(1, "rgba(220,252,231,0)"); ctx.fillStyle = fg; ctx.fillRect(off + dx, fy - 7, W, 14); } }
+      if (!DC.off && DC.day > 0.05) { ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let i = 0; i < 4; i++) { const x0 = ((i * 170 + t * 4) % (W + 200)) - 100, a = 0.07 * DC.day * (0.6 + 0.4 * Math.sin(t * 0.7 + i));
+        const g = ctx.createLinearGradient(x0, 0, x0 + 60, 160); g.addColorStop(0, `rgba(255,244,200,${a})`); g.addColorStop(1, "rgba(255,244,200,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0 + 34, 0); ctx.lineTo(x0 + 110, 160); ctx.lineTo(x0 + 50, 160); ctx.fill(); } ctx.restore(); }
+      tile(0.55, 240, x => {
+        scPine(ctx, x + 40, 160, 92, "#0c2a17", "rgba(74,222,128,0.10)"); scPine(ctx, x + 120, 160, 70, "#0f3320", "rgba(74,222,128,0.10)"); scPine(ctx, x + 200, 160, 104, "#0a2414", "rgba(74,222,128,0.09)");
+        ctx.fillStyle = "#3f2a1a"; ctx.fillRect(x + 160, 150, 22, 8); ctx.fillStyle = "#5b3a1a"; ctx.fillRect(x + 160, 150, 22, 2);
+        ctx.fillStyle = "#b91c1c"; ctx.fillRect(x + 92, 152, 6, 3); ctx.fillStyle = "#fde68a"; ctx.fillRect(x + 94, 155, 2, 3); ctx.fillStyle = "#fff"; ctx.fillRect(x + 93, 152, 1, 1); ctx.fillRect(x + 96, 153, 1, 1);
+      });
+      let g = ctx.createLinearGradient(0, 154, 0, 170); g.addColorStop(0, dcMix("#3f6212", "#65a30d", DC.day * 0.5)); g.addColorStop(1, "#1a2e0b"); ctx.fillStyle = g; ctx.fillRect(0, 154, W, 16);
+      tile(1, 64, x => { for (let i = 0; i < 6; i++) { const gx = x + i * 11 + scR(i, 5) * 5, sw = Math.sin(t * 2 + gx * 0.05) * 1.5; ctx.strokeStyle = i % 2 ? "#4d7c0f" : "#65a30d"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(gx, 158); ctx.lineTo(gx + sw, 151); ctx.stroke(); }
+        ctx.fillStyle = "#f9a8d4"; ctx.fillRect(x + 30, 154, 2, 2); ctx.fillStyle = "#fde047"; ctx.fillRect(x + 52, 156, 2, 2); });
+      g = ctx.createLinearGradient(0, 168, 0, 210); g.addColorStop(0, "#6b4f33"); g.addColorStop(1, "#3f2e1f"); ctx.fillStyle = g; ctx.fillRect(0, 168, W, 42);
+      ctx.fillStyle = "#2f2216"; ctx.fillRect(0, 168, W, 2);
+      tile(1, 80, x => { ctx.fillStyle = "#4a3624"; ctx.fillRect(x + 10, 180, 10, 3); ctx.fillRect(x + 46, 194, 7, 3); ctx.fillStyle = "#8b6b4a"; ctx.fillRect(x + 30, 186, 4, 3); ctx.fillRect(x + 64, 200, 3, 2); ctx.fillStyle = "#a8a29e"; ctx.fillRect(x + 70, 178, 4, 3); });
+      if (DC.off || DC.night > 0.3) { ctx.save(); ctx.globalCompositeOperation = "lighter"; const na = DC.off ? 1 : DC.night;
+        for (let i = 0; i < 10; i++) { const fx = ((i * 71 + t * (6 + i) - walk * 0.4) % (W + 20) + W + 20) % (W + 20) - 10, fy = 100 + (i * 17) % 56 + Math.sin(t * 2 + i) * 6, a = na * (0.4 + 0.5 * Math.abs(Math.sin(t * 2.5 + i)));
+          scGlow(ctx, fx, fy, 7, "190,242,100", a * 0.6); ctx.fillStyle = `rgba(236,252,203,${a})`; ctx.fillRect(fx - 1, fy - 1, 2, 2); } ctx.restore(); }
+    }
+    // ---------------- MINES D'OBSIDIENNE ----------------
+    function scCrystal(ctx, x, base, h, col, hi, t, i) {
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, x, base - h * 0.5, h * 0.9, col, 0.18 + 0.1 * Math.sin(t * 2 + i)); ctx.restore();
+      ctx.fillStyle = `rgb(${col})`; ctx.beginPath(); ctx.moveTo(x - h * 0.2, base); ctx.lineTo(x - h * 0.08, base - h * 0.75); ctx.lineTo(x, base - h); ctx.lineTo(x + h * 0.12, base - h * 0.7); ctx.lineTo(x + h * 0.2, base); ctx.fill();
+      ctx.fillStyle = hi; ctx.beginPath(); ctx.moveTo(x - h * 0.07, base); ctx.lineTo(x - h * 0.03, base - h * 0.7); ctx.lineTo(x, base - h * 0.95); ctx.lineTo(x + h * 0.02, base); ctx.fill();
+    }
+    function drawMinesScene(ctx, W, t, walk, DC) {
+      let g = ctx.createLinearGradient(0, 0, 0, 160); g.addColorStop(0, "#05060d"); g.addColorStop(0.6, "#151339"); g.addColorStop(1, "#1b1a3f"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, 160);
+      const tile = (sp, w, f) => { const o = (walk * sp) % w; for (let x = -w; x < W + w; x += w) f(x - o); };
+      tile(0.15, 220, x => { ctx.fillStyle = "#17153b"; ctx.beginPath(); ctx.moveTo(x, 160); for (let i = 0; i <= 11; i++) ctx.lineTo(x + i * 20, 96 - scR(i, 7) * 34); ctx.lineTo(x + 220, 160); ctx.fill();
+        ctx.strokeStyle = `rgba(56,189,248,${0.35 + 0.2 * Math.sin(t * 1.5)})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + 30, 140); ctx.lineTo(x + 52, 118); ctx.lineTo(x + 70, 124); ctx.lineTo(x + 96, 100); ctx.stroke(); });
+      tile(0.3, 120, x => { for (let i = 0; i < 4; i++) { const sx = x + i * 30 + scR(i, 9) * 10, h = 14 + scR(i, 8) * 28; ctx.fillStyle = "#0b0a1c"; ctx.beginPath(); ctx.moveTo(sx - 7, 0); ctx.lineTo(sx, h); ctx.lineTo(sx + 7, 0); ctx.fill(); }
+        const ph = (t * 0.7 + x * 0.01) % 1; ctx.fillStyle = `rgba(125,211,252,${0.7 * (1 - ph)})`; ctx.fillRect(x + 31, 30 + ph * 120, 1, 3); });
+      tile(0.6, 260, x => {
+        scCrystal(ctx, x + 40, 156, 46, "56,189,248", "#e0f2fe", t, 1); scCrystal(ctx, x + 58, 156, 28, "129,140,248", "#e0e7ff", t, 2); scCrystal(ctx, x + 196, 156, 54, "168,85,247", "#f5d0fe", t, 3); scCrystal(ctx, x + 214, 156, 30, "56,189,248", "#e0f2fe", t, 4);
+        ctx.fillStyle = "#3f2a1a"; ctx.fillRect(x + 110, 70, 8, 90); ctx.fillRect(x + 160, 70, 8, 90); ctx.fillRect(x + 104, 64, 70, 9); ctx.fillStyle = "#5b3a1a"; ctx.fillRect(x + 104, 64, 70, 2); ctx.fillRect(x + 110, 70, 2, 90); ctx.fillRect(x + 160, 70, 2, 90);
+        const fl = 0.75 + 0.25 * Math.sin(t * 9 + x) * Math.sin(t * 13); ctx.strokeStyle = "#57534e"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + 139, 73); ctx.lineTo(x + 139, 84); ctx.stroke();
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, x + 139, 90, 34, "253,224,71", 0.35 * fl); ctx.restore(); ctx.fillStyle = "#44403c"; ctx.fillRect(x + 134, 84, 10, 3); ctx.fillStyle = "#fde047"; ctx.fillRect(x + 135, 87, 8, 7); ctx.fillStyle = "#fff7d6"; ctx.fillRect(x + 137, 89, 4, 3); ctx.fillStyle = "#44403c"; ctx.fillRect(x + 134, 94, 10, 2);
+      });
+      g = ctx.createLinearGradient(0, 156, 0, 210); g.addColorStop(0, "#2a2f45"); g.addColorStop(1, "#0f172a"); ctx.fillStyle = g; ctx.fillRect(0, 156, W, 54);
+      ctx.fillStyle = "#111827"; ctx.fillRect(0, 156, W, 2);
+      tile(1, 22, x => { ctx.fillStyle = "#3f2a1a"; ctx.fillRect(x, 174, 12, 14); ctx.fillStyle = "#5b3a1a"; ctx.fillRect(x, 174, 12, 2); });
+      ctx.fillStyle = "#64748b"; ctx.fillRect(0, 176, W, 3); ctx.fillRect(0, 186, W, 3); ctx.fillStyle = "#cbd5e1"; ctx.fillRect(0, 176, W, 1); ctx.fillRect(0, 186, W, 1);
+      tile(1, 90, x => { ctx.fillStyle = "#334155"; ctx.fillRect(x + 20, 196, 8, 4); ctx.fillRect(x + 60, 202, 5, 3); ctx.fillStyle = "#38bdf8"; ctx.fillRect(x + 44, 162, 3, 3); ctx.fillStyle = "#a855f7"; ctx.fillRect(x + 76, 166, 2, 2); });
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let i = 0; i < 14; i++) { const ph = (t * 0.15 + scR(i, 11)) % 1, x = ((scR(i, 12) * W - walk * 0.2) % W + W) % W, y = 40 + ph * 110; ctx.fillStyle = `rgba(165,180,252,${0.5 * Math.sin(ph * Math.PI)})`; ctx.fillRect(x, y, 1.5, 1.5); } ctx.restore();
+    }
+    // ---------------- CITADELLE CENDRÉE ----------------
+    function drawCitadelScene(ctx, W, t, walk, DC) {
+      const S = scSky(ctx, W, DC, ["#1c0606", "#5b1a0d", "#3a1208"], ["#5b2a1a", "#a4502a", "#c9774a"], ["#3a0f1a", "#b4401f", "#f08a3c"]);
+      const tile = (sp, w, f) => { const o = (walk * sp) % w; for (let x = -w; x < W + w; x += w) f(x - o); };
+      const vx = 470 - (walk * 0.04) % 40;
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, vx, 50, 120, "249,115,22", 0.3 + 0.08 * Math.sin(t * 2)); ctx.restore();
+      for (let i = 0; i < 7; i++) { const ph = (t * 0.08 + i / 7) % 1; ctx.fillStyle = `rgba(68,64,60,${0.5 * (1 - ph)})`; ctx.beginPath(); ctx.arc(vx + Math.sin(i * 2 + t * 0.3) * 10 + ph * 50, 46 - ph * 60, 10 + ph * 26, 0, 7); ctx.fill(); }
+      ctx.fillStyle = "#2b0d0d"; ctx.beginPath(); ctx.moveTo(vx - 150, 150); ctx.lineTo(vx - 22, 52); ctx.lineTo(vx + 22, 52); ctx.lineTo(vx + 150, 150); ctx.fill();
+      ctx.fillStyle = "#f97316"; ctx.fillRect(vx - 20, 50, 40, 5);
+      for (let i = 0; i < 4; i++) { const lp = (t * 0.25 + i * 0.25) % 1; ctx.fillStyle = i % 2 ? "#ea580c" : "#fb923c"; ctx.fillRect(vx - 16 + i * 9 - lp * (i - 1.5) * 18, 55 + lp * 70, 3, 10); }
+      tile(0.22, 300, x => { ctx.fillStyle = "#14090a";
+        [[20, 60, 18, 90], [40, 86, 54, 64], [96, 50, 18, 100], [116, 80, 40, 70], [200, 70, 22, 80], [222, 96, 50, 54]].forEach(([a, b, w, h]) => { ctx.fillRect(x + a, b, w, h); for (let k = 0; k < w; k += 6) ctx.fillRect(x + a + k, b - 4, 3, 4); });
+        ctx.beginPath(); ctx.moveTo(x + 18, 60); ctx.lineTo(x + 29, 40); ctx.lineTo(x + 40, 60); ctx.fill(); ctx.beginPath(); ctx.moveTo(x + 94, 50); ctx.lineTo(x + 105, 28); ctx.lineTo(x + 116, 50); ctx.fill();
+        [[26, 74], [28, 98], [102, 66], [102, 92], [64, 104], [208, 86], [240, 112]].forEach(([a, b], i) => { const f = 0.6 + 0.4 * Math.sin(t * 5 + i * 1.3); ctx.fillStyle = `rgba(251,146,60,${f})`; ctx.fillRect(x + a, b, 3, 5); });
+      });
+      tile(0.55, 260, x => {
+        ctx.fillStyle = "#2a1512"; ctx.fillRect(x + 30, 102, 16, 58); ctx.fillRect(x + 26, 98, 24, 6); ctx.fillStyle = "#3b1d17"; ctx.fillRect(x + 30, 102, 4, 58);
+        ctx.fillStyle = "#2a1512"; ctx.fillRect(x + 150, 118, 14, 42); ctx.beginPath(); ctx.moveTo(x + 150, 118); ctx.lineTo(x + 158, 108); ctx.lineTo(x + 164, 118); ctx.fill();
+        const wv = Math.sin(t * 2 + x * 0.01) * 3; ctx.fillStyle = "#7f1d1d"; ctx.beginPath(); ctx.moveTo(x + 50, 104); ctx.lineTo(x + 66, 104); ctx.lineTo(x + 66 + wv, 134); ctx.lineTo(x + 58 + wv, 128); ctx.lineTo(x + 50 + wv, 136); ctx.fill(); ctx.fillStyle = "#fbbf24"; ctx.fillRect(x + 56, 112, 4, 4);
+        ctx.fillStyle = "#44403c"; ctx.fillRect(x + 210, 140, 16, 4); ctx.fillRect(x + 215, 144, 6, 16); const fl = Math.sin(t * 11 + x) * 2;
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, x + 218, 134, 30, "251,146,60", 0.45); ctx.fillStyle = "rgba(253,224,71,0.9)"; ctx.beginPath(); ctx.moveTo(x + 211, 140); ctx.quadraticCurveTo(x + 218 + fl, 120, x + 225, 140); ctx.fill(); ctx.fillStyle = "rgba(249,115,22,0.9)"; ctx.beginPath(); ctx.moveTo(x + 213, 140); ctx.quadraticCurveTo(x + 218 - fl, 128, x + 223, 140); ctx.fill(); ctx.restore();
+      });
+      let g = ctx.createLinearGradient(0, 152, 0, 168); g.addColorStop(0, "#fde047"); g.addColorStop(0.4, "#f97316"); g.addColorStop(1, "#7f1d1d"); ctx.fillStyle = g; ctx.fillRect(0, 152, W, 16);
+      const lo = (walk * 0.7 + t * 14) % 60; ctx.fillStyle = "rgba(254,240,138,0.7)"; for (let x = -60; x < W + 60; x += 60) { ctx.fillRect(x - lo + 8, 156, 18, 1); ctx.fillRect(x - lo + 36, 161, 12, 1); }
+      ctx.fillStyle = "rgba(41,37,36,0.8)"; for (let x = -60; x < W + 60; x += 60) { ctx.fillRect(x - lo + 22, 158, 8, 3); }
+      for (let i = 0; i < 4; i++) { const ph = (t * 0.6 + i * 0.25) % 1, bx = (i * 167 + 50) % W; ctx.fillStyle = `rgba(253,224,71,${1 - ph})`; ctx.beginPath(); ctx.arc(bx, 158 - ph * 6, 1.5 + ph * 2, 0, 7); ctx.fill(); }
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, W / 2, 160, W * 0.6, "249,115,22", 0.12); ctx.restore();
+      g = ctx.createLinearGradient(0, 168, 0, 210); g.addColorStop(0, "#3a3532"); g.addColorStop(1, "#1c1917"); ctx.fillStyle = g; ctx.fillRect(0, 168, W, 42);
+      ctx.fillStyle = "#57534e"; ctx.fillRect(0, 168, W, 2);
+      const co = Math.floor(walk % 120), cp = 0.55 + 0.35 * Math.sin(t * 2.2);
+      for (let x = -120; x < W + 120; x += 120) { const cx = x - co; ctx.strokeStyle = `rgba(249,115,22,${cp})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx + 10, 178); ctx.lineTo(cx + 24, 184); ctx.lineTo(cx + 20, 194); ctx.lineTo(cx + 36, 200); ctx.moveTo(cx + 24, 184); ctx.lineTo(cx + 40, 182); ctx.moveTo(cx + 74, 190); ctx.lineTo(cx + 88, 196); ctx.lineTo(cx + 104, 192); ctx.stroke();
+        ctx.fillStyle = "#292524"; ctx.fillRect(cx + 50, 176, 14, 6); ctx.fillStyle = "#44403c"; ctx.fillRect(cx + 50, 176, 14, 2); }
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let i = 0; i < 16; i++) { const ph = (t * 0.35 + scR(i, 21)) % 1, x = ((scR(i, 22) * W + Math.sin(t + i) * 10 - walk * 0.3) % W + W) % W, y = 200 - ph * 190; ctx.fillStyle = `rgba(${i % 3 ? "251,146,60" : "253,224,71"},${1 - ph})`; ctx.fillRect(x, y, 2, 2); } ctx.restore();
+      ctx.fillStyle = "rgba(168,162,158,0.55)"; for (let i = 0; i < 12; i++) { const ph = (t * 0.12 + scR(i, 31)) % 1, x = ((scR(i, 32) * W + t * 12 - walk * 0.5) % W + W) % W; ctx.fillRect(x, ph * 170, 1.5, 1.5); }
+    }
+    // ---------------- L'ABYSSE DU NÉANT ----------------
+    function drawVoidScene(ctx, W, t, walk, DC) {
+      let g = ctx.createLinearGradient(0, 0, 0, 160); g.addColorStop(0, "#02010a"); g.addColorStop(0.6, "#160a33"); g.addColorStop(1, "#1f0d45"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, 160);
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      [[120, 60, 110, "168,85,247", 0.22], [330, 90, 90, "236,72,153", 0.14], [250, 30, 70, "56,189,248", 0.1]].forEach(([x, y, r, c, a], i) => scGlow(ctx, x + Math.sin(t * 0.2 + i) * 20 - (walk * 0.03) % 40, y, r, c, a));
+      ctx.restore();
+      for (let i = 0; i < 70; i++) { ctx.globalAlpha = 0.25 + 0.7 * Math.abs(Math.sin(t * (0.6 + scR(i, 41) * 1.5) + i)); ctx.fillStyle = i % 9 === 0 ? "#f0abfc" : i % 7 === 0 ? "#a5f3fc" : "#ffffff"; ctx.fillRect(((scR(i, 42) * W - walk * 0.05) % W + W) % W, scR(i, 43) * 150, i % 11 ? 1 : 2, i % 11 ? 1 : 2); }
+      ctx.globalAlpha = 1;
+      const bx = 500, by = 52, rot = -0.3 + Math.sin(t * 0.4) * 0.05;
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, bx, by, 70, "251,191,36", 0.16); ctx.restore();
+      ctx.strokeStyle = "rgba(251,191,36,0.85)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(bx, by, 40, 10, rot, Math.PI, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(bx, by, 17, 0, 7); ctx.fill(); ctx.strokeStyle = "rgba(232,121,249,0.7)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(bx, by, 18.5, 0, 7); ctx.stroke();
+      ctx.strokeStyle = "rgba(251,191,36,0.95)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(bx, by, 40, 10, rot, 0.12, Math.PI - 0.12); ctx.stroke();
+      for (let i = 0; i < 10; i++) { const ph = (t * 0.4 + i / 10) % 1, a = i * 0.63 + t * 2, r = 46 * (1 - ph) + 18; ctx.fillStyle = `rgba(253,230,138,${ph})`; ctx.fillRect(bx + Math.cos(a) * r, by + Math.sin(a) * r * 0.3, 2, 2); }
+      const tile = (sp, w, f) => { const o = (walk * sp) % w; for (let x = -w; x < W + w; x += w) f(x - o); };
+      const island = (cx, cy, w, sd) => { const bob = Math.sin(t * 0.8 + sd) * 3; cy += bob;
+        ctx.fillStyle = "#1e0f45"; ctx.beginPath(); ctx.moveTo(cx - w, cy); ctx.lineTo(cx + w, cy); ctx.lineTo(cx + w * 0.4, cy + w * 0.8); ctx.lineTo(cx, cy + w * 1.1); ctx.lineTo(cx - w * 0.35, cy + w * 0.7); ctx.fill();
+        ctx.fillStyle = "#4c1d95"; ctx.fillRect(cx - w, cy - 2, w * 2, 3); ctx.fillStyle = "#7c3aed"; ctx.fillRect(cx - w * 0.2, cy - 10, 3, 8); ctx.fillStyle = "#e879f9"; ctx.fillRect(cx - w * 0.2, cy - 12, 3, 3);
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, cx, cy + w * 0.5, w * 1.4, "168,85,247", 0.12); ctx.restore(); };
+      tile(0.18, 340, x => { island(x + 60, 92, 24, 1); island(x + 230, 70, 16, 2); });
+      tile(0.45, 280, x => {
+        const ob = Math.sin(t * 0.9 + x * 0.01) * 4;
+        ctx.fillStyle = "#12072b"; ctx.beginPath(); ctx.moveTo(x + 40, 160); ctx.lineTo(x + 50, 86 + ob); ctx.lineTo(x + 62, 92 + ob); ctx.lineTo(x + 70, 160); ctx.fill();
+        for (let k = 0; k < 4; k++) { const a = 0.4 + 0.5 * Math.sin(t * 2 + k + x); ctx.fillStyle = `rgba(232,121,249,${a})`; ctx.fillRect(x + 54, 102 + ob + k * 13, 4, 6); }
+        for (let k = 0; k < 3; k++) { const sx = x + 140 + k * 40, sy = 60 + Math.sin(t * 1.2 + k + x) * 8 + k * 14; ctx.save(); ctx.translate(sx, sy); ctx.rotate(t * 0.4 + k); ctx.fillStyle = k % 2 ? "#4c1d95" : "#22d3ee"; ctx.fillRect(-3, -6, 6, 12); ctx.restore(); }
+      });
+      g = ctx.createLinearGradient(0, 158, 0, 210); g.addColorStop(0, "#241546"); g.addColorStop(1, "#0b0518"); ctx.fillStyle = g; ctx.fillRect(0, 158, W, 52);
+      ctx.fillStyle = "#7c3aed"; ctx.fillRect(0, 158, W, 2);
+      const to = Math.floor(walk % 40);
+      for (let x = -40; x < W + 40; x += 40) { const tx = x - to; ctx.fillStyle = "#1a0d38"; ctx.fillRect(tx + 1, 170, 38, 14); ctx.fillRect(tx + 1, 188, 38, 16);
+        const a = 0.3 + 0.5 * Math.abs(Math.sin(t * 1.5 + tx * 0.05)); ctx.fillStyle = `rgba(232,121,249,${a})`; ctx.fillRect(tx + 17, 175, 6, 1); ctx.fillRect(tx + 19, 173, 2, 5); ctx.fillStyle = `rgba(34,211,238,${a * 0.7})`; ctx.fillRect(tx + 10, 194, 3, 3); }
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let i = 0; i < 16; i++) { const ph = (t * 0.3 + scR(i, 51)) % 1, x = ((scR(i, 52) * W - walk * 0.6) % W + W) % W; ctx.fillStyle = `rgba(${i % 2 ? "232,121,249" : "34,211,238"},${Math.sin(ph * Math.PI)})`; ctx.fillRect(x, 200 - ph * 120, 2, 2); } ctx.restore();
+    }
+    const BIOME_SCENES = { forest: drawForestScene, swamp: (ctx, W, t, walk, DC) => drawSwampScene(ctx, W, t, walk, DC), mines: drawMinesScene, citadel: drawCitadelScene, "void": drawVoidScene };
+
+    // v1.44 — Scène du Marais Brumeux : arbres morts à mousse pendante, roseaux, eau stagnante, ponton de planches, feux follets
+    function swampDeadTree(ctx, x, y, h, col, w, moss, t) {
+      ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(x - w * 1.6, y); ctx.quadraticCurveTo(x - w * 0.4, y - h * 0.5, x + w * 0.6, y - h); ctx.lineTo(x + w * 1.4, y - h + 2); ctx.quadraticCurveTo(x + w * 0.6, y - h * 0.5, x + w * 1.8, y); ctx.closePath(); ctx.fill();
+      const br = [[0.45, -1, 0.42], [0.62, 1, 0.38], [0.78, -1, 0.3], [0.9, 1, 0.26], [0.34, 1, 0.22]];
+      br.forEach(([f, d, L], i) => {
+        const bx = x + w * 0.2 + (f - 0.5) * w, by = y - h * f, ex = bx + d * h * L, ey = by - h * L * 0.45;
+        ctx.lineWidth = Math.max(1, w * 0.75); ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx + d * h * L * 0.5, by - h * L * 0.05, ex, ey); ctx.stroke();
+        ctx.lineWidth = Math.max(1, w * 0.4); ctx.beginPath(); ctx.moveTo(ex - d * h * L * 0.3, ey + h * L * 0.12); ctx.lineTo(ex - d * h * L * 0.15, ey - h * L * 0.25); ctx.stroke();
+        if (moss) {
+          for (let k = 0; k < 3; k++) {
+            const mx = bx + (ex - bx) * (0.35 + k * 0.25), my = by + (ey - by) * (0.35 + k * 0.25), ml = 8 + ((i * 7 + k * 5) % 9), sw = Math.sin(t * 1.3 + i + k) * 2;
+            ctx.strokeStyle = k % 2 ? "rgba(77,124,15,0.85)" : "rgba(101,163,13,0.75)"; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(mx, my); ctx.quadraticCurveTo(mx + sw, my + ml * 0.6, mx + sw * 1.4, my + ml); ctx.stroke();
+          }
+          ctx.strokeStyle = col;
+        }
+      });
+    }
+    function swampReeds(ctx, x, y, t, n) {
+      for (let i = 0; i < n; i++) {
+        const sx = x + i * 4 - n * 2, h = 18 + ((i * 7) % 3) * 6, sw = Math.sin(t * 1.6 + x * 0.05 + i) * 2.5;
+        ctx.strokeStyle = i % 2 ? "#3f6212" : "#4d7c0f"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(sx, y); ctx.quadraticCurveTo(sx + sw * 0.4, y - h * 0.6, sx + sw, y - h); ctx.stroke();
+        if (i % 2 === 0) { ctx.fillStyle = "#5b3a1a"; ctx.fillRect(sx + sw - 1.5, y - h - 6, 3, 7); ctx.fillStyle = "#3f2a14"; ctx.fillRect(sx + sw - 0.5, y - h - 8, 1, 2); }
+      }
+    }
+    function drawSwampScene(ctx, W, t, walk, DC) {
+      DC = DC || dayCycle();
+      scSky(ctx, W, DC, ["#0d1626", "#1c3940", "#2a4a40"], ["#5f8f8a", "#9cc4b4", "#c9dfcf"], ["#2c2448", "#8a5a6a", "#d79a7a"]);
+      scSkyBodies(ctx, W, DC, t, "204,251,241", 0.6);
+      // plan lointain : silhouettes noyées dans la brume (0,15x)
+      const far = (walk * 0.15) % 220;
+      for (let x = -220; x < W + 220; x += 220) {
+        const bx = x - far;
+        ctx.fillStyle = "#1a2f34"; ctx.beginPath(); ctx.moveTo(bx, 140); ctx.quadraticCurveTo(bx + 60, 122, bx + 120, 134); ctx.quadraticCurveTo(bx + 170, 126, bx + 220, 140); ctx.lineTo(bx + 220, 150); ctx.lineTo(bx, 150); ctx.fill();
+        swampDeadTree(ctx, bx + 40, 136, 48, "#1a2f34", 1.6, false, t);
+        swampDeadTree(ctx, bx + 132, 134, 34, "#1a2f34", 1.2, false, t);
+        ctx.fillStyle = "#1a2f34"; ctx.fillRect(bx + 180, 108, 9, 28); ctx.fillRect(bx + 177, 104, 15, 5); ctx.fillRect(bx + 196, 118, 7, 18);
+      }
+      for (let k = 0; k < 3; k++) { const fy = 104 + k * 14, off = (t * (6 + k * 4) + k * 90) % W;
+        for (const dx of [0, -W]) { const fg = ctx.createLinearGradient(0, fy - 8, 0, fy + 8); fg.addColorStop(0, "rgba(204,251,241,0)"); fg.addColorStop(0.5, `rgba(204,251,241,${0.07 + k * 0.025})`); fg.addColorStop(1, "rgba(204,251,241,0)"); ctx.fillStyle = fg; ctx.fillRect(off + dx, fy - 8, W, 16); } }
+      // plan intermédiaire : grands arbres morts moussus et roseaux (0,5x)
+      const mid = (walk * 0.5) % 280;
+      for (let x = -280; x < W + 280; x += 280) {
+        const mx = x - mid;
+        swampDeadTree(ctx, mx + 70, 158, 82, "#0f1d1a", 3.2, true, t);
+        swampReeds(ctx, mx + 160, 158, t, 6); swampReeds(ctx, mx + 236, 158, t, 4);
+        swampDeadTree(ctx, mx + 205, 158, 40, "#13221e", 1.8, true, t + 1);
+      }
+      // eau stagnante
+      g = ctx.createLinearGradient(0, 150, 0, 172); g.addColorStop(0, "#28504a"); g.addColorStop(1, "#0f211e"); ctx.fillStyle = g; ctx.fillRect(0, 150, W, 22);
+      ctx.fillStyle = "rgba(218,251,234,0.35)"; for (let k = 0; k < 4; k++) ctx.fillRect(452 + Math.sin(t * 2 + k) * 6 - k * 2, 153 + k * 4, 36 - k * 6, 1);
+      const wo = walk % 160;
+      for (let x = -160; x < W + 160; x += 160) {
+        const wx = x - wo;
+        ctx.fillStyle = "rgba(204,251,241,0.16)"; ctx.fillRect(wx + 10 + Math.sin(t * 1.5) * 3, 158, 26, 1); ctx.fillRect(wx + 84 - Math.sin(t * 1.2) * 3, 164, 34, 1);
+        ctx.fillStyle = "#3f6212"; ctx.beginPath(); ctx.ellipse(wx + 52, 162, 7, 2.2, 0, 0, 7); ctx.fill(); ctx.fillStyle = "#28504a"; ctx.fillRect(wx + 52, 160, 4, 2);
+        ctx.fillStyle = "#4d7c0f"; ctx.beginPath(); ctx.ellipse(wx + 128, 157, 5, 1.8, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = "#f9a8d4"; ctx.fillRect(wx + 50, 159, 2, 2); ctx.fillStyle = "#fdf2f8"; ctx.fillRect(wx + 50, 159, 1, 1);
+      }
+      for (let i = 0; i < 4; i++) { const ph = (t * 0.5 + i * 0.27) % 1, bx = (i * 157 + 40) % W; if (ph < 0.75) { ctx.strokeStyle = `rgba(190,242,100,${0.6 * (1 - ph)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(bx, 168 - ph * 14, 1.5 + ph * 1.5, 0, 7); ctx.stroke(); } else { ctx.strokeStyle = "rgba(190,242,100,0.35)"; ctx.beginPath(); ctx.ellipse(bx, 157, 5 * (ph - 0.75) * 8, 1.2, 0, 0, 7); ctx.stroke(); } }
+      // ponton de planches
+      const po = Math.floor(walk % 24);
+      ctx.fillStyle = "#3b2a1c"; ctx.fillRect(0, 170, W, 30);
+      ctx.fillStyle = "#5c4330"; ctx.fillRect(0, 170, W, 2);
+      ctx.fillStyle = "#24180f"; for (let x = -24; x < W + 24; x += 24) { ctx.fillRect(x - po, 170, 2, 30); }
+      ctx.fillStyle = "#4a3524"; for (let x = -24; x < W + 24; x += 24) { ctx.fillRect(x - po + 6, 178, 8, 1); ctx.fillRect(x - po + 12, 190, 6, 1); }
+      const pp = Math.floor(walk % 96); ctx.fillStyle = "#1f150d"; for (let x = -96; x < W + 96; x += 96) { ctx.fillRect(x - pp, 164, 6, 8); ctx.fillStyle = "#4a3524"; ctx.fillRect(x - pp, 164, 6, 1); ctx.fillStyle = "#1f150d"; }
+      g = ctx.createLinearGradient(0, 200, 0, 210); g.addColorStop(0, "#14302b"); g.addColorStop(1, "#0b1a17"); ctx.fillStyle = g; ctx.fillRect(0, 200, W, 10);
+      // feux follets
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 6; i++) {
+        const fx = ((i * 113 + t * (8 + i * 2) - walk * 0.3) % (W + 40) + W + 40) % (W + 40) - 20, fy = 90 + (i * 23) % 60 + Math.sin(t * 1.8 + i) * 8, a = 0.5 + 0.4 * Math.sin(t * 3 + i * 2);
+        const wg = ctx.createRadialGradient(fx, fy, 0, fx, fy, 10); wg.addColorStop(0, `rgba(94,234,212,${a})`); wg.addColorStop(1, "rgba(94,234,212,0)"); ctx.fillStyle = wg; ctx.fillRect(fx - 10, fy - 10, 20, 20);
+        ctx.fillStyle = `rgba(236,254,255,${a})`; ctx.fillRect(fx - 1, fy - 1, 2, 2);
+      }
+      ctx.restore();
     }
     function drawBiomeSplashes(t) {
       const cvs = document.querySelectorAll("canvas[data-biome-splash]"); if (!cvs.length) return;
@@ -18540,6 +18863,8 @@ function wmDraw(ctx, t, opt) {
         drawHero128(document.getElementById("hero-view-canvas"), state.hero, tSec, heroPoseTimer, false, false);
       }
 
+      if (!window._dcT || tSec - window._dcT > 1) { window._dcT = tSec; try { const el = document.getElementById("tb-cycle"), D = dayCycle(); if (el) { el.style.display = D.off ? "none" : ""; el.textContent = `${D.icon} ${D.name} — ${Math.floor(D.left / 60)}:${String(D.left % 60).padStart(2, "0")}`; }
+        const cb = document.getElementById("chk-daycycle"); if (cb && document.activeElement !== cb) cb.checked = !state.cycleOff; } catch (e) {} }
       try { tickBucheron(dt, tSec); if (state.activeView === "bucheron") drawBucheronScene(tSec); } catch (e) { console.error(e); }
       // Progression des 3 métiers hardcore (Pêche, Minage, Récolte)
       ["peche", "minage", "recolte", "eclats"].forEach(pk => {
@@ -19251,8 +19576,35 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.42";
+    const GAME_VERSION = "1.48";
     const PATCH_NOTES = [
+      { v: "1.48", date: "21/11/2026", titre: "Lumière de jour plus naturelle", items: [
+        "🌤️ Campement : la lumière du jour n'a plus d'effet délavé. Les couleurs sont plus franches, le contraste est plus net, la teinte est chaude et des ombres portées apparaissent sous le héros et le feu."
+      ] },
+      { v: "1.47", date: "21/11/2026", titre: "Un campement en plein jour", items: [
+        "☀️ Campement : vrai éclairage de journée. À midi, la scène est lumineuse et chaude au lieu de rester sombre.",
+        "☁️ Des nuages dérivent dans le ciel : blancs le jour, roses et orangés à l'aube et au crépuscule, sombres la nuit.",
+        "🐦 Des vols d'oiseaux en V traversent le ciel pendant la journée."
+      ] },
+      { v: "1.46", date: "21/11/2026", titre: "Des biomes plus beaux", items: [
+        "🌲 Forêt des Murmures : montagnes lointaines, sapins en plusieurs plans, brume, rayons de soleil le jour, lucioles la nuit, herbes qui ondulent, fleurs et champignons au bord du sentier.",
+        "💎 Mines d'Obsidienne : stalactites et gouttes d'eau, veines de cristal lumineuses dans la roche, grands cristaux bleus et violets qui pulsent, étais de bois avec lanternes vacillantes, rails de wagonnet et poussière en suspension.",
+        "🌋 Citadelle Cendrée : volcan en éruption qui fume, ruines du château aux fenêtres embrasées, piliers, bannières déchirées, braseros, rivière de lave avec ses bulles, sol de basalte fissuré de lave, braises et cendres.",
+        "🌌 Abysse du Néant : nébuleuses colorées, trou noir et son disque de matière, îles flottantes, obélisques runiques, éclats en lévitation et dalles gravées de runes lumineuses.",
+        "🌗 Le cycle jour / nuit pilote maintenant le vrai ciel de la Forêt, du Marais et de la Citadelle : soleil le jour, lune et étoiles la nuit. Les Mines (sous terre) et l'Abysse (le néant) n'ont pas de jour."
+      ] },
+      { v: "1.45", date: "21/11/2026", titre: "Cycle jour / nuit", items: [
+        "🌗 Nouveau cycle jour / nuit de 10 minutes : aube (1 min 30), jour (3 min 30), crépuscule (1 min 30) et nuit (3 min 30). Il suit l'horloge réelle et continue même jeu fermé.",
+        "🔥 Campement : le soleil se lève et traverse le ciel, puis la lune prend le relais. Le ciel passe du bleu au rose-orangé puis à la nuit étoilée, et les aurores, les étoiles et les étoiles filantes n'apparaissent que la nuit.",
+        "🗺️ Expéditions : un voile d'ambiance doré à l'aube, chaud au crépuscule et bleu nuit la nuit.",
+        "⏱️ La phase en cours et le temps restant s'affichent à côté du nom du héros. Le cycle se désactive dans Expédition → Automatisation."
+      ] },
+      { v: "1.44", date: "21/11/2026", titre: "Un vrai marécage", items: [
+        "🌫️ Marais Brumeux : nouveau décor d'expédition fidèle à l'illustration de la zone. Arbres morts tordus à mousse pendante, roseaux, eau stagnante avec nénuphars et bulles, bancs de brume, feux follets, lune pâle, et un ponton de planches sur lequel avance le héros."
+      ] },
+      { v: "1.43", date: "21/11/2026", titre: "Nouvelle disposition des destinations (PC)", items: [
+        "🗺️ Sur ordinateur, l'onglet Destination affiche maintenant la liste des zones en colonne à gauche, et la carte de Lumenia à droite avec le bestiaire en dessous. Sur mobile, rien ne change."
+      ] },
       { v: "1.42", date: "21/11/2026", titre: "Difficultés pour tous les biomes", items: [
         "🔥 Marais Brumeux, Mines d'Obsidienne et Citadelle Cendrée ont maintenant leurs modes Facile, Difficile et Cauchemar, comme la Forêt des Murmures : monstres plus coriaces, meilleurs équipements, ressources exclusives en plus et récompenses ×2,5 ou ×5.",
         "💇 Coiffure « Carré » corrigée (une barre de cheveux traversait le visage) et 5 nouvelles coiffures : Chignon Noble, Couettes, Crête Rebelle, Mèche Rebelle et Boucles Volumineuses.",
@@ -19748,6 +20100,7 @@ function wmDraw(ctx, t, opt) {
         rp.addEventListener("input", e => { ai().potion = +e.target.value; lb.textContent = e.target.value; }); }
       document.getElementById("chk-exp-autogather").addEventListener("change", e => { state.expedition.autoGather = e.target.checked; });
       document.getElementById("chk-exp-autoloop").addEventListener("change", e => { state.expedition.autoLoop = e.target.checked; });
+      { const cb = document.getElementById("chk-daycycle"); if (cb) cb.addEventListener("change", e => { state.cycleOff = !e.target.checked; saveGame(); }); }
       document.getElementById("btn-exp-clear-log").addEventListener("click", () => {
         document.getElementById("exp-log-feed").innerHTML = "";
       });
