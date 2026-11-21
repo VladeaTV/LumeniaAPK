@@ -4674,6 +4674,17 @@
       { id: "aura_phenix", slot: "aura", nom: "Renaissance du Phénix", rarete: "legendaire", kind: "phoenix", main: "#f97316", trim: "#fde047", desc: "Des ailes de flammes se déploient dans votre dos." },
       { id: "aura_trou_noir", slot: "aura", nom: "Trou Noir", rarete: "legendaire", kind: "blackhole", main: "#7c3aed", trim: "#fbbf24", desc: "La lumière elle-même est aspirée à vos pieds." },
       { id: "aura_sakura", slot: "aura", nom: "Tempête de Sakura", rarete: "legendaire", kind: "sakura", main: "#f472b6", trim: "#fce7f3", desc: "Une pluie de pétales de cerisier vous accompagne." },
+      // ===== v1.40 — PANOPLIE COSMÉTIQUE « PIONNIER DE L'AURORE » (exclusif bêta, débloquée par code) =====
+      { id: "armure_pionnier", slot: "armure", nom: "Cuirasse du Pionnier de l'Aurore", rarete: "legendaire", kind: "dragon", main: "#0c1230", trim: "#5eead4", glow: "#fcd34d", fx: "pionnier", emb: "star", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
+      { id: "casque_pionnier", slot: "casque", nom: "Auréole de l'Aurore", rarete: "legendaire", kind: "halo", main: "#fcd34d", trim: "#5eead4", glow: "#ffffff", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
+      { id: "arme_pionnier_lame", slot: "arme", nom: "Lame de l'Aurore Boréale", rarete: "legendaire", kind: "sword", main: "#e0f2fe", trim: "#fcd34d", glow: "#5eead4", fx: "pionnier", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
+      { id: "arme_pionnier_arc", slot: "arme", nom: "Arc de l'Aurore Boréale", rarete: "legendaire", kind: "bow", main: "#0c1230", trim: "#fcd34d", glow: "#5eead4", fx: "pionnier", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
+      { id: "arme_pionnier_sceptre", slot: "arme", nom: "Sceptre de l'Aurore Boréale", rarete: "legendaire", kind: "staff", main: "#0c1230", trim: "#fcd34d", glow: "#5eead4", fx: "pionnier", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
+      { id: "bouclier_pionnier", slot: "bouclier", nom: "Égide du Pionnier", rarete: "legendaire", kind: "round", main: "#0c1230", trim: "#5eead4", glow: "#fcd34d", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
+      { id: "bouclier_pionnier_tome", slot: "bouclier", nom: "Codex des Pionniers", rarete: "legendaire", kind: "tome", main: "#0c1230", trim: "#5eead4", glow: "#fcd34d", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
+      { id: "cape_pionnier", slot: "cape", nom: "Ailes de l'Aurore Boréale", rarete: "legendaire", kind: "wings", main: "#99f6e4", trim: "#fcd34d", fx: "pionnier", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
+      { id: "cape_pionnier_etendard", slot: "cape", nom: "Étendard du Pionnier", rarete: "legendaire", kind: "cape", main: "#0c1230", trim: "#5eead4", fx: "pionnier", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
+      { id: "aura_pionnier", slot: "aura", nom: "Aurore Boréale", rarete: "legendaire", kind: "aurore", main: "#5eead4", trim: "#fcd34d", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
       { id: "aura_prisme", slot: "aura", nom: "Prisme Céleste", rarete: "legendaire", kind: "prism", main: "#ffffff", trim: "#c4b5fd", desc: "Toutes les couleurs du monde à vos pieds." }
     ];
     // ===== v1.24 — SKINS LÉGENDAIRES DE CLASSE (débloqués par des succès « Légendes ») =====
@@ -5690,6 +5701,17 @@
           const a = t * (1.2 + fxR(i, seed) * 0.8) + i * 0.4, r = rw * (0.35 + 0.35 * fxR(i + 3, seed)), x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * rh * 0.3 + (fxR(i + 7, seed) - 0.5) * rh * 0.7;
           ctx.fillStyle = i % 4 === 0 ? "rgba(45,212,191,0.85)" : `rgba(253,230,138,${0.5 + 0.4 * Math.sin(t * 3 + i)})`; ctx.fillRect(Math.round(x), Math.round(y), 2, 2);
         }
+      } else if (fx === "pionnier") {
+        fxGlowAt(ctx, cx, cy, rw * 0.8, "94,234,212", 0.16 + 0.06 * Math.sin(t * 2));
+        for (let b = 0; b < 1; b++) {
+          ctx.beginPath();
+          for (let i = 0; i <= 12; i++) { const x = rx + rw * i / 12, y = cy + Math.sin(t * 2.2 + i * 0.7 + b * 2) * rh * 0.22; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+          const g = ctx.createLinearGradient(rx, 0, rx + rw, 0); g.addColorStop(0, "rgba(94,234,212,0)"); g.addColorStop(0.3, "rgba(94,234,212,0.42)"); g.addColorStop(0.6, "rgba(192,132,252,0.38)"); g.addColorStop(0.85, "rgba(252,211,77,0.38)"); g.addColorStop(1, "rgba(252,211,77,0)");
+          ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.stroke();
+        }
+        for (let i = 0; i < 5; i++) { const tw = Math.sin(t * 4 + i * 1.7 + seed); if (tw < 0.2) continue; const x = Math.round(rx + fxR(i + 40, seed) * rw), y = Math.round(ry + fxR(i + 50, seed) * rh), r = Math.round(1 + tw * 3);
+          ctx.fillStyle = `rgba(253,230,138,${tw})`; ctx.fillRect(x - r, y, r * 2 + 1, 1); ctx.fillRect(x, y - r, 1, r * 2 + 1); ctx.fillStyle = "#ffffff"; ctx.fillRect(x, y, 1, 1); }
+        for (let i = 0; i < 6; i++) { const ph = (t * 0.6 + fxR(i, seed)) % 1; sq(rx + fxR(i + 7, seed) * rw, ry + rh - ph * (rh + 10), 2, `rgba(${i % 2 ? "94,234,212" : "253,230,138"},${0.85 * (1 - ph)})`); }
       } else if (fx === "prism") {
         for (let i = 0; i < 10; i++) { const a = t * 1.8 + i * 0.628, x = cx + Math.cos(a) * rw * 0.55, y = cy + Math.sin(a) * rh * 0.42;
           ctx.fillStyle = `hsla(${(t * 140 + i * 36) % 360},100%,70%,0.95)`; ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 3, 3); }
@@ -5748,6 +5770,24 @@
         }
         ctx.globalCompositeOperation = "lighter";
         ctx.strokeStyle = "rgba(249,168,212,0.55)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(64, 116, 38, 9, 0, 0, 7); ctx.stroke();
+      } else if (k === "aurore") {
+        for (let band = 0; band < 3; band++) {
+          const hue = [170, 275, 45][band];
+          for (let x = 4; x < 124; x += 2) {
+            const base = 26 + band * 9 + Math.sin(x * 0.06 + t * 1.4 + band * 1.7) * 8 + Math.sin(x * 0.13 - t * 0.9) * 4, hh = 28 + Math.sin(x * 0.09 + t * 2 + band) * 10;
+            const al = 0.4 * (0.6 + 0.4 * Math.sin(x * 0.2 + t * 3 + band)) * Math.min(1, Math.min(x - 4, 124 - x) / 24);
+            const g = ctx.createLinearGradient(0, base, 0, base + hh); g.addColorStop(0, `hsla(${hue},95%,70%,0)`); g.addColorStop(0.35, `hsla(${hue},95%,68%,${al})`); g.addColorStop(1, `hsla(${hue},95%,60%,0)`);
+            ctx.fillStyle = g; ctx.fillRect(x, base, 2, hh);
+          }
+        }
+        ctx.strokeStyle = "rgba(252,211,77,0.8)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(64, 116, 40, 9, 0, 0, 7); ctx.stroke();
+        ctx.strokeStyle = "rgba(94,234,212,0.65)"; ctx.beginPath(); ctx.ellipse(64, 116, 32 + Math.sin(t * 2) * 2, 7, 0, 0, 7); ctx.stroke();
+        for (let i = 0; i < 8; i++) { const a2 = t * 0.8 + i * 0.785, x = 64 + Math.cos(a2) * 40, y = 116 + Math.sin(a2) * 9; ctx.fillStyle = i % 2 ? "#5eead4" : "#fde68a"; ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 3, 3); }
+        for (let i = 0; i < 5; i++) { const a2 = t * 1.1 + i * 1.2566, x = 64 + Math.cos(a2) * 46, y = 56 + Math.sin(a2) * 10, front = Math.sin(a2) > 0, r = front ? 4 : 2;
+          fxGlowAt(ctx, x, y, 10, "253,230,138", front ? 0.55 : 0.25); ctx.fillStyle = "#fff7d6"; ctx.fillRect(Math.round(x - r), Math.round(y), r * 2 + 1, 1); ctx.fillRect(Math.round(x), Math.round(y - r), 1, r * 2 + 1); }
+        for (let i = 0; i < 14; i++) { const ph = (t * 0.5 + fxR(i, 17)) % 1, x = 16 + fxR(i + 3, 17) * 96 + Math.sin(t * 2 + i) * 3, y = 120 - ph * 110;
+          ctx.fillStyle = `hsla(${[170, 275, 45][i % 3]},95%,75%,${1 - ph})`; ctx.fillRect(Math.round(x), Math.round(y), 2, 2); }
+        fxGlowAt(ctx, 64, 74, 60, "94,234,212", 0.14 + 0.05 * Math.sin(t * 1.5));
       } else if (k === "prism") {
         for (let i = 0; i < 36; i++) { const a2 = i / 36 * 6.283 + t; ctx.fillStyle = `hsla(${(i * 10 + t * 120) % 360},100%,65%,0.8)`; ctx.fillRect(Math.round(64 + Math.cos(a2) * 40) - 1, Math.round(116 + Math.sin(a2) * 9) - 1, 3, 3); }
         for (let i = 0; i < 10; i++) { const ph = (t * 0.7 + fxR(i, 5)) % 1, x = 20 + fxR(i + 2, 5) * 88, y = 118 - ph * 110;
@@ -5764,7 +5804,7 @@
       g.addColorStop(0, a.main + "55"); g.addColorStop(1, a.main + "00");
       ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
       const k = a.kind;
-      if (["vortex", "phoenix", "blackhole", "sakura", "prism"].includes(k)) { drawLegendAura(ctx, a, t); return; }
+      if (["vortex", "phoenix", "blackhole", "sakura", "prism", "aurore"].includes(k)) { drawLegendAura(ctx, a, t); return; }
       if (k === "bloodaura") {
         // flammes de sang qui montent, gouttes flottantes, halo sombre
         for (let i = 0; i < 12; i++) { const x = 6 + (i * 5) % 21 + Math.sin(t * 3 + i) * 1.5, hh = 2 + Math.round(Math.abs(Math.sin(t * 6 + i)) * 3); px(x, 30 - hh - (i % 3), 1, hh, i % 2 ? a.main : a.trim); }
@@ -6148,7 +6188,27 @@
     const MARK_OPTS = [["aucune", "Aucune"], ["cicatrice", "Cicatrice"], ["peinture", "Peinture de guerre"], ["taches", "Taches de rousseur"]];
     const EYE_COLORS = ["#0f172a", "#1d4ed8", "#15803d", "#b45309", "#7f1d1d", "#a855f7", "#14b8a6"];
 
+    // v1.40 — codes cadeaux (le code n'est pas stocké en clair, seulement son empreinte)
+    const GIFT_CODES = { 1788267979: "pionnier" };
+    function giftHash(str) { let h = 2166136261; for (const ch of str) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; }
+    function grantBetaSkins(announce) {
+      let n = 0; SKIN_CATALOG.filter(k => k.beta).forEach(k => { if (!state.skinsPossedes[k.id]) { state.skinsPossedes[k.id] = true; n++; } });
+      if (announce) { RetroAudio.levelUp(); showToast("🌟 Panoplie « Pionnier de l'Aurore » débloquée ! Équipez-la dans Apparence."); }
+      if (n) saveGame(); return n;
+    }
+    function redeemGiftCode(raw) {
+      const c = String(raw || "").toUpperCase().replace(/\s+/g, "");
+      if (GIFT_CODES[giftHash(c)] !== "pionnier") return false;
+      try { localStorage.setItem("lumenia_pionnier", "1"); } catch (e) {}
+      grantBetaSkins(true); return true;
+    }
+    let _betaFlag = null;
+    function betaAutoGrant() {   // le code vaut pour toutes les sauvegardes de cet appareil
+      if (_betaFlag === null) { try { _betaFlag = localStorage.getItem("lumenia_pionnier") === "1"; } catch (e) { _betaFlag = false; } }
+      if (_betaFlag && state.skinsPossedes && !state.skinsPossedes.aura_pionnier) grantBetaSkins(false);
+    }
     function renderWardrobeView() {
+      betaAutoGrant();
       const box = document.getElementById("view-garderobe");
       const h = state.hero;
       h.skins = h.skins || { armure: null, arme: null, casque: null, aura: null };
@@ -6206,8 +6266,8 @@
           cards.push(`<button type="button" ${own ? `data-skin-pick="${slot}:${k.id}"` : "disabled"} class="ui-btn p-2.5 rounded-lg border text-left ${on ? "border-amber-400 bg-slate-800" : "border-slate-700 bg-slate-900/70"} ${own ? "hover:border-slate-500" : "opacity-70"}">
             <canvas data-skin-prev="${slot}:${k.id}" width="128" height="128" class="pixelated w-16 h-16 mx-auto" style="${own ? "" : "filter:brightness(0.15) contrast(1.2)"}"></canvas>
             <div class="text-xs font-bold mt-1" style="color:${col}">${own ? k.nom : "???"}</div>
-            <div class="text-[10px] text-slate-400">${UNIVERS_CONFIG.raretes[k.rarete].nom} • ${k.ach ? `${LEGEND_LINES[k.ligne].icon} Skin de classe` : getSkinDropPct(k).toFixed(1).replace(/\.0$/, "") + "% / trouvaille"}</div>
-            ${own ? `<div class="text-[10px] text-slate-500 mt-0.5">${k.desc}</div>` : k.ach ? `<div class="text-[10px] text-amber-300/80 mt-0.5">🔒 Succès « ${LEGEND_LINES[k.ligne].nom} »</div>` : '<div class="text-[10px] text-slate-500 mt-0.5">🔒 À trouver en expédition</div>'}
+            <div class="text-[10px] text-slate-400">${UNIVERS_CONFIG.raretes[k.rarete].nom} • ${k.beta ? "🌟 Exclusif Bêta" : k.ach ? `${LEGEND_LINES[k.ligne].icon} Skin de classe` : getSkinDropPct(k).toFixed(1).replace(/\.0$/, "") + "% / trouvaille"}</div>
+            ${own ? `<div class="text-[10px] text-slate-500 mt-0.5">${k.desc}</div>` : k.beta ? `<div class="text-[10px] text-teal-300/90 mt-0.5">🔒 Code Pionnier (Discord)</div>` : k.ach ? `<div class="text-[10px] text-amber-300/80 mt-0.5">🔒 Succès « ${LEGEND_LINES[k.ligne].nom} »</div>` : '<div class="text-[10px] text-slate-500 mt-0.5">🔒 À trouver en expédition</div>'}
             ${on ? '<div class="text-[10px] text-amber-300 mt-1">✓ Équipé</div>' : ""}</button>`);
         });
         content = `<div class="grid grid-cols-2 md:grid-cols-3 gap-3">${cards.join("")}</div>`;
@@ -6222,6 +6282,11 @@
             <div class="text-sm font-bold text-amber-300 mt-2">${h.nom}</div>
           </div>
           <label class="melvor-card p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-slate-500"><span class="text-xs text-slate-300">Apparence automatique des panoplies<br><span class="text-[10px] text-slate-500">Désactivée : tes skins restent visibles même avec un set équipé.</span></span><input id="ward-setlook" type="checkbox" ${h.setLookOff ? "" : "checked"} class="tgl" /></label>
+          <div class="melvor-card p-3 space-y-2" style="border-color:rgba(94,234,212,0.45);background:linear-gradient(135deg,rgba(94,234,212,0.08),rgba(192,132,252,0.08),rgba(252,211,77,0.08))">
+            <div class="text-xs font-bold text-teal-200">🎁 Code cadeau</div>
+            ${state.skinsPossedes.armure_pionnier ? `<div class="text-[11px] text-amber-200">🌟 Panoplie « Pionnier de l'Aurore » débloquée. Merci d'avoir rejoint la bêta !</div>` : `<div class="flex gap-2"><input id="ward-code" type="text" maxlength="40" placeholder="Entrez un code" autocomplete="off" class="flex-1 min-w-0 px-2.5 py-1.5 bg-slate-950 border border-slate-600 rounded-lg text-xs text-white uppercase focus:outline-none focus:border-teal-400" /><button type="button" id="ward-code-ok" class="ui-btn px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold">Valider</button></div>
+            <div class="text-[10px] text-slate-400">Les pionniers de la bêta trouvent un code sur le Discord de LUMENIA.</div>`}
+          </div>
           <div class="melvor-card p-3 text-[11px] text-slate-300 space-y-1">
             <div class="font-semibold text-slate-200">Chances de rareté par skin trouvé</div>
             <div>${odds}</div>
@@ -6234,6 +6299,9 @@
         </div>`;
 
       const redraw = () => { saveGame(); renderWardrobeView(); };
+      const cOk = document.getElementById("ward-code-ok"), cIn = document.getElementById("ward-code");
+      if (cOk && cIn) { const go = () => { if (redeemGiftCode(cIn.value)) renderWardrobeView(); else { RetroAudio.error ? RetroAudio.error() : RetroAudio.cursor(); showToast("❌ Code invalide."); } };
+        cOk.addEventListener("click", go); cIn.addEventListener("keydown", e => { if (e.key === "Enter") go(); }); }
       const slk = document.getElementById("ward-setlook");
       if (slk) slk.addEventListener("change", () => { RetroAudio.confirm(); h.setLookOff = !slk.checked; redraw(); });
       box.querySelectorAll("[data-ward-tab]").forEach(b => b.addEventListener("click", () => { RetroAudio.cursor(); wardrobeTab = b.dataset.wardTab; renderWardrobeView(); }));
@@ -18019,6 +18087,7 @@ function wmDraw(ctx, t, opt) {
       if (h.pm > stats.pmMax) h.pm = stats.pmMax;
 
       updateSkillNavBadge();
+      try { betaAutoGrant(); } catch (e) {}
       { const na = document.querySelector('[data-nav="autel"]'), isRl = h.classe === "runelame"; if (na) na.style.display = isRl ? "" : "none";
         const sp = document.getElementById("sb-rune-pts"); if (sp) { const fr = isRl ? runePointsTotal(h) - runePointsUsed(h) : 0; sp.textContent = fr > 0 ? "+" + fr : ""; sp.style.color = fr > 0 ? "#c4b5fd" : ""; } }
       { const _m = getActiveMount(), _sb = document.getElementById("sb-mount"); if (_sb) _sb.textContent = _m ? _m.icon + " ×" + getMountSpeed().toFixed(2) : ""; }
@@ -19107,8 +19176,12 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.39";
+    const GAME_VERSION = "1.40";
     const PATCH_NOTES = [
+      { v: "1.40", date: "21/11/2026", titre: "Bienvenue dans la bêta !", items: [
+        "🌟 Nouvelle panoplie cosmétique exclusive « Pionnier de l'Aurore » pour remercier les joueurs de la bêta : cuirasse et heaume ailé nuit-et-or parcourus d'aurores boréales, lame / arc / sceptre, égide ou codex, ailes ou étendard, et l'aura « Aurore Boréale » (rideaux de lumière, couronne d'étoiles et sceau doré).",
+        "🎁 Nouveau champ « Code cadeau » dans l'onglet Apparence. Le code des pionniers est partagé sur le Discord de LUMENIA. Une fois saisi, il est valable pour toutes les sauvegardes de l'appareil."
+      ] },
       { v: "1.39", date: "21/11/2026", titre: "Guide des classes", items: [
         "ℹ️ Nouveau bouton « i » sur chaque classe à la création du héros : quelles statistiques monter (de ⭐⭐⭐ principale à « survie uniquement »), la répartition conseillée et des conseils de jeu.",
         "🧙 Le même guide est accessible à tout moment depuis l'onglet Héros, à côté de « Attributs Principaux »."
