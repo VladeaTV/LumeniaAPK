@@ -1298,7 +1298,7 @@
 
               <div class="melvor-panel p-5 space-y-4">
                 <div class="flex items-center justify-between">
-                  <h2 class="text-base font-bold text-white">Attributs Principaux</h2>
+                  <h2 class="text-base font-bold text-white">Attributs Principaux <button type="button" data-cls-info-self class="ui-btn ml-1 align-middle w-5 h-5 rounded-full bg-sky-700 hover:bg-sky-600 text-white text-[11px] font-bold leading-5" title="Guide de ta classe : quelles stats monter">i</button></h2>
                   <span class="text-xs px-3 py-1 rounded-lg bg-slate-900 border border-amber-500/40 text-amber-300 tabular-nums">
                     Points disponibles : <b id="hero-view-free-pts">0</b>
                   </span>
@@ -3550,6 +3550,54 @@
       alchimiste: { n: 4, lab: "Avancé",        col: "#fb923c", why: "Gagne sur la durée : poisons, affaiblissements et potions à enchaîner au bon moment." },
       runelame:   { n: 5, lab: "Expert",        col: "#f472b6", why: "Pas d'arme : éléments, Résonance, points de l'Autel et âmes absorbées à optimiser. Demande de bien connaître le jeu." }
     };
+
+    // v1.39 — Guide de classe (bouton « i ») : stats à monter, répartition conseillée, conseils
+    const STAT_INFO = {
+      force:   { ic: "⚔️", nom: "Force",   eff: "+3 PV max, +1,3 Attaque, +0,3 Défense" },
+      agilite: { ic: "💨", nom: "Agilité", eff: "+0,4 % critique, +0,8 % vitesse d'action, +0,4 Attaque, +0,25 Défense" },
+      esprit:  { ic: "🔮", nom: "Esprit",  eff: "+2,5 PM max, +1,5 Puissance magique (sorts)" },
+      chance:  { ic: "🍀", nom: "Chance",  eff: "+0,5 % critique, +0,01 dégâts critiques, +0,4 % butin rare, +0,2 % XP" }
+    };
+    const CLASS_GUIDE = {
+      chevalier: { prio: { force: 3, agilite: 2, chance: 1, esprit: 0 }, reco: "70 % Force • 30 % Agilité",
+        note: { force: "Ta stat principale : attaque, PV et défense d'un coup.", esprit: "Seulement des PM : inutile au-delà de quelques points." },
+        tips: ["Frappe Solaire inflige de gros dégâts ET te soigne : c'est ton bouton de survie.", "La Voie du Rempart en fait un mur quasi indestructible.", "Les dégâts sont plus bas que les autres classes, mais tu meurs très rarement."] },
+      rodeur: { prio: { agilite: 3, chance: 2, force: 1, esprit: 0 }, reco: "70 % Agilité • 30 % Chance",
+        note: { agilite: "Ta stat principale : critiques, vitesse et puissance des tirs (compétences).", chance: "Critiques plus fréquents et plus forts : excellente en complément.", force: "Un peu d'attaque de base et de PV si tu meurs trop vite." },
+        tips: ["Ton compagnon (selon ta lignée) attaque tout seul à chaque tour.", "Classe très rapide et très critique, mais fragile : surveille tes PV.", "La panoplie Traqueur Stellaire fait frapper 3 fois chaque attaque."] },
+      occultiste: { prio: { esprit: 3, agilite: 2, chance: 1, force: 0 }, reco: "70 % Esprit • 30 % Agilité",
+        note: { esprit: "Ta stat principale : puissance de tous tes sorts et réserve de PM.", force: "Seulement pour la survie (PV) : tu es fragile." },
+        tips: ["Tes sorts font énormément de dégâts : garde toujours assez de PM.", "Peu de PV : la Voie Arcanique et les potions te gardent en vie.", "Varie les éléments : brûlure, gel et foudre se complètent."] },
+      alchimiste: { prio: { esprit: 3, chance: 2, agilite: 1, force: 0 }, reco: "70 % Esprit • 30 % Chance",
+        note: { esprit: "Ta stat principale : sorts, poisons et PM.", chance: "Critiques et meilleur butin : très bon complément.", force: "Seulement pour la survie (PV)." },
+        tips: ["Tes poisons et affaiblissements gagnent sur la durée : idéal contre les boss.", "Tes potions sont 25 % plus efficaces : tu tiens longtemps.", "Commence par affaiblir (DEF −35 %), puis empoisonne."] },
+      runelame: { prio: { esprit: 3, agilite: 2, chance: 1, force: 0 }, reco: "70 % Esprit • 30 % Agilité",
+        note: { esprit: "Ta stat principale : +1,3 Attaque des lames, +1,5 Puissance magique, +2,5 PM.", agilite: "Chaque lame peut critiquer : plus de critiques et plus de tours = beaucoup plus de coups.", force: "Tes lames ignorent la Force : seulement +3 PV et +0,3 Défense (survie)." },
+        tips: ["Autel Runique : Tranchant = dégâts, Essence = effet de l'élément.", "3 lames du même élément = Résonance +35 % : l'Essence devient très rentable.", "Chaque arme trouvée est absorbée par tes lames (stats bonus jusqu'à 2 × ton niveau).", "Panoplie Sceau de l'Éveil : toutes les lames prennent l'élément de ton choix (+25 %)."] }
+    };
+    function openClassInfo(id) {
+      const c = UNIVERS_CONFIG.classes[id], g = CLASS_GUIDE[id], d = CLASS_DIFF[id]; if (!c || !g) return;
+      let m = document.getElementById("class-info-modal");
+      if (!m) { m = document.createElement("div"); m.id = "class-info-modal"; document.body.appendChild(m); }
+      m.className = "fixed inset-0 z-[80] flex items-center justify-center p-3 bg-black/70";
+      const stars = n => n ? "⭐".repeat(n) : `<span class="text-slate-500">—</span>`;
+      const lab = n => ["Survie uniquement", "Correcte", "Très bonne", "Principale"][n];
+      const rows = Object.entries(g.prio).sort((a, b) => b[1] - a[1]).map(([k, n]) => { const S = STAT_INFO[k];
+        return `<tr class="border-t border-slate-800"><td class="py-2 pr-2 whitespace-nowrap font-semibold text-slate-100">${S.ic} ${S.nom}</td>
+          <td class="py-2 pr-2 text-[11px] text-slate-300 leading-snug">${(g.note && g.note[k]) || S.eff}</td>
+          <td class="py-2 text-right whitespace-nowrap"><div class="text-[11px]">${stars(n)}</div><div class="text-[10px] ${n === 3 ? "text-amber-300" : "text-slate-400"}">${n ? lab(n) : "Peu utile"}</div></td></tr>`; }).join("");
+      m.innerHTML = `<div class="melvor-panel w-full max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-5 space-y-3" style="background:#0f172a">
+        <div class="flex items-start justify-between gap-3"><div><div class="text-base font-bold text-white">${c.nom}</div><div class="text-[11px] text-slate-400">${c.arme} • ${c.bonusTexte}</div></div>
+          <button type="button" data-ci-close class="ui-btn px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs">✕</button></div>
+        ${d ? classDiffHtml(id, true) : ""}
+        <div class="melvor-card p-3"><div class="text-xs font-bold text-amber-200 mb-1">📊 Quelles stats monter ?</div>
+          <table class="w-full text-xs"><tbody>${rows}</tbody></table>
+          <div class="mt-2 text-[11px] text-emerald-300">💡 Répartition conseillée : <b>${g.reco}</b></div></div>
+        <div class="melvor-card p-3 space-y-1"><div class="text-xs font-bold text-sky-200">🎯 Conseils</div>${g.tips.map(t => `<div class="text-[11px] text-slate-300">• ${t}</div>`).join("")}</div>
+      </div>`;
+      m.onclick = e => { if (e.target === m || e.target.closest("[data-ci-close]")) m.remove(); };
+    }
+    document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-cls-info-self]"); if (b) { RetroAudio.cursor(); openClassInfo(state.hero.classe); } });
     function classDiffHtml(id, full) {
       const d = CLASS_DIFF[id]; if (!d) return "";
       const pips = Array.from({ length: 5 }, (_, k) => `<span style="display:inline-block;width:9px;height:9px;margin-right:2px;border-radius:2px;background:${k < d.n ? d.col : "#1e293b"};box-shadow:${k < d.n ? "0 0 4px " + d.col + "aa" : "none"}"></span>`).join("");
@@ -8991,13 +9039,14 @@
             class="cr-pick ui-btn ${act ? "on" : ""}">
             <div class="flex items-center justify-between gap-1">
               <div class="font-bold text-sm">${act ? "▶ " : ""}${c.nom}${c.nouveau ? ` <span class="ml-1 text-[9px] px-1 py-0.5 rounded bg-violet-600 text-white align-middle">NOUVEAU</span>` : ""}</div>
-              <span class="text-[10px] px-1.5 py-0.5 bg-slate-950 rounded text-amber-200">${c.arme}</span>
+              <span class="flex items-center gap-1.5"><span class="text-[10px] px-1.5 py-0.5 bg-slate-950 rounded text-amber-200">${c.arme}</span><span role="button" tabindex="0" data-cls-info="${c.id}" title="Infos : quelles stats monter" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-700 hover:bg-sky-500 text-white text-[11px] font-bold cursor-pointer">i</span></span>
             </div>
             <div class="text-[11px] text-emerald-300 mt-1">${c.bonusTexte}</div>
             ${classDiffHtml(c.id, act)}
           </button>
         `;
       }).join("");
+      clsBox.querySelectorAll("[data-cls-info]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); RetroAudio.cursor(); openClassInfo(b.dataset.clsInfo); }));
       clsBox.querySelectorAll("[data-cls]").forEach(b => b.addEventListener("click", () => {
         RetroAudio.cursor();
         h.classe = b.dataset.cls;
@@ -19058,8 +19107,12 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.38";
+    const GAME_VERSION = "1.39";
     const PATCH_NOTES = [
+      { v: "1.39", date: "21/11/2026", titre: "Guide des classes", items: [
+        "ℹ️ Nouveau bouton « i » sur chaque classe à la création du héros : quelles statistiques monter (de ⭐⭐⭐ principale à « survie uniquement »), la répartition conseillée et des conseils de jeu.",
+        "🧙 Le même guide est accessible à tout moment depuis l'onglet Héros, à côté de « Attributs Principaux »."
+      ] },
       { v: "1.38", date: "21/11/2026", titre: "Difficulté des classes et équilibrage", items: [
         "🎓 Création du héros : chaque classe affiche sa difficulté de prise en main (1 à 5) avec une explication. Chevalier = Débutant, Rôdeur = Accessible, Occultiste = Intermédiaire, Alchimiste = Avancé, Runelame = Expert. Les classes sont triées de la plus simple à la plus exigeante.",
         "⚖️ Équilibrage vérifié par simulation de combat (niveaux 20, 45 et 80, équipement forgé équivalent) : le Runelame se place au milieu du classement, entre les classes robustes et les « canons de verre ».",
