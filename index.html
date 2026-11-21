@@ -454,6 +454,8 @@
       #mv-enemy.on { display: flex; }
       #mv-enemy .nm { font-size: 9px; color: #fda4af; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       #mv-gold { font-size: 10px; color: #fde047; font-weight: 700; white-space: nowrap; }
+      .mv-pot { font-size: 10px; font-weight: 700; white-space: nowrap; }
+      @media (max-width: 380px) { #mv-gold { display: none; } }
     }
     .inv-check { position: absolute; top: 6px; left: 6px; width: 20px; height: 20px; border-radius: 6px; border: 2px solid #64748b; background: rgba(2,6,23,.8); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #0f172a; }
     .inv-picked .inv-check { background: #fbbf24; border-color: #fde68a; }
@@ -477,6 +479,44 @@
       #exp-path-dialog > div:nth-child(2) { font-size: 8px !important; margin: 3px 0 5px !important; }
       #btn-path-yes, #btn-path-no { font-size: 9px !important; padding: 4px 0 !important; }
     }
+
+    /* v1.33 — fiche d'équipement façon MMORPG */
+    .pd-frame { position: relative; padding: 16px 12px 12px; border-radius: 14px; border: 1px solid #3b2a14;
+      background: radial-gradient(circle at 50% 38%, rgba(251,191,36,.10), transparent 55%), linear-gradient(180deg, #1a1408 0%, #0f0c08 100%);
+      box-shadow: inset 0 0 0 1px rgba(251,191,36,.12), inset 0 0 40px rgba(0,0,0,.7); }
+    .pd-frame::before, .pd-frame::after { content: ""; position: absolute; left: 10px; right: 10px; height: 2px; background: linear-gradient(90deg, transparent, #b45309, #fde68a, #b45309, transparent); }
+    .pd-frame::before { top: 6px; } .pd-frame::after { bottom: 6px; }
+    .pd-grid { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+    .pd-col { display: flex; flex-direction: column; gap: 14px; }
+    .pd-center { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+    .pd-portrait { width: 100%; max-width: 170px; aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(circle, rgba(56,189,248,.10) 0%, rgba(2,6,23,.85) 70%); border: 2px solid #3b2a14; box-shadow: 0 0 0 3px rgba(180,83,9,.35), inset 0 0 30px rgba(0,0,0,.8); }
+    .pd-portrait canvas { width: 82%; height: 82%; image-rendering: pixelated; }
+    .pd-slot { position: relative; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .pd-box { position: relative; width: 58px; height: 58px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(180deg, #1f2937, #0b1120); border: 2px solid #475569; box-shadow: inset 0 0 12px rgba(0,0,0,.8), 0 2px 0 #000; transition: transform .12s, box-shadow .12s; cursor: pointer; }
+    .pd-box:hover { transform: translateY(-2px); }
+    .pd-box canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+    .pd-box.r-commun { border-color: #94a3b8; } .pd-box.r-rare { border-color: #38bdf8; box-shadow: inset 0 0 12px rgba(0,0,0,.8), 0 0 10px rgba(56,189,248,.35); }
+    .pd-box.r-maitre { border-color: #c084fc; box-shadow: inset 0 0 12px rgba(0,0,0,.8), 0 0 12px rgba(192,132,252,.4); }
+    .pd-box.r-legendaire { border-color: #fbbf24; box-shadow: inset 0 0 12px rgba(0,0,0,.8), 0 0 14px rgba(251,191,36,.5); }
+    .pd-box.r-set { border-color: #4ade80; box-shadow: inset 0 0 12px rgba(0,0,0,.8), 0 0 14px rgba(74,222,128,.5); }
+    .pd-box.empty { border-style: dashed; border-color: #334155; opacity: .75; }
+    .pd-rf { position: absolute; right: -6px; top: -6px; font-size: 9px; font-weight: 900; padding: 1px 4px; border-radius: 6px; background: #f59e0b; color: #1c1917; border: 1px solid #fde68a; }
+    .pd-lab { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+    #pd-tip { position: fixed; z-index: 92; width: 260px; max-width: calc(100vw - 16px); pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s;
+      background: linear-gradient(180deg, rgba(10,16,34,.97), rgba(4,8,20,.98)); border: 1px solid #64748b; border-radius: 8px; padding: 10px 12px; box-shadow: 0 0 0 1px #000, 0 12px 30px rgba(0,0,0,.7); font-size: 12px; color: #e2e8f0; }
+    #pd-tip.show { opacity: 1; transform: none; } #pd-tip.pinned { pointer-events: auto; }
+    #pd-tip .t-name { font-weight: 800; font-size: 14px; line-height: 1.2; }
+    #pd-tip .t-sub { display: flex; justify-content: space-between; font-size: 11px; color: #cbd5e1; margin-top: 2px; }
+    #pd-tip .t-lvl { color: #fde047; font-size: 11px; margin-top: 2px; }
+    #pd-tip .t-stat { color: #f8fafc; } #pd-tip .t-sec { color: #4ade80; }
+    #pd-tip .t-set { color: #4ade80; font-size: 11px; margin-top: 6px; } #pd-tip .t-off { color: #64748b; }
+    #pd-tip .t-desc { color: #fcd34d; font-style: italic; font-size: 11px; margin-top: 6px; }
+    #pd-tip .t-hr { height: 1px; background: #334155; margin: 6px 0; }
+    #pd-tip.c-commun .t-name { color: #e2e8f0; } #pd-tip.c-rare .t-name { color: #38bdf8; } #pd-tip.c-maitre .t-name { color: #c084fc; } #pd-tip.c-legendaire .t-name { color: #fbbf24; } #pd-tip.c-set .t-name { color: #4ade80; }
+    #pd-tip.c-rare { border-color: #0369a1; } #pd-tip.c-maitre { border-color: #7e22ce; } #pd-tip.c-legendaire { border-color: #b45309; } #pd-tip.c-set { border-color: #15803d; }
+    @media (max-width: 420px) { .pd-box { width: 52px; height: 52px; } .pd-box canvas { width: 42px; height: 42px; } .pd-slot { width: 56px; } .pd-hint { display: none; } }
 </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -751,6 +791,9 @@
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="hud-chip text-orange-300" title="Coupons de Repos (soin au feu de camp, max 10)">🎟️ <span id="tb-coupons">1</span></span>
               <span class="hud-chip text-amber-300" title="Coupons Dorés (monnaie du marchand, max 120)">🎫 <span id="tb-coupons-or">0</span></span>
+              <span class="hud-chip text-rose-300" title="Potions de Soin restantes">🧪 <span id="tb-pot">0</span></span>
+              <span id="tb-elx-chip" class="hud-chip text-fuchsia-300 hidden" title="Grands Élixirs restants">⚗️ <span id="tb-elx">0</span></span>
+              <span id="tb-ration-chip" class="hud-chip text-amber-200 hidden" title="Rations du Rôdeur restantes">🍖 <span id="tb-ration">0</span></span>
               <span class="hud-chip text-yellow-300" title="Or">🪙 <span id="tb-gold">25</span></span>
               <span class="hud-chip text-orange-300" title="Éclats de Forge (monnaie du menu Perfectionner)">🔸 <span id="tb-frag">0</span></span>
               <span class="hud-chip text-slate-300" title="Sac">🎒 <b id="tb-bag" class="text-white">3/24</b></span>
@@ -1092,7 +1135,7 @@
                 <button type="button" data-forge-cat="Accessoires" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">💍 Accessoires</button>
                 <button type="button" data-forge-cat="Composants" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🧱 Composants</button>
                 <button type="button" data-forge-cat="Renforcement" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">⚒️ Renforcement</button>
-                <button type="button" data-forge-cat="Sacs d'inventaire" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🎒 Sacs d'inventaire</button>
+
                 <button type="button" data-forge-cat="Skins d'Armes" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🗡️ Skins d'Armes</button>
                 <button type="button" data-forge-cat="Skins d'Armures" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">👘 Skins d'Armures</button>
                 <button type="button" data-forge-cat="Casques, Capes & Ailes" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🦇 Casques, Capes &amp; Ailes</button>
@@ -1127,8 +1170,11 @@
                   <h2 class="text-base font-bold text-white">Sac d'Aventurier</h2>
                   <p class="text-xs text-slate-400">Sélectionnez un emplacement pour inspecter et comparer l'objet.</p>
                 </div>
-                <div class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs tabular-nums">
-                  Emplacements : <b id="inv-slots-counter" class="text-amber-300">3 / 24</b>
+                <div class="flex items-center gap-2">
+                  <div class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs tabular-nums">
+                    Emplacements : <b id="inv-slots-counter" class="text-amber-300">3 / 50</b>
+                  </div>
+                  <button id="btn-bag-upgrade" type="button" class="ui-btn px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold disabled:opacity-40"></button>
                 </div>
               </div>
 
@@ -1192,13 +1238,20 @@
                 <span id="hero-view-subtitle" class="text-xs text-sky-300">Humain • Chevalier</span>
               </div>
 
-              <div class="melvor-card p-4 flex flex-col items-center">
-                <canvas id="hero-view-canvas" width="128" height="128" class="pixelated w-36 h-36"></canvas>
-                <div id="hero-view-title" class="text-sm font-bold text-amber-300 mt-2">Aldric — Combat Niv. 1</div>
+              <div class="pd-frame">
+                <div class="pd-grid">
+                  <div class="pd-col" id="pd-left"></div>
+                  <div class="pd-center">
+                    <div class="pd-portrait"><canvas id="hero-view-canvas" width="128" height="128" class="pixelated"></canvas></div>
+                    <div id="hero-view-title" class="text-sm font-bold text-amber-300 mt-2 text-center">Aldric — Combat Niv. 1</div>
+                    <div id="pd-ilvl" class="text-[10px] text-slate-400 text-center"></div>
+                  </div>
+                  <div class="pd-col" id="pd-right"></div>
+                </div>
+                <div class="text-[10px] text-slate-500 text-center mt-3 pd-hint">Survole un emplacement pour voir ses statistiques • clique pour les options</div>
               </div>
 
               <div class="space-y-2.5">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Emplacements Portés (4)</h3>
                 <div id="hero-4slots-list" class="space-y-2.5"></div>
               </div>
             </div>
@@ -1339,6 +1392,7 @@
       <div class="mv-row"><span class="lb text-sky-400">PM</span><div class="mv-bar"><i id="mv-mp" class="bg-sky-500" style="width:100%"></i></div><span id="mv-mp-t" class="tx">0/0</span></div>
     </div>
     <div id="mv-enemy"><span id="mv-en-name" class="nm">Ennemi</span><div class="mv-bar"><i id="mv-en-hp" class="bg-rose-500" style="width:100%"></i></div></div>
+    <span id="mv-pot" class="mv-pot">🧪 0</span>
     <span id="mv-gold">🪙 0</span>
   </div>
   <!-- v1.28 : barre d'onglets mobile -->
@@ -2206,37 +2260,37 @@
           ingredients: { cuir_epais: 6, fer: 4, seve_ancestrale: 2 }, desc: "Ancien modèle."
         },
         {
-          id: "rec_sac_a", nom: "Poche Cousue (+2 places)", cat: "Sacs d'inventaire",
+          id: "rec_sac_a", nom: "Poche Cousue (+2 places)", cat: "Sacs d'inventaire", legacy: true,
           type: "sac", bonusSlots: 2, maxCraft: 10, niveauForgeReq: 1, xpForge: 14, coutOr: 10,
           ingredients: { cuir_epais: 1, sauge: 1 },
           desc: "Quelques poches de cuir cousues sur le sac. Fabricable jusqu'à 10 fois."
         },
         {
-          id: "rec_sac_b", nom: "Sacoche Renforcée (+2 places)", cat: "Sacs d'inventaire",
+          id: "rec_sac_b", nom: "Sacoche Renforcée (+2 places)", cat: "Sacs d'inventaire", legacy: true,
           type: "sac", bonusSlots: 2, maxCraft: 10, niveauForgeReq: 3, xpForge: 24, coutOr: 25,
           ingredients: { cuir_epais: 2, cuivre: 2 },
           desc: "Rivets de cuivre et double couture. Fabricable jusqu'à 10 fois."
         },
         {
-          id: "rec_sac_c", nom: "Bandoulière d'Éclaireur (+3 places)", cat: "Sacs d'inventaire",
+          id: "rec_sac_c", nom: "Bandoulière d'Éclaireur (+3 places)", cat: "Sacs d'inventaire", legacy: true,
           type: "sac", bonusSlots: 3, maxCraft: 8, niveauForgeReq: 5, xpForge: 40, coutOr: 60,
           ingredients: { cuir_epais: 3, toile_araignee: 2, cuivre: 2 },
           desc: "Répartit le poids et ajoute de la place. Fabricable jusqu'à 8 fois."
         },
         {
-          id: "rec_sac_d", nom: "Havresac de Mineur (+3 places)", cat: "Sacs d'inventaire",
+          id: "rec_sac_d", nom: "Havresac de Mineur (+3 places)", cat: "Sacs d'inventaire", legacy: true,
           type: "sac", bonusSlots: 3, maxCraft: 8, niveauForgeReq: 8, xpForge: 60, coutOr: 110,
           ingredients: { cuir_epais: 4, fer: 2, poussiere_gemme: 1 },
           desc: "Conçu pour les longues descentes. Fabricable jusqu'à 8 fois."
         },
         {
-          id: "rec_sac_e", nom: "Besace d'Explorateur (+3 places)", cat: "Sacs d'inventaire",
+          id: "rec_sac_e", nom: "Besace d'Explorateur (+3 places)", cat: "Sacs d'inventaire", legacy: true,
           type: "sac", bonusSlots: 3, maxCraft: 8, niveauForgeReq: 12, xpForge: 90, coutOr: 200,
           ingredients: { cuir_epais: 5, seve_ancestrale: 2, ecaille_vase: 2 },
           desc: "Imperméable et extensible. Fabricable jusqu'à 8 fois."
         },
         {
-          id: "rec_sac_f", nom: "Sac Draconique (+3 places)", cat: "Sacs d'inventaire",
+          id: "rec_sac_f", nom: "Sac Draconique (+3 places)", cat: "Sacs d'inventaire", legacy: true,
           type: "sac", bonusSlots: 3, maxCraft: 6, niveauForgeReq: 20, xpForge: 160, coutOr: 420,
           ingredients: { cuir_epais: 6, mithril: 1, ecaille_drake: 1 },
           desc: "Cuir d'écaille quasi indestructible. Fabricable jusqu'à 6 fois."
@@ -8588,13 +8642,24 @@
     /* =======================================================================
        7. GESTION DU SAC & GÉNÉRATION D'ÉQUIPEMENT
        ======================================================================= */
+    const BAG_BASE = 50, BAG_STEP = 5, BAG_MAX_UPG = 20;
+    function bagUpgradeCost(n) { return Math.round(300 * Math.pow(1.35, n) / 10) * 10; }
+    function buyBagUpgrade() {
+      const n = state.sacAgrandi || 0;
+      if (n >= BAG_MAX_UPG) { showToast("🎒 Ton sac est déjà agrandi au maximum !"); return; }
+      const c = bagUpgradeCost(n);
+      if (state.or < c) { showToast(`🪙 Il te faut ${c.toLocaleString("fr-FR")} Or pour agrandir le sac.`); return; }
+      state.or -= c; state.sacAgrandi = n + 1; RetroAudio.confirm();
+      showToast(`🎒 Sac agrandi : +${BAG_STEP} emplacements (${getMaxBagSlots()} au total) !`);
+      try { updateGlobalHUD(); } catch (e) {} renderInventoryView(); saveGame();
+    }
     function getMaxBagSlots() {
-      let extra = 0;
+      let extra = (state.sacAgrandi || 0) * BAG_STEP;
       Object.entries(state.sacsForges).forEach(([recId, count]) => {
         const rec = UNIVERS_CONFIG.recettesForge.find(r => r.id === recId);
         if (rec && count > 0) extra += rec.bonusSlots * count;
       });
-      return state.capaciteBaseSac + extra;
+      return BAG_BASE + extra;   // v1.33 : 50 places de base (les anciens sacs forgés restent comptés)
     }
 
     function getUsedBagSlots() {
@@ -10703,7 +10768,7 @@
     }
 
     function renderForgeView() {
-      if (state.forgeCat === "Potions") state.forgeCat = "Armes";
+      if (state.forgeCat === "Potions" || state.forgeCat === "Sacs d'inventaire") state.forgeCat = "Armes";
       const forge = state.metiers.forge;
       const reqXp = getProfXpReq(forge.niveau);
       document.getElementById("forge-lvl-num").textContent = forge.niveau;
@@ -11244,6 +11309,7 @@
       document.getElementById("mv-mp").style.width = `${Math.max(0, Math.min(100, h.pm / stats.pmMax * 100))}%`;
       document.getElementById("mv-mp-t").textContent = `${h.pm}/${stats.pmMax}`;
       document.getElementById("mv-gold").textContent = "🪙 " + Math.floor(state.or).toLocaleString("fr-FR");
+      { const p = document.getElementById("mv-pot"); if (p) { const n = state.ressources.potion_soin || 0; p.textContent = "🧪 " + n; p.style.color = n ? "#fda4af" : "#f43f5e"; } }
       const c = state.expedition && state.expedition.combat, en = document.getElementById("mv-enemy");
       en.classList.toggle("on", !!c);
       if (c) { document.getElementById("mv-en-name").textContent = c.enemy.nom.replace(/^(BOSS|ÉLITE)\s*:\s*/, ""); document.getElementById("mv-en-hp").style.width = `${Math.max(0, c.enemy.pv / c.enemy.pvMax * 100)}%`; }
@@ -11334,10 +11400,86 @@
       const b = e.target.closest && e.target.closest("#btn-inv-multi"); if (!b) return;
       invMulti = !invMulti; invPick.clear(); invConfirm = null; RetroAudio.cursor(); renderInventoryView();
     });
+
+    /* =======================================================================
+       v1.33 — Fiche d'équipement façon MMORPG (emplacements autour du portrait + info-bulles)
+       ======================================================================= */
+    let respecArmed = false;
+    function respecCost(h) { return 50 + 20 * ((h || state.hero).niveau || 1); }
+    const PD_SLOTS = { left: [["casque", "Tête"], ["armure", "Torse"]], right: [["anneau", "Doigt"], ["arme", "Arme"]] };
+    const PD_PAL = { commun: ["#e2e8f0", "#94a3b8", "#475569"], rare: ["#bae6fd", "#38bdf8", "#0369a1"], maitre: ["#f5d0fe", "#c084fc", "#7e22ce"], legendaire: ["#fef3c7", "#fbbf24", "#b45309"], set: ["#bbf7d0", "#4ade80", "#15803d"], empty: ["#475569", "#334155", "#1e293b"] };
+    function drawSlotIcon(cv, slot, key) {
+      const x = cv.getContext("2d"); x.clearRect(0, 0, 16, 16); const [L, M, D] = PD_PAL[key] || PD_PAL.commun;
+      const p = (a, b, w, h, c) => { x.fillStyle = c; x.fillRect(a, b, w, h); };
+      if (slot === "arme") { for (let i = 0; i < 9; i++) { p(11 - i, 1 + i, 2, 1, i < 1 ? L : M); p(12 - i, 1 + i, 1, 1, L); } p(3, 9, 5, 1, D); p(4, 8, 1, 3, D); p(5, 10, 1, 1, D); p(3, 11, 2, 2, "#78350f"); p(1, 13, 2, 2, M); p(7, 8, 1, 1, L); }
+      else if (slot === "armure") { p(3, 3, 10, 10, M); p(2, 3, 3, 3, D); p(11, 3, 3, 3, D); p(6, 2, 4, 2, D); p(4, 4, 3, 8, L); p(7, 5, 2, 7, D); p(3, 12, 10, 2, D); p(7, 8, 2, 1, L); }
+      else if (slot === "casque") { p(4, 3, 8, 2, M); p(3, 5, 10, 6, M); p(4, 4, 3, 3, L); p(3, 9, 10, 1, D); p(5, 10, 2, 3, D); p(9, 10, 2, 3, D); p(7, 1, 2, 3, L); p(5, 7, 6, 1, "#0f172a"); }
+      else { x.fillStyle = M; for (let a = 0; a < 6.3; a += 0.25) p(Math.round(8 + Math.cos(a) * 4.5), Math.round(9 + Math.sin(a) * 4.5), 1, 1, M); for (let a = 3.6; a < 5; a += 0.3) p(Math.round(8 + Math.cos(a) * 4.5), Math.round(9 + Math.sin(a) * 4.5), 1, 1, L); p(6, 1, 4, 4, L); p(7, 2, 2, 2, "#22d3ee"); p(7, 5, 2, 1, D); }
+    }
+    function pdTipHtml(slotK, it) {
+      const lab = { arme: "Arme", armure: "Torse", casque: "Tête", anneau: "Anneau" }[slotK];
+      if (!it) return `<div class="t-name" style="color:#94a3b8">${lab}</div><div class="t-sub"><span>Emplacement vide</span></div><div class="t-hr"></div><div class="t-off">Équipe un objet depuis l'Inventaire.</div>`;
+      const rar = UNIVERS_CONFIG.raretes[it.rarete] || { nom: it.rarete }, rf = 1 + RENFORT_PER_LVL * (it.renfort || 0), R = v => Math.round((v || 0) * rf), st = it.stats || {};
+      const prim = [["atk", "Attaque"], ["def", "Défense"], ["pvMax", "Points de vie"], ["pmMax", "Points de mana"]].filter(([k]) => st[k]).map(([k, n]) => `<div class="t-stat">+${R(st[k])} ${n}</div>`).join("");
+      const sec = [["force", "Force"], ["agilite", "Agilité"], ["esprit", "Esprit"], ["chance", "Chance"]].filter(([k]) => st[k]).map(([k, n]) => `<div class="t-sec">+${R(st[k])} ${n}</div>`).join("")
+        + (st.critChance ? `<div class="t-sec">Équipé : augmente vos chances de critique de ${(st.critChance * rf * 100).toFixed(1).replace(".0", "")} %.</div>` : "");
+      let setHtml = "";
+      if (it.setId) { const pan = getAllSets().find(p => p.id === it.setId); if (pan) { const n = countSetPieces(pan.id);
+        setHtml = `<div class="t-set">${pan.icone} Panoplie ${pan.nom} (${n}/4)</div>
+          <div class="${n >= 2 ? "t-sec" : "t-off"}" style="font-size:11px">(2) Bonus : ${formatEquipStatsLine(pan.stat2) || "statistiques"}</div>
+          <div class="${n >= 4 ? "t-sec" : "t-off"}" style="font-size:11px">(4) ${pan.effet4 ? (pan.effet4.nom || "Effet") + (pan.effet4.desc ? " : " + pan.effet4.desc : "") : "Effet de combat"}</div>`; } }
+      return `<div class="t-name">${it.nom}${it.renfort ? ` <span style="color:#fbbf24">+${it.renfort}</span>` : ""}</div>
+        <div class="t-lvl">Niveau d'objet ${it.niveau}</div>
+        <div class="t-sub"><span>${lab}</span><span>${it.setId ? "Panoplie" : rar.nom}</span></div>
+        <div class="t-hr"></div>${prim}${sec ? `<div style="margin-top:4px">${sec}</div>` : ""}${setHtml}
+        ${it.desc ? `<div class="t-desc">« ${it.desc} »</div>` : ""}
+        <div class="t-hr"></div><div class="t-off" style="font-size:10px">Valeur : ${(rar.valeurOr || 0) + it.niveau * 5} 🪙</div>`;
+    }
+    let _pdPinned = null;
+    function pdTip() { let t = document.getElementById("pd-tip"); if (!t) { t = document.createElement("div"); t.id = "pd-tip"; document.body.appendChild(t); } return t; }
+    function pdShow(slotK, anchor, pinned) {
+      const t = pdTip(), it = state.equipementPorte[slotK];
+      t.className = it ? "c-" + (it.setId ? "set" : it.rarete) : "";
+      t.innerHTML = pdTipHtml(slotK, it) + (pinned && it ? `<div style="display:flex;gap:6px;margin-top:8px"><button type="button" class="ui-btn" data-pd-unequip="${slotK}" style="flex:1;padding:6px;border-radius:6px;background:#334155;color:#fff;font-weight:700;font-size:11px">Retirer</button><button type="button" class="ui-btn" data-pd-close style="flex:1;padding:6px;border-radius:6px;background:#1e293b;color:#cbd5e1;font-size:11px">Fermer</button></div>` : pinned ? `<button type="button" class="ui-btn" data-pd-inv style="margin-top:8px;width:100%;padding:6px;border-radius:6px;background:#334155;color:#fff;font-weight:700;font-size:11px">Ouvrir l'inventaire</button>` : "");
+      t.classList.add("show"); t.classList.toggle("pinned", !!pinned);
+      const r = anchor.getBoundingClientRect(), tw = t.offsetWidth, th = t.offsetHeight;
+      let left = r.right + 10; if (left + tw > window.innerWidth - 8) left = r.left - tw - 10; if (left < 8) left = Math.max(8, Math.min(window.innerWidth - tw - 8, r.left + r.width / 2 - tw / 2));
+      let top = r.top; if (left === Math.max(8, Math.min(window.innerWidth - tw - 8, r.left + r.width / 2 - tw / 2))) top = r.bottom + 8;
+      if (top + th > window.innerHeight - 8) top = Math.max(8, window.innerHeight - th - 8);
+      t.style.left = left + "px"; t.style.top = top + "px";
+      if (pinned) {
+        const u = t.querySelector("[data-pd-unequip]"); if (u) u.onclick = () => { const k = u.dataset.pdUnequip, cur = state.equipementPorte[k]; if (!cur) return; state.equipementPorte[k] = null; addEquipmentToInventory(cur); RetroAudio.cursor(); pdHide(true); renderHeroView(); updateGlobalHUD(); saveGame(); };
+        const c = t.querySelector("[data-pd-close]"); if (c) c.onclick = () => pdHide(true);
+        const iv = t.querySelector("[data-pd-inv]"); if (iv) iv.onclick = () => { pdHide(true); state.invFilter = "Équipement"; switchView("inventaire"); };
+      }
+    }
+    function pdHide(force) { if (_pdPinned && !force) return; _pdPinned = null; const t = document.getElementById("pd-tip"); if (t) { t.classList.remove("show", "pinned"); } }
+    document.addEventListener("click", e => { if (!_pdPinned) return; if (e.target.closest && (e.target.closest("#pd-tip") || e.target.closest("[data-pd-slot]"))) return; pdHide(true); });
+    window.addEventListener("scroll", () => { if (!_pdPinned) pdHide(); }, { passive: true });
+    function renderPaperdoll() {
+      const mk = ([k, lab]) => { const it = state.equipementPorte[k], key = it ? (it.setId ? "set" : it.rarete) : "empty";
+        return `<div class="pd-slot"><div class="pd-box ${it ? "r-" + key : "empty"} ${it && it.setId ? "inv-set" : ""}" data-pd-slot="${k}" role="button" tabindex="0"><canvas width="16" height="16" data-pd-icon="${k}:${key}"></canvas>${it && it.renfort ? `<span class="pd-rf">+${it.renfort}</span>` : ""}</div><span class="pd-lab">${lab}</span></div>`; };
+      const L = document.getElementById("pd-left"), Rr = document.getElementById("pd-right"); if (!L || !Rr) return;
+      L.innerHTML = PD_SLOTS.left.map(mk).join(""); Rr.innerHTML = PD_SLOTS.right.map(mk).join("");
+      document.querySelectorAll("[data-pd-icon]").forEach(cv => { const [k, key] = cv.dataset.pdIcon.split(":"); drawSlotIcon(cv, k, key); });
+      const eq = Object.values(state.equipementPorte).filter(Boolean), il = document.getElementById("pd-ilvl");
+      if (il) il.textContent = eq.length ? `Niveau d'objet moyen : ${Math.round(eq.reduce((a, i) => a + i.niveau, 0) / eq.length)}` : "Aucun équipement porté";
+      document.querySelectorAll("[data-pd-slot]").forEach(b => {
+        const k = b.dataset.pdSlot;
+        b.addEventListener("mouseenter", () => { if (!_pdPinned && matchMedia("(hover: hover)").matches) pdShow(k, b, false); });
+        b.addEventListener("mouseleave", () => pdHide());
+        b.addEventListener("click", () => { RetroAudio.cursor(); if (_pdPinned === k) { pdHide(true); return; } _pdPinned = k; pdShow(k, b, true); });
+      });
+    }
+
     function renderInventoryView() {
       const used = getUsedBagSlots();
       const max = getMaxBagSlots();
       document.getElementById("inv-slots-counter").textContent = `${used} / ${max}`;
+      { const bb = document.getElementById("btn-bag-upgrade"); if (bb) { const n = state.sacAgrandi || 0;
+          if (n >= BAG_MAX_UPG) { bb.textContent = "🎒 Sac au maximum"; bb.disabled = true; }
+          else { const c = bagUpgradeCost(n); bb.innerHTML = `🎒 +${BAG_STEP} places <span class="opacity-80">— ${c.toLocaleString("fr-FR")} 🪙</span>`; bb.disabled = state.or < c; bb.title = `Agrandissement ${n + 1}/${BAG_MAX_UPG}`; }
+          if (!bb._b) { bb._b = true; bb.addEventListener("click", buyBagUpgrade); } } }
 
       let items = getUnifiedInventoryItems();
       if (state.invFilter === "Utile") { const u = usefulResources(); items = items.filter(i => i.kind === "res" && u.has(i.resId)); }
@@ -11645,25 +11787,8 @@
         { k: "casque", label: "🪖 Casque" },
         { k: "anneau", label: "💍 Anneau" }
       ];
-      document.getElementById("hero-4slots-list").innerHTML = slots.map(s => {
-        const it = state.equipementPorte[s.k];
-        if (!it) {
-          return `<div class="melvor-card p-3 text-xs text-slate-500">${s.label} : <i>Emplacement vide</i></div>`;
-        }
-        return `
-          <div class="melvor-card p-3 border-l-4 rarity-${it.rarete} flex items-center justify-between gap-2">
-            <div>
-              <div class="text-xs font-bold">${s.label} : ${it.nom}</div>
-              <div class="text-[11px] text-slate-300 mt-0.5">${formatEquipStatsLine(it.stats)}</div>
-              ${setTagHtml(it)}
-            </div>
-            <button type="button" data-unequip-slot="${s.k}"
-              class="ui-btn px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-[11px] text-slate-200">
-              Retirer
-            </button>
-          </div>
-        `;
-      }).join("") + setCardHtml();
+      renderPaperdoll();
+      document.getElementById("hero-4slots-list").innerHTML = setCardHtml();
 
       document.querySelectorAll("[data-unequip-slot]").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -11690,17 +11815,19 @@
 
       document.getElementById("hero-view-free-pts").textContent = h.pointsLibres;
       const attrs = [
-        { k: "force", nom: "Force", icone: "⚔️", tot: tot.force },
-        { k: "agilite", nom: "Agilité", icone: "💨", tot: tot.agilite },
-        { k: "esprit", nom: "Esprit", icone: "🔮", tot: tot.esprit },
-        { k: "chance", nom: "Chance", icone: "🍀", tot: tot.chance }
+        { k: "force", nom: "Force", icone: "⚔️", tot: tot.force, role: "Robustesse et coups physiques", eff: ["+3 PV max", "+1,3 Attaque", "+0,3 Défense"] },
+        { k: "agilite", nom: "Agilité", icone: "💨", tot: tot.agilite, role: "Vitesse et précision", eff: ["+0,8 % vitesse de jauge ATB", "+0,4 % chance de critique", "+0,4 Attaque", "+0,25 Défense"] },
+        { k: "esprit", nom: "Esprit", icone: "🔮", tot: tot.esprit, role: "Magie et réserve de mana", eff: ["+2,5 PM max", "+1,5 Puissance magique (sorts)"] },
+        { k: "chance", nom: "Chance", icone: "🍀", tot: tot.chance, role: "Critiques, butin et expérience", eff: ["+0,5 % chance de critique", "+0,01 aux dégâts critiques", "+0,4 % butin rare", "+0,2 % d'XP"] }
       ];
       const attrBox = document.getElementById("hero-attributes-list");
       attrBox.innerHTML = attrs.map(a => `
-        <div class="melvor-card p-3 flex items-center justify-between">
-          <div class="text-xs">
+        <div class="melvor-card p-3 flex items-start justify-between gap-2">
+          <div class="text-xs min-w-0">
             <span class="font-semibold text-slate-200">${a.icone} ${a.nom} : <b class="text-white">${a.tot}</b></span>
             <span class="text-[11px] text-slate-500 ml-1">(Base ${h.baseStats[a.k]})</span>
+            <div class="text-[10px] text-amber-200/80 mt-1 font-semibold">${a.role}</div>
+            <div class="text-[10px] text-slate-400 leading-snug">Par point : ${a.eff.join(" • ")}</div>
           </div>
           ${h.pointsLibres > 0 ? `
             <button type="button" data-spend-attr="${a.k}"
@@ -11711,6 +11838,25 @@
         </div>
       `).join("");
 
+      { // Remboursement des points contre de l'or
+        const spent = ["force", "agilite", "esprit", "chance"].reduce((acc, k) => acc + Math.max(0, (h.baseStats[k] || 1) - 1), 0);
+        const cost = respecCost(h), free = !(h.respecs > 0);
+        attrBox.insertAdjacentHTML("beforeend", `<div class="sm:col-span-2 melvor-card p-3 flex flex-wrap items-center justify-between gap-2 border border-slate-700">
+          <div class="text-[11px] text-slate-300">↺ <b>Réinitialiser mes points</b> <span class="text-slate-500">— récupère les ${spent} point(s) dépensé(s) pour les répartir autrement.</span></div>
+          <button type="button" id="btn-respec" ${spent ? "" : "disabled"} class="ui-btn px-3 py-1.5 rounded-lg text-xs font-bold ${respecArmed ? "bg-rose-500 text-white" : "bg-slate-800 border border-amber-500/50 text-amber-200"} disabled:opacity-40">
+            ${respecArmed ? "✔ Confirmer" : free ? "Gratuit (1re fois)" : `${cost.toLocaleString("fr-FR")} 🪙`}</button></div>`);
+        const rb = document.getElementById("btn-respec");
+        if (rb) rb.addEventListener("click", () => {
+          if (!respecArmed) { respecArmed = true; RetroAudio.cursor(); renderHeroView(); setTimeout(() => { if (respecArmed) { respecArmed = false; if (state.activeView === "heros") renderHeroView(); } }, 4000); return; }
+          respecArmed = false;
+          if (!free && state.or < cost) { showToast(`🪙 Il te faut ${cost.toLocaleString("fr-FR")} Or pour réinitialiser tes points.`); renderHeroView(); return; }
+          if (!free) state.or -= cost;
+          h.pointsLibres += spent; h.baseStats = { force: 1, agilite: 1, esprit: 1, chance: 1 }; h.respecs = (h.respecs || 0) + 1;
+          const st = getHeroTotalStats(); h.pv = Math.min(h.pv, st.pvMax); h.pm = Math.min(h.pm, st.pmMax);
+          RetroAudio.confirm(); showToast(`↺ ${spent} point(s) remboursé(s) ! Répartis-les comme tu veux.`);
+          updateGlobalHUD(); renderHeroView(); saveGame();
+        });
+      }
       attrBox.querySelectorAll("[data-spend-attr]").forEach(btn => {
         btn.addEventListener("click", () => {
           if (h.pointsLibres > 0) {
@@ -14030,7 +14176,7 @@ function wmDraw(ctx, t, opt) {
           "Choisissez une catégorie (Armes, Armures, Accessoires, Sacs…) — les potions se fabriquent désormais dans ⚗️ Alchimie, puis une recette. Chaque recette demande des ingrédients, de l'Or et un niveau de Forge.",
           "Cliquez sur « 🔨 Fabriquer ». La qualité de l'équipement est tirée au sort : Commun, Rare, Maître ou Légendaire. Les chances dépendent de votre niveau de Forge.",
           "Le bouton « i » à côté du nom d'un équipement affiche les stats possibles pour chaque qualité, ainsi que les bonus aléatoires.",
-          "Sacs d'inventaire : des crafts peu coûteux qui ajoutent +2 ou +3 emplacements chacun. Plusieurs sont fabricables jusqu'à un maximum indiqué (ex. 3/10).",
+          "Sac : 50 emplacements de base. Agrandis-le de +5 places contre de l'Or avec le bouton 🎒 de l'onglet Inventaire.",
           "Les objets Communs inutiles peuvent être recyclés en Éclats de Forge (et en XP de Forge)."
         ],
         tips: [
@@ -16570,6 +16716,7 @@ function wmDraw(ctx, t, opt) {
 
       document.querySelectorAll(".game-view").forEach(v => v.classList.add("hidden"));
       document.querySelectorAll("[data-mtab]").forEach(b => b.classList.toggle("on", b.dataset.mtab === viewId));
+      try { pdHide(true); } catch (e) {}
       document.body.classList.toggle("inv-multi-on", viewId === "inventaire" && typeof invMulti !== "undefined" && invMulti);
       { const imb = document.getElementById("inv-multi-bar"); if (imb && viewId !== "inventaire") imb.classList.add("hidden"); }
       if (window.innerWidth < 1024) { mobMenu(false); try { window.scrollTo({ top: 0 }); } catch (e) {} }
@@ -16671,6 +16818,12 @@ function wmDraw(ctx, t, opt) {
       const bagStr = `${getUsedBagSlots()}/${getMaxBagSlots()}`;
       document.getElementById("tb-coupons").textContent = state.couponsRepos;
       { const o = document.getElementById("tb-coupons-or"); if (o) o.textContent = state.couponsOr || 0; }
+      { const r = state.ressources, pot = r.potion_soin || 0, elx = r.elixir_royal || 0, ra = r.ration_voyage || 0;
+        const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+        set("tb-pot", pot); set("tb-elx", elx); set("tb-ration", ra);
+        const ec = document.getElementById("tb-elx-chip"); if (ec) ec.classList.toggle("hidden", !elx);
+        const rc = document.getElementById("tb-ration-chip"); if (rc) rc.classList.toggle("hidden", !ra);
+        const pc = document.getElementById("tb-pot"); if (pc) pc.parentElement.classList.toggle("text-rose-500", pot === 0); }
       document.getElementById("tb-gold").textContent = Math.floor(state.or).toLocaleString("fr-FR");
       const tbf = document.getElementById("tb-frag"); if (tbf) tbf.textContent = (state.ressources.eclat_forge || 0).toLocaleString("fr-FR");
       const sbf = document.getElementById("sb-perfect-frag"); if (sbf) sbf.textContent = state.metiers.forge.niveau >= PERFECT_MIN_LVL ? `🔸 ${state.ressources.eclat_forge || 0}` : `🔒 N.${PERFECT_MIN_LVL}`;
@@ -17721,8 +17874,15 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.32";
+    const GAME_VERSION = "1.33";
     const PATCH_NOTES = [
+      { v: "1.33", date: "21/11/2026", titre: "Héros, sac et potions", items: [
+        "🛡️ Nouvelle fiche d'équipement façon MMORPG dans l'onglet Héros : tes 4 emplacements entourent ton portrait. Survole un objet pour voir sa fiche complète (niveau, statistiques, panoplie). Clique dessus pour le retirer.",
+        "📖 Les attributs sont expliqués : ce que donnent un point de Force, d'Agilité, d'Esprit et de Chance.",
+        "↺ Nouveau : réinitialise tes points d'attributs pour les répartir autrement. C'est gratuit la première fois, puis ça coûte un peu d'Or selon ton niveau.",
+        "🎒 Le sac passe à 50 emplacements de base. Les sacs ne se forgent plus (fini la pénurie de Cuir Épais) : agrandis ton sac de +5 places contre de l'Or depuis l'Inventaire, jusqu'à 20 fois. Les sacs déjà forgés restent comptés.",
+        "🧪 Tes potions restantes s'affichent en haut à côté des coupons, et dans le bandeau PV/PM sur mobile. Les Grands Élixirs et les Rations apparaissent dès que tu en as."
+      ] },
       { v: "1.32", date: "20/11/2026", titre: "Scène mobile agrandie", items: [
         "📱 Mobile : pendant une expédition, la scène est recadrée sur l'action et devient environ 60 % plus haute. Le héros, les monstres et les découvertes sont bien plus grands et les fenêtres ne sont plus coupées.",
         "📱 Mobile : la fenêtre « Entrer dans cette grotte ? » est plus compacte, les boutons OUI / NON sont toujours visibles."
