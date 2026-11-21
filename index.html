@@ -4441,6 +4441,14 @@
     }
     function getActiveMount() { const m = getMountState(); return m.actif && m.possedees[m.actif] ? MOUNT_CATALOG.find(x => x.id === m.actif) : null; }
     function getMountSpeed() { const m = getActiveMount(); return 1 + (m ? m.bonus : 0); }
+    /* v1.73 — Apparence de monture : la monture ÉQUIPÉE donne le bonus de vitesse ; l'apparence peut être n'importe quelle
+       monture possédée (ms.skin), ou aucune (ms.aPied = true : le héros marche, le bonus reste actif). */
+    function getMountLook() {
+      const ms = getMountState(), act = getActiveMount();
+      if (!act || ms.aPied) return null;
+      const sk = ms.skin && ms.possedees[ms.skin] ? MOUNT_CATALOG.find(x => x.id === ms.skin) : null;
+      return sk || act;
+    }
     function rollMountDrop(kind, biome) {
       const ms = getMountState();
       MOUNT_CATALOG.forEach(m => {
@@ -4475,6 +4483,19 @@
               <div class="text-xs text-emerald-300">Expéditions ${Math.round(pv.bonus * 100)}% plus rapides (durée ÷ ${(1 + pv.bonus).toFixed(2)})</div>
             </div>
             <div class="text-xs text-slate-400">Monture active : <b class="text-amber-300">${act ? act.icon + " " + act.nom : "aucune"}</b> • vitesse d'expédition ×${getMountSpeed().toFixed(2)}</div>
+            <div class="melvor-card p-3 space-y-2 ${act ? "" : "opacity-60"}">
+              <div class="text-xs font-bold text-slate-200">🎨 Apparence en expédition</div>
+              <p class="text-[11px] text-slate-400 leading-snug">Le bonus de vitesse vient toujours de la monture <b class="text-slate-200">équipée</b>. Ici, tu choisis seulement ce qu'on voit.</p>
+              <select id="mount-skin" ${act ? "" : "disabled"} class="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-200">
+                <option value="">Identique à la monture équipée${act ? ` (${act.nom})` : ""}</option>
+                ${MOUNT_CATALOG.filter(m => ms.possedees[m.id]).map(m => `<option value="${m.id}" ${ms.skin === m.id ? "selected" : ""}>${m.icon} ${m.nom}</option>`).join("")}
+              </select>
+              <label class="flex items-center justify-between gap-2 cursor-pointer text-xs text-slate-200">
+                <span>🚶 Rester à pied <span class="block text-[10px] text-slate-500">Le héros marche, mais garde le bonus de vitesse de sa monture.</span></span>
+                <input id="mount-apied" type="checkbox" ${ms.aPied ? "checked" : ""} ${act ? "" : "disabled"} class="tgl" />
+              </label>
+              ${act ? `<div class="text-[11px] text-sky-300">Affiché : ${getMountLook() ? getMountLook().icon + " " + getMountLook().nom : "🚶 à pied"}</div>` : `<div class="text-[11px] text-slate-500">Équipe d'abord une monture.</div>`}
+            </div>
           </div>
           <div class="xl:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-3">
             ${MOUNT_CATALOG.map(m => {
@@ -4508,6 +4529,10 @@
         ms.actif = ms.actif === b.dataset.mountEq ? null : b.dataset.mountEq; mountPreviewId = b.dataset.mountEq;
         RetroAudio.confirm(); saveGame(); renderStableView();
       }));
+      const skSel = document.getElementById("mount-skin");
+      if (skSel) skSel.addEventListener("change", () => { ms.skin = skSel.value || null; if (ms.skin) { ms.aPied = false; mountPreviewId = ms.skin; } RetroAudio.cursor(); saveGame(); renderStableView(); });
+      const apChk = document.getElementById("mount-apied");
+      if (apChk) apChk.addEventListener("change", () => { ms.aPied = apChk.checked; RetroAudio.cursor(); saveGame(); renderStableView(); });
     }
     const stableHeroBuf = document.createElement("canvas"); stableHeroBuf.width = 128; stableHeroBuf.height = 128;
     function drawStablePreview(t) {
@@ -5300,7 +5325,7 @@
       for (let i = 0; i < 20; i++) { ctx.fillStyle = i % 3 ? "#c4b5fd" : "#ffffff"; if (Math.sin(t * 2 + i) > 0) ctx.fillRect((i * 53) % 480, (i * 29) % 120, 2, 2); }
       ctx.fillStyle = "#14532d"; ctx.fillRect(0, 168, 480, 32); ctx.fillStyle = "#166534"; ctx.fillRect(0, 168, 480, 4);
       const off = Math.floor(t * 70) % 60; ctx.fillStyle = "#15803d"; for (let x = -60; x < 540; x += 60) ctx.fillRect(x - off + 10, 182, 18, 3);
-      const m = getActiveMount();
+      const m = getMountLook() || getActiveMount();
       stellarPreviewCount = 4;
       drawRider(ctx, m ? m.id : "cheval", state.hero, 240, 176, t, true, 1, 0);
       stellarPreviewCount = null;
@@ -10255,7 +10280,7 @@
       const heroX = (state.expedition.combat ? 145 : 165) - (heroHurt ? Math.round(6 * Math.sin(hk / 0.22 * Math.PI)) : 0);
       const petT = getPetType();
       if (petT) drawBeast(ctx, petT, heroX + (state.expedition.combat ? 150 : 175), 180, 1, timeSec + 0.4, isWalking, false);
-      const mnt = getActiveMount();
+      const mnt = getMountLook();   // v1.73 : apparence choisie (ou à pied) — le bonus de vitesse reste celui de la monture équipée
       if (_rlS) { RUNE_SCENE.cx = heroX + 52; RUNE_SCENE.cy = mnt ? 106 : 128; RUNE_SCENE.t = timeSec; try { drawRuneOrbit(ctx, state.hero, RUNE_SCENE.cx, RUNE_SCENE.cy, RUNE_SCENE.sc, timeSec, "back", true); } catch (e) {} }
       if (mnt) drawRider(ctx, mnt.id, state.hero, heroX + 52, 176, timeSec, isWalking, 1, heroPoseTimer);
       else {
@@ -17068,7 +17093,8 @@ function wmDraw(ctx, t, opt) {
         intro: "Les montures accélèrent la progression des expéditions et votre héros les chevauche dans la scène.",
         steps: ["Ouvrez l'« Écurie » : achetez une monture avec de l'or, puis équipez-la. L'aperçu animé montre votre héros en selle.",
           "Certaines montures tombent aussi sur les élites et boss de leur biome (Cerf, Panthère, Griffon, Wyverne, Chimère).",
-          "Le bonus indiqué réduit la durée de l'expédition (la Chimère la divise par plus de deux)."],
+          "Le bonus indiqué réduit la durée de l'expédition (la Chimère la divise par plus de deux).",
+          "« Apparence en expédition » : chevauchez n'importe quelle monture que vous possédez, ou restez à pied — le bonus de vitesse reste toujours celui de la monture équipée."],
         tips: ["Les montures les plus rapides coûtent des millions : visez d'abord le Destrier Noir ou le Cerf."] },
       panoplies: { icone: "🌌", nom: "Panoplies",
         intro: "Chaque classe a deux panoplies de 4 pièces forgées à la Forge Étoilée : la panoplie stellaire et une panoplie d'archétype.",
@@ -18641,7 +18667,8 @@ function wmDraw(ctx, t, opt) {
         ang = dir + d * Math.min(1, e * 1.3);
       }
       if (f.el === "sang" && f.i % 2 === 0 && a < T2) ang = a * 28;   // la faux tournoie comme un boomerang
-      drawRuneBlade(ctx, f.el, x, y, ang, (B > 1 ? 1.3 : 1.16), tt, { i: f.i, ev: f.ev });
+      // v1.73 : lames réduites pendant l'attaque (pixels de 2) pour une animation plus lisible
+      drawRuneBlade(ctx, f.el, x, y, ang, (B > 1 ? 1.3 : 1.16), tt, { i: f.i, ev: f.ev, cell: 2 });
       if (a >= T1 - 0.02) drawRuneImpact(ctx, f.el, ix + 3, iy + 4, (a - T1 + 0.02) / 0.44, f.seed, B, f.ev);
     }
 
@@ -18688,7 +18715,7 @@ function wmDraw(ctx, t, opt) {
           if (q < 1) { ctx.globalCompositeOperation = "lighter"; for (let j = 1; j <= 5; j++) { const qq = Math.max(0, q - j * 0.12); rlGlow(ctx, r0.x + (tx - r0.x) * qq * qq, r0.y + (ty - r0.y) * qq * qq, (7 - j) * 1.8, (RUNE_EL[el] || E0).glow, 0.4 * (1 - j / 6)); } ctx.globalCompositeOperation = "source-over"; }
           else alpha = Math.max(0, 1 - (e - ti) / 0.2);
         } else continue;
-        drawRuneBlade(ctx, el, x, y, ang, 1.05, e + k, { i: k, ev, alpha });
+        drawRuneBlade(ctx, el, x, y, ang, 1.05, e + k, { i: k, ev, alpha, cell: 2 });   // v1.73 : lames réduites pendant l'ultime
       }
       imp.forEach((ti, g) => { const p = (e - ti) / 0.45; if (p >= 0 && p < 1) drawRuneImpact(ctx, els[g % els.length], EXc - 6, EYc + 4, p, S + g * 13, 1.5, ev); });
       const fe = e - imp[imp.length - 1];
@@ -21253,8 +21280,14 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.72";
+    const GAME_VERSION = "1.73";
     const PATCH_NOTES = [
+      { v: "1.73", date: "21/11/2026", titre: "Apparence de monture & voyage à pied", items: [
+        "🐎 Écurie → « Apparence en expédition » : choisis la monture que ton héros chevauche parmi toutes celles que tu possèdes. Le bonus de vitesse reste toujours celui de la monture équipée.",
+        "🚶 Nouvelle case « Rester à pied » : ton héros marche pendant les expéditions mais garde le bonus de vitesse de sa monture équipée.",
+        "Le choix est sauvegardé et s'applique aussi à l'aperçu « En selle » des panoplies.",
+        "🔮 Runelame : pendant l'attaque et l'ultime, les lames qui fondent sur l'ennemi sont réduites de moitié pour une animation plus lisible (elles reprennent leur grande taille en orbite)."
+      ] },
       { v: "1.72", date: "21/11/2026", titre: "Lames runiques affinées", items: [
         "🔮 Les lames du Runelame gardent leur grande taille mais sont plus fines : de longues lames élancées (3 pixels de large) avec une rune centrale, plus élégantes autour du héros."
       ] },
