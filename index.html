@@ -3111,7 +3111,9 @@
       const def = Math.max(0, Math.round(rawDef * injuryMult));
       const critRaw = 0.05 + agilite * 0.004 + chance * 0.005 + (lin.bonuses.critFlat || 0) + (cls.bonuses.critFlat || 0) + bPeche.critFlat + eqCrit;
       const critChance = Math.min(0.60, critRaw);
-      const critMult = +(1.6 + chance * 0.01).toFixed(2);
+      // v1.64 : le critique au-delà du plafond de 60 % n'est plus perdu — chaque point de % en trop donne +0,005 aux dégâts critiques
+      const CRIT_OVER_RATE = 0.5, critOver = Math.max(0, critRaw - 0.60);
+      const critMult = +(1.6 + chance * 0.01 + critOver * CRIT_OVER_RATE).toFixed(2);
       const lootBonusPct = Math.round(chance * 0.4 + bPeche.rareLootBonus);
       const xpMult = 1 + (lin.bonuses.xpMult || 0) + chance * 0.002 + _bb.xp;
       const atbSpeedMult = 1 + (cls.bonuses.speedBonus || 0) + agilite * 0.008;
@@ -3141,8 +3143,9 @@
         // Critique
         T("critChance", "Base", 0.05); T("critChance", `Agilité ${agilite} × 0,4 %`, agilite * 0.004); T("critChance", `Chance ${chance} × 0,5 %`, chance * 0.005);
         T("critChance", linL, lin.bonuses.critFlat || 0); T("critChance", clsL, cls.bonuses.critFlat || 0); T("critChance", "🎣 Paliers de Pêche", bPeche.critFlat);
-        T("critChance", "⛔ Plafond de 60 %", critChance - critRaw);
-        T("critMult", "Base", 1.6); T("critMult", `Chance ${chance} × 0,01`, critMult - 1.6);
+        T("critChance", "🔄 Au-delà de 60 % : converti en dégâts critiques", critChance - critRaw);
+        T("critMult", "Base", 1.6); T("critMult", `Chance ${chance} × 0,01`, chance * 0.01);
+        T("critMult", `🔄 Critique en trop (${(Math.round(critOver * 1000) / 10).toString().replace(".", ",")} %) × 0,005`, critMult - 1.6 - chance * 0.01);
         // Butin rare
         T("lootBonusPct", `Chance ${chance} × 0,4`, lootBonusPct - bPeche.rareLootBonus); T("lootBonusPct", "🎣 Paliers de Pêche (★)", bPeche.rareLootBonus);
       }
@@ -13005,7 +13008,7 @@
       const f = STAT_TIP_FMT[key] || (v => `${v > 0 ? "+" : "−"}${Math.abs(Math.round(v))}`);
       // ordre de lecture : base / niveau / attributs → équipement et bonus → multiplicateurs, plafonds et malus
       const rank = l => /^(Base|Points répartis|Niveau de combat|Lignée|Classe|Force|Agilité|Esprit|Chance|Force ×)/.test(l) ? 0
-        : /^(⛔|🩸|🌳|⚡|🖋️|✨ Effet|Paliers Minage)/u.test(l) ? 2 : 1;
+        : /^(⛔|🔄|🩸|🌳|⚡|🖋️|✨ Effet|Paliers Minage)/u.test(l) ? 2 : 1;
       const rows = (trace[key] || []).map((r, i) => [r, i]).sort((a, b) => rank(a[0][0]) - rank(b[0][0]) || a[1] - b[1]).map(([[l, v]]) => [l.replace(/(\d)\.(\d)/g, "$1,$2"), v]).map(([l, v]) => `<div class="flex justify-between gap-3"><span class="text-slate-300">${l}</span><b class="${v >= 0 ? "text-emerald-300" : "text-rose-300"} tabular-nums whitespace-nowrap">${f(v)}</b></div>`).join("");
       return `<div class="font-bold text-amber-200 mb-1">${title}</div>${rows || '<div class="text-slate-500">Aucune source</div>'}<div class="flex justify-between gap-3 border-t border-slate-600 mt-1 pt-1"><span class="text-slate-200 font-bold">Total</span><b class="text-white">${total}</b></div>`;
     }
@@ -13049,7 +13052,7 @@
         def: statTipHtml("def", "🛡️ Défense (DEF)", tot.def, _tr),
         pvMax: statTipHtml("pvMax", "❤️ PV Max", tot.pvMax, _tr),
         pmMax: statTipHtml("pmMax", "💧 PM Max", tot.pmMax, _tr),
-        crit: statTipHtml("critChance", "🎯 Chance de critique", `${Math.round(tot.critChance * 1000) / 10} %`, _tr) + `<div class="mt-2"></div>` + statTipHtml("critMult", "💥 Dégâts critiques", `×${String(tot.critMult).replace(".", ",")}`, _tr),
+        crit: statTipHtml("critChance", "🎯 Chance de critique", `${Math.round(tot.critChance * 1000) / 10} %`, _tr) + `<div class="text-[10px] text-slate-400 mt-1">Les sources de base sont plafonnées à 60 % : l'excédent devient des dégâts critiques. Les compétences et buffs s'ajoutent ensuite (max 85 %).</div><div class="mt-2"></div>` + statTipHtml("critMult", "💥 Dégâts critiques", `×${String(tot.critMult).replace(".", ",")}`, _tr),
         lootBonusPct: statTipHtml("lootBonusPct", "🍀 Bonus Butin Rare", `+${tot.lootBonusPct} %`, _tr),
         ult: ultTipHtml(),
         force: statTipHtml("force", "⚔️ Force", tot.force, _tr),
@@ -20109,8 +20112,13 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.63";
+    const GAME_VERSION = "1.64";
     const PATCH_NOTES = [
+      { v: "1.64", date: "21/11/2026", titre: "Le critique n'est plus jamais perdu", items: [
+        "🔄 La chance de critique venant des attributs, de l'équipement, de la lignée, de la classe et des métiers reste plafonnée à 60 %, mais l'excédent n'est plus gaspillé : chaque point de % au-delà donne +0,005 aux dégâts critiques (ex. 100 % de critique en trop = +0,5).",
+        "Les compétences passives et les buffs de critique s'ajoutent toujours après ce plafond (jusqu'à 85 %).",
+        "ⓘ L'infobulle Critique affiche la conversion : la ligne « Au-delà de 60 % » côté chance, et le bonus correspondant côté dégâts critiques."
+      ] },
       { v: "1.63", date: "21/11/2026", titre: "D'où viennent mes stats ?", items: [
         "ⓘ Fiche du héros : survole (PC) ou touche (mobile) une statistique de combat (Attaque, Défense, PV, PM, Critique, Butin rare, Jauge d'Ultime) ou un attribut (Force, Agilité, Esprit, Chance) pour voir TOUT ce qui compose son total.",
         "Le détail liste chaque source avec sa valeur : base, niveau, attributs, lignée, classe, chaque équipement (renforcement compris), panoplie, lames runiques, paliers de métiers, bestiaire, compétences passives, gravures, buffs actifs, blessure et plafonds.",
