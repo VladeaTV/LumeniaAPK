@@ -932,6 +932,7 @@
                         </div>
                         <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden"><div id="combat-enemy-hp-bar" class="h-full bg-rose-500 transition-all duration-150" style="width: 100%"></div></div>
                         <div id="combat-enemy-hp-text" class="text-[10px] text-slate-300 tabular-nums text-right mt-0.5">0/0 PV</div>
+                        <div class="flex items-center gap-1 mt-0.5" title="Jauge d'action du monstre : il attaque quand elle est pleine"><span class="text-[9px] text-orange-300">⚡</span><div class="flex-1 h-1 bg-slate-950 rounded-full overflow-hidden"><div id="combat-enemy-atb-bar" class="h-full bg-gradient-to-r from-orange-500 to-amber-300" style="width:0%"></div></div></div>
                       </div>
                       <div class="absolute left-0 right-0 bottom-0 h-1.5 bg-black/60"><div id="combat-atb-bar" class="h-full bg-amber-400" style="width: 0%"></div></div>
                     </div>
@@ -6213,7 +6214,7 @@
     const EYE_COLORS = ["#0f172a", "#1d4ed8", "#15803d", "#b45309", "#7f1d1d", "#a855f7", "#14b8a6"];
 
     // v1.40 — codes cadeaux (le code n'est pas stocké en clair, seulement son empreinte)
-    const GIFT_CODES = { 1788267979: "pionnier" };
+    const GIFT_CODES = { 1788267979: "pionnier", 735046340: "pionnier", 3378441200: "pionnier" };
     function giftHash(str) { let h = 2166136261; for (const ch of str) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; }
     function grantBetaSkins(announce) {
       let n = 0; SKIN_CATALOG.filter(k => k.beta).forEach(k => { if (!state.skinsPossedes[k.id]) { state.skinsPossedes[k.id] = true; n++; } });
@@ -6221,7 +6222,7 @@
       if (n) saveGame(); return n;
     }
     function redeemGiftCode(raw) {
-      const c = String(raw || "").toUpperCase().replace(/\s+/g, "");
+      const c = String(raw || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/0/g, "O");   // tolère espaces, tirets, accents, 0/O
       if (GIFT_CODES[giftHash(c)] !== "pionnier") return false;
       try { localStorage.setItem("lumenia_pionnier", "1"); } catch (e) {}
       grantBetaSkins(true); try { checkTitres(); } catch (e) {} return true;
@@ -7156,9 +7157,11 @@
     // un arbre abattu (par le héros ou par les bûcherons engagés)
     function buchFell(tr, byWorkers, tSec, silent) {
       const b = buchState();
-      const q = 1 + (Math.random() < Math.min(0.6, Math.min(0.35, b.niveau / 200) + buchPalierBonus().doubleChance / 100) ? 1 : 0);
+      const sb = spotBonus("buch_" + tr.id);
+      const q = zoneQty(1 + (Math.random() < Math.min(0.6, Math.min(0.35, b.niveau / 200) + buchPalierBonus().doubleChance / 100) ? 1 : 0), sb.common);
       state.ressources[tr.res] = (state.ressources[tr.res] || 0) + q;
-      let extra = ""; if (Math.random() < 0.12) { state.ressources.resine = (state.ressources.resine || 0) + 1; extra = " +1 🍯"; }
+      let extra = ""; if (Math.random() < 0.12) { const rq = zoneQty(1, sb.rare); state.ressources.resine = (state.ressources.resine || 0) + rq; extra = ` +${rq} 🍯`; }
+      { const sg = silentGather; silentGather = !!silent; spotGainXp("buch_" + tr.id, tr.nom, 1); silentGather = sg; }
       const xp = Math.round((byWorkers ? WORKER_XP_PER * b.assistants : tr.xp) * getGatherLevelXpBoost(b.niveau));
       if (!silent) {
         if (!byWorkers) buchFx = { t0: tSec, gain: `+${q} 🪵${extra}` };
@@ -7241,6 +7244,7 @@
             <div class="melvor-card p-4 space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <span class="font-semibold text-white">Arbre actif : <span class="text-amber-300">${tr.nom}</span> (+${tr.xp} XP / arbre)</span>
+                <span class="w-full order-last">${spotLvlHtml("buch_" + tr.id)}</span>
                 <span class="text-slate-400 tabular-nums">Cycle : ${(tr.duree / speed).toFixed(1)}s</span>
               </div>
               <div class="relative mx-auto w-full max-w-md rounded-2xl border-2 border-slate-600 bg-slate-950 overflow-hidden shadow-lg">
@@ -7270,7 +7274,7 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 ${BUCH_TREES.map(t => { const ok = b.niveau >= t.lvl, on = t.id === b.treeId, r = UNIVERS_CONFIG.ressources[t.res];
                   return `<button type="button" data-buch-tree="${t.id}" ${ok ? "" : "disabled"} class="ui-btn text-left p-3.5 rounded-lg border ${on ? "bg-slate-800 border-amber-400" : "bg-slate-900/70 border-slate-700 hover:border-slate-500"}">
-                    <div class="flex items-center justify-between"><span class="text-xs font-bold text-white">${t.icone} ${t.nom}</span>
+                    <div class="flex items-center justify-between"><span class="text-xs font-bold text-white">${t.icone} ${t.nom} ${ok ? `<span class="text-[10px] text-sky-300 font-semibold">📈${spotState("buch_" + t.id).lvl}</span>` : ""}</span>
                     <span class="text-[10px] px-2 py-0.5 rounded-full ${ok ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"}">Niv.${t.lvl} • +${t.xp} XP</span></div>
                     <div class="text-[11px] text-slate-400 mt-1.5">${r.icone} ${r.nom} (100%) • 🍯 Résine (12%) • ${t.duree}s</div></button>`; }).join("")}
               </div>
@@ -9880,6 +9884,21 @@
     }
 
     let silentGather = false, _catchStats = null, musicTick = 0, achTick = 0;
+    // v1.51 — NIVEAU DE LIEU pour les métiers (même principe que les zones) : +25 % commun / +10 % rare au niv. 50
+    const SPOT_MAX = 50;
+    function spotXpReq(l) { return 15 + 8 * l; }
+    function spotState(id) { if (!state.spotLvls) state.spotLvls = {}; if (!state.spotLvls[id]) state.spotLvls[id] = { lvl: 1, xp: 0 }; return state.spotLvls[id]; }
+    function spotBonus(id) { const z = spotState(id); return { common: z.lvl / SPOT_MAX * 0.25, rare: z.lvl / SPOT_MAX * 0.10 }; }
+    function spotGainXp(id, nom, x) {
+      const z = spotState(id); if (z.lvl >= SPOT_MAX) return;
+      z.xp += x; let up = false;
+      while (z.lvl < SPOT_MAX && z.xp >= spotXpReq(z.lvl)) { z.xp -= spotXpReq(z.lvl); z.lvl++; up = true; }
+      if (z.lvl >= SPOT_MAX) z.xp = 0;
+      if (up && !silentGather) showToast(`📈 ${nom} : niveau de lieu ${z.lvl}${z.lvl >= SPOT_MAX ? " (MAX)" : ""} ! (+${Math.round(z.lvl / SPOT_MAX * 25)} % butin commun)`);
+    }
+    function spotLvlHtml(id) { const z = spotState(id), b = spotBonus(id);
+      return `<div class="mt-1.5"><div class="flex items-center justify-between text-[10px]"><b class="text-sky-300">📈 Lieu niv. ${z.lvl}${z.lvl >= SPOT_MAX ? " (MAX)" : ""}</b><span class="text-emerald-300">+${Math.round(b.common * 100)} % commun • +${Math.round(b.rare * 100)} % rare</span></div>${z.lvl < SPOT_MAX ? `<div class="h-1 bg-slate-950 rounded-full overflow-hidden mt-0.5"><div class="h-full bg-sky-400" style="width:${z.xp / spotXpReq(z.lvl) * 100}%"></div></div>` : ""}</div>`; }
+
     function performGatherAttempt(profKey, isAuto = false) {
       const cfg = UNIVERS_CONFIG.metiers[profKey];
       const p = state.metiers[profKey];
@@ -9896,6 +9915,7 @@
         if (Math.random() * 100 < realChance) {
           let qty = drop.eclat ? getEclatQty(spot) : drop.min;
           if (Math.random() * 100 < mastery.doubleChance) qty *= 2;
+          { const sb = spotBonus(spot.id); qty = zoneQty(qty, getDropTier(drop) >= 2 ? sb.rare : sb.common); }
           state.ressources[drop.resId] = (state.ressources[drop.resId] || 0) + qty;
           const rInfo = UNIVERS_CONFIG.ressources[drop.resId];
           obtained.push(`${qty}x ${rInfo.icone} ${rInfo.nom}`);
@@ -9904,6 +9924,7 @@
         }
       });
 
+      spotGainXp(spot.id, spot.nom, 1 + (isAuto ? 0 : 0));
       // XP : ÷2 si bredouille, ×1 commun, ×1,5 peu commun, ×2,5 rare
       const xpFactor = bestTier < 0 ? 0.5 : DROP_TIERS[bestTier].mult;
       const workerXp = isAuto ? WORKER_XP_PER * p.assistants : 0;
@@ -11108,6 +11129,7 @@
             <div class="melvor-card p-4 space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <span class="font-semibold text-white">Lieu actif : <span class="text-amber-300">${spot.nom}</span> (+${spot.xp} XP / essai)</span>
+                <span class="w-full order-last">${spotLvlHtml(spot.id)}</span>
                 <span class="text-slate-400 tabular-nums">Cycle : ${cycleDuration}s</span>
               </div>
 
@@ -11193,7 +11215,7 @@
                     <button type="button" data-prof-spot="${sp.id}" ${!unlocked ? "disabled" : ""}
                       class="ui-btn text-left p-3.5 rounded-lg border ${active ? "bg-slate-800 border-amber-400" : "bg-slate-900/70 border-slate-700 hover:border-slate-500"}">
                       <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-white">${sp.nom}</span>
+                        <span class="text-xs font-bold text-white">${sp.nom} ${unlocked ? `<span class="text-[10px] text-sky-300 font-semibold">📈${spotState(sp.id).lvl}</span>` : ""}</span>
                         <span class="text-[10px] px-2 py-0.5 rounded-full ${unlocked ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"}">
                           Niv.${sp.niveauReq} • +${sp.xp} XP
                         </span>
@@ -13640,13 +13662,16 @@ function wmDraw(ctx, t, opt) {
           <canvas data-biome-splash="${b.id}" width="320" height="140" class="bs-canvas"></canvas>
           <div class="bs-shade"></div>
           <div class="bs-lvl">${unlocked ? "" : "🔒 "}Niv. ${b.niveauReq}+${(() => { const dd = selected && curD ? curD : (b.difficultes || []).find(x => !x.heroMax && !x.solo) || (b.difficultes || [])[0]; const rc = diffRecLevel(b, dd); return rc ? ` • 🎯 ${rc[0]}–${rc[1]}` : ""; })()}</div>
-          <div class="bs-name">${b.nom}</div>
+          <div class="bs-name">${b.nom}${unlocked ? `<span style="display:block;font-family:inherit;font-size:8px;color:#7dd3fc;margin-top:3px">📈 ZONE NIV. ${zoneState(b.id).lvl}${zoneState(b.id).lvl >= ZONE_MAX ? " MAX" : ""}</span>` : ""}</div>
           ${unlocked ? `<div class="bs-diffs">${diffs}</div>` : `<div class="bs-locktxt">Débloqué au niveau ${b.niveauReq}</div>`}
         </div>`;
       }).join("") + `</div>`;
       const curRc = diffRecLevel(selB, curD), L0 = state.hero.niveau;
       const recTxt = curRc ? `<span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${L0 < curRc[0] ? "bg-rose-950 text-rose-300 border border-rose-700/50" : L0 > curRc[1] ? "bg-sky-950 text-sky-300 border border-sky-700/50" : "bg-emerald-950 text-emerald-300 border border-emerald-700/50"}">🎯 Niveau conseillé : ${curRc[0]}–${curRc[1]} ${L0 < curRc[0] ? "(tu es en dessous : prudence !)" : L0 > curRc[1] ? "(facile pour toi : essaie plus dur)" : "(idéal pour toi)"}</span>` : "";
-      html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}</div>`;
+      const zS = zoneState(selB.id), zB = zoneBonus(selB.id);
+      const zoneTxt = `<div class="mt-1.5 melvor-card p-2"><div class="flex items-center justify-between text-[11px]"><b class="text-sky-300">📈 Niveau de zone ${zS.lvl}${zS.lvl >= ZONE_MAX ? " (MAX)" : ` / ${ZONE_MAX}`}</b><span class="text-emerald-300">+${Math.round(zB.common * 100)} % butin commun • +${Math.round(zB.rare * 100)} % rare</span></div>
+        ${zS.lvl < ZONE_MAX ? `<div class="h-1.5 bg-slate-900 rounded-full overflow-hidden mt-1"><div class="h-full bg-sky-400" style="width:${zS.xp / zoneXpReq(zS.lvl) * 100}%"></div></div><div class="text-[10px] text-slate-500 mt-0.5">${Math.floor(zS.xp)} / ${zoneXpReq(zS.lvl)} XP de zone • monstre +1, élite +3, boss +10, expédition terminée +5</div>` : ""}</div>`;
+      html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}${zoneTxt}</div>`;
       listBox.innerHTML = html;
 
       listBox.querySelectorAll("[data-biome-diff]").forEach(btn => {
@@ -13935,6 +13960,7 @@ function wmDraw(ctx, t, opt) {
       document.getElementById("combat-enemy-hp-text").textContent = `${e.pv}/${e.pvMax} PV${e.shield > 0 ? ` (+🛡️${e.shield})` : ""}`;
       try { updateMobVitals(); } catch (er) {}
       document.getElementById("combat-atb-bar").style.width = `${Math.min(100, c.atb)}%`;
+      { const eb = document.getElementById("combat-enemy-atb-bar"); if (eb) eb.style.width = `${Math.max(0, Math.min(100, c.eatb || 0))}%`; }
       { const nIt = combatUsableItems().length; document.getElementById("combat-potion-count").textContent = nIt ? `${nIt} objet${nIt > 1 ? "s" : ""}` : "Aucun objet"; }
 
       const ready = c.turn === "PLAYER" && c.atb >= 100;
@@ -14696,6 +14722,7 @@ function wmDraw(ctx, t, opt) {
         }
 
         state.bestiaire[c.enemy.id] = (state.bestiaire[c.enemy.id] || 0) + 1; questEvent("kills", 1); rollMalakorHead(c.enemy.id);
+        zoneGainXp(biome, c.enemy.boss ? 10 : (c.enemy.elite || c.enemy.guardian) ? 3 : 1);
         const compTxt = rollMobMaterial(c.enemy, stats) + rollDifficultyLoot(c.enemy, biome);
 
         addExpLog(`🏆 Victoire contre ${c.enemy.nom} ! +${xp} XP, +${gold} Or${compTxt} (butin en sac d'expédition).`, "text-emerald-300");
@@ -14711,7 +14738,7 @@ function wmDraw(ctx, t, opt) {
         }
 
         if (c.enemy.boss) {
-          const q = 2 + (Math.random() < 0.5 ? 1 : 0);
+          const q = zoneQty(2 + (Math.random() < 0.5 ? 1 : 0), zoneBonus(biome.id).common);
           state.expedition.unsecuredLoot.ressources[c.enemy.lootComp] = (state.expedition.unsecuredLoot.ressources[c.enemy.lootComp] || 0) + q;
           const bossRes = UNIVERS_CONFIG.ressources[c.enemy.lootComp];
           const bossGear = generateEquipment({ level: c.enemy.niveau, bonusTier: biome.bonusTier + diffTier(biome) + 2, provenance: `Butin de ${c.enemy.nom}` });
@@ -14744,10 +14771,14 @@ function wmDraw(ctx, t, opt) {
         return;
       }
 
-      // Tour ennemi
-      c.turn = "ENEMY";
+      // v1.50 : l'ennemi n'agit plus automatiquement après chaque action du héros : il a sa propre jauge d'action
+      c.turn = "PLAYER"; c.atb = 0;
       updateCombatUI();
-
+    }
+    // Vitesse d'action des monstres (indépendante de celle du héros)
+    function enemySpeed(en) { return (en.spd || 1) * (1 + Math.min(0.45, (en.niveau || 1) * 0.004)) * (en.boss ? 1.12 : (en.elite || en.guardian) ? 1.06 : 1); }
+    function startEnemyAction(c) {
+      c.turn = "ENEMY"; c.eatb = 0; updateCombatUI();
       setTimeout(() => {
         const cur = state.expedition.combat;
         if (!cur) return;
@@ -14759,7 +14790,7 @@ function wmDraw(ctx, t, opt) {
           if (en.charging) { en.charging = false; addExpLog(`✨ Charge interrompue ! L'attaque de ${en.nom} est annulée.`, "text-emerald-300 font-bold"); addCanvasFloat("enemy", "INTERROMPU", "#4ade80"); }
           addExpLog(`💫 ${en.nom} est étourdi et passe son tour !`, "text-yellow-300");
           addCanvasFloat("enemy", "💫", "#fde047");
-          cur.turn = "PLAYER"; cur.atb = 0; updateCombatUI();
+          cur.turn = "PLAYER"; updateCombatUI();
           return;
         }
         let atkNow = Math.round(en.atk * (1 - (en.debuffs && en.debuffs.atk ? en.debuffs.atk.pct : 0))), heavy = 1;
@@ -14775,7 +14806,7 @@ function wmDraw(ctx, t, opt) {
         if (stats.dodge && Math.random() < stats.dodge) {
           addCanvasFloat("hero", "ESQUIVE !", "#fde047");
           addExpLog(`💨 ${state.hero.nom} esquive l'attaque de ${en.nom} !`, "text-yellow-200");
-          cur.turn = "PLAYER"; cur.atb = 0; updateCombatUI();
+          cur.turn = "PLAYER"; updateCombatUI();
           return;
         }
         const raw = Math.max(2, mitig(atkNow, stats.def, 1));
@@ -14810,7 +14841,6 @@ function wmDraw(ctx, t, opt) {
           triggerPunitiveDefeat(cur.enemy.nom);
         } else {
           cur.turn = "PLAYER";
-          cur.atb = 0;
           updateCombatUI();
         }
       }, 420);
@@ -14968,6 +14998,7 @@ function wmDraw(ctx, t, opt) {
         else if (enemy.guardian) qty = 1 + (Math.random() < 0.5 ? 1 : 0);
         else if (Math.random() < (enemy.elite ? ex.pElite : ex.pNormal)) qty = 1 + (Math.random() < 0.25 ? 1 : 0);
         if (qty <= 0) return;
+        qty = zoneQty(qty, zoneBonus(biome.id).rare);
         u.ressources[ex.resId] = (u.ressources[ex.resId] || 0) + qty;
         const r = UNIVERS_CONFIG.ressources[ex.resId];
         txt += `, +${qty} ${r.icone} ${r.nom}`;
@@ -14976,6 +15007,24 @@ function wmDraw(ctx, t, opt) {
     }
 
     // Butin du monstre : peut tomber en plusieurs exemplaires (x2, x3)
+
+    // =======================================================================
+    //  v1.50 — NIVEAU DE ZONE : plus on farme un biome, plus il donne de butin (quantités, pas probabilités)
+    //  Niv. 50 max : +25 % de ressources communes, +10 % de ressources rares
+    // =======================================================================
+    const ZONE_MAX = 50;
+    function zoneXpReq(l) { return 10 + 5 * l; }
+    function zoneState(bid) { if (!state.zones) state.zones = {}; if (!state.zones[bid]) state.zones[bid] = { lvl: 1, xp: 0 }; return state.zones[bid]; }
+    function zoneBonus(bid) { const z = zoneState(bid); return { common: z.lvl / ZONE_MAX * 0.25, rare: z.lvl / ZONE_MAX * 0.10 }; }
+    function zoneQty(q, pct) { const x = q * (1 + (pct || 0)); let n = Math.floor(x); if (Math.random() < x - n) n++; return n; }
+    function zoneGainXp(biome, x) {
+      if (!biome) return; const z = zoneState(biome.id); if (z.lvl >= ZONE_MAX) return;
+      z.xp += x; let up = false;
+      while (z.lvl < ZONE_MAX && z.xp >= zoneXpReq(z.lvl)) { z.xp -= zoneXpReq(z.lvl); z.lvl++; up = true; }
+      if (z.lvl >= ZONE_MAX) z.xp = 0;
+      if (up) { const b = zoneBonus(biome.id); addExpLog(`📈 ${biome.nom} passe au niveau de zone ${z.lvl}${z.lvl >= ZONE_MAX ? " (MAX)" : ""} ! Butin : +${Math.round(b.common * 100)} % commun, +${Math.round(b.rare * 100)} % rare.`, "text-sky-300 font-bold");
+        showToast(`📈 ${biome.icone} ${biome.nom} : zone niveau ${z.lvl} !`); }
+    }
     function rollMobMaterial(enemy, stats) {
       const base = Math.min(0.9, (enemy.boss ? 1 : 0.55) + stats.chance * 0.003 + stats.lootBonusPct * 0.002);
       let extra = "";
@@ -14985,7 +15034,7 @@ function wmDraw(ctx, t, opt) {
       const p2 = (enemy.elite ? 0.36 : 0.24) + bonus;
       const p3 = (enemy.elite ? 0.15 : 0.08) + bonus * 0.5;
       const r = Math.random();
-      const qty = r < p3 ? 3 : (r < p2 ? 2 : 1);
+      const qty = zoneQty(r < p3 ? 3 : (r < p2 ? 2 : 1), zoneBonus(state.expedition.biomeId).common);
       const comp = UNIVERS_CONFIG.ressources[enemy.lootComp];
       const u = state.expedition.unsecuredLoot;
       u.ressources[enemy.lootComp] = (u.ressources[enemy.lootComp] || 0) + qty;
@@ -15048,6 +15097,7 @@ function wmDraw(ctx, t, opt) {
       try { const bz = UNIVERS_CONFIG.biomes.find(b => b.id === state.expedition.biomeId); forgeXp(15 + (bz ? bz.niveauReq : 1) * 3); } catch (e) {}
       questEvent("exped", 1);
       const biome = UNIVERS_CONFIG.biomes.find(b => b.id === state.expedition.biomeId);
+      zoneGainXp(biome, 5);
       const stats = getHeroTotalStats();
       const dif = getExpDifficulty(biome);
       const rMult = dif ? dif.rewardMult : 1;
@@ -18920,6 +18970,11 @@ function wmDraw(ctx, t, opt) {
           const c = state.expedition.combat;
           tickCombatStatuses(c, dt);
           if (!state.expedition.combat) return requestAnimationFrame(gameLoop);
+          if (c.turn === "PLAYER" && c.enemy.pv > 0) {   // jauge d'action du monstre (se remplit en même temps que la tienne)
+            c.eatb = Math.min(100, (c.eatb === undefined ? -12 : c.eatb) + dt * 52 * enemySpeed(c.enemy));
+            const eb = document.getElementById("combat-enemy-atb-bar"); if (eb) eb.style.width = `${Math.max(0, c.eatb)}%`;
+            if (c.eatb >= 100) { startEnemyAction(c); return requestAnimationFrame(gameLoop); }
+          }
           if (c.turn === "PLAYER" && c.atb < 100) {
             c.atb = Math.min(100, c.atb + dt * 52 * stats.atbSpeedMult);
             if (state.activeView === "expedition") updateCombatUI();
@@ -19576,8 +19631,22 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.48";
+    const GAME_VERSION = "1.51";
     const PATCH_NOTES = [
+      { v: "1.51", date: "21/11/2026", titre: "Niveaux de lieu pour les métiers", items: [
+        "📈 Pêche, Minage, Récolte, Mine d'Éclats et Bûcheron : chaque lieu (rivière, filon, champ, arbre…) a son propre niveau, de 1 à 50. Chaque tentative (la tienne ou celle de tes travailleurs) lui donne de l'XP.",
+        "🎁 Comme pour les zones, le niveau de lieu augmente la QUANTITÉ récoltée sans toucher aux chances : jusqu'à +25 % sur les ressources communes et peu communes, et +10 % sur les rares (ou la Résine pour le Bûcheron).",
+        "👀 Le niveau s'affiche sur chaque lieu (📈) et sous le lieu actif, avec sa barre de progression."
+      ] },
+      { v: "1.50", date: "21/11/2026", titre: "Niveaux de zone et vraie jauge des monstres", items: [
+        "📈 Nouveau : niveau de zone (1 à 50) pour chaque biome. Plus tu y farmes, plus il monte : +1 XP par monstre, +3 par élite ou gardien, +10 par boss, +5 par expédition terminée.",
+        "🎁 Chaque niveau de zone augmente la QUANTITÉ de butin, jamais les chances de drop : jusqu'à +25 % de ressources communes et +10 % de ressources rares au niveau 50.",
+        "⚡ Combat : les monstres et les boss ont maintenant leur propre jauge d'action, affichée sous leur barre de PV. Avant, le monstre agissait automatiquement après chacune de tes actions, si bien qu'augmenter ta vitesse accélérait aussi la sienne.",
+        "💨 Ta vitesse compte vraiment : un héros rapide peut agir 2 ou 3 fois pendant qu'un monstre lent agit une seule fois. Les jauges se mettent en pause pendant les animations. Les élites, les gardiens et les boss sont un peu plus rapides, et les monstres de haut niveau aussi."
+      ] },
+      { v: "1.49", date: "21/11/2026", titre: "Code cadeau plus tolérant", items: [
+        "🎁 Le champ « Code cadeau » accepte maintenant les petites fautes de frappe : espaces, tirets ou traits d'union différents, accents, minuscules et chiffre 0 à la place de la lettre O."
+      ] },
       { v: "1.48", date: "21/11/2026", titre: "Lumière de jour plus naturelle", items: [
         "🌤️ Campement : la lumière du jour n'a plus d'effet délavé. Les couleurs sont plus franches, le contraste est plus net, la teinte est chaude et des ombres portées apparaissent sous le héros et le feu."
       ] },
