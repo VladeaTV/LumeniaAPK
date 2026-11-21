@@ -3316,7 +3316,7 @@
     const RUNE_EL = {
       arcane: { nom: "Arcane", ic: "🔷", col: "#a78bfa", core: "#ede9fe", dark: "#4c1d95", glow: "#8b5cf6", desc: e => `+${Math.round(8 * e)} % de dégâts sur chaque coup et +${Math.round(2 * e)} PM.` },
       sang:   { nom: "Sang",   ic: "🩸", col: "#ef4444", core: "#fecaca", dark: "#450a0a", glow: "#dc2626", desc: (e, a) => `Saignement : ${Math.max(2, Math.round(a * 0.07 * e))} dégâts/s pendant 5 s.` },
-      givre:  { nom: "Givre",  ic: "❄️", col: "#7dd3fc", core: "#f0f9ff", dark: "#0c4a6e", glow: "#38bdf8", desc: e => `${Math.round(Math.min(0.35, 0.10 * e) * 100)} % de chance de geler l'ennemi 1 tour (boss : ATQ −20 % pendant 8 s).` },
+      givre:  { nom: "Givre",  ic: "❄️", col: "#7dd3fc", core: "#f0f9ff", dark: "#0c4a6e", glow: "#38bdf8", desc: e => `Dégâts ×0,9 (×1,15 sur un ennemi gelé). Chaque coup Ralentit (vitesse d'attaque −25 %, dégâts −5 %, 4 s) • ${Math.round(Math.min(0.35, 0.10 * e) * 100)} % de chance de GELER l'ennemi, boss compris (il ne peut plus agir pendant 2 s + 0,1 s par rang d'Essence).` },
       flamme: { nom: "Flamme", ic: "🔥", col: "#fb923c", core: "#fef08a", dark: "#7f1d1d", glow: "#f97316", desc: (e, a) => `Brûlure : ${Math.max(2, Math.round(a * 0.08 * e))} dégâts/s pendant 4 s.` },
       foudre: { nom: "Foudre", ic: "⚡", col: "#fde047", core: "#fefce8", dark: "#713f12", glow: "#facc15", desc: e => `${Math.round(Math.min(0.6, 0.2 * e) * 100)} % de chance de déclencher un arc (+45 % de dégâts).` },
       poison: { nom: "Poison", ic: "☠️", col: "#a3e635", core: "#d9f99d", dark: "#1a2e05", glow: "#65a30d", desc: (e, a) => `Venin : ${Math.max(2, Math.round(a * 0.05 * e))} dégâts/s pendant 8 s.` },
@@ -3331,6 +3331,11 @@
     let RUNE_HIT_SKIP = false;
 
     function runeNewSword() { return { el: "arcane", tr: 0, ess: 0, chg: 0 }; }
+    /* Givre runique : Ralenti (vitesse −25 %, dégâts −5 %) + Gel temporisé (l'ennemi ne joue plus) */
+    const FROST_SLOW_SPD = 0.25, FROST_SLOW_DMG = 0.05, FROST_SLOW_DUR = 4, FROST_FRZ_CD = 6;
+    function frostFrozen(en) { return !!en && (en.frz || 0) > 0; }
+    function frostDmgMult(en) { return frostFrozen(en) ? 1.15 : 0.9; }
+    function frostFreezeDur(s) { return 2 + 0.1 * ((s && s.ess) | 0); }
     function runeState(h) {
       h = h || state.hero;
       if (!h.rune || typeof h.rune !== "object") h.rune = {};
@@ -3402,17 +3407,12 @@
       else if (s.el === "flamme") runeDot(en, "burn", Math.max(2, Math.round(stats.atk * 0.08 * f)), 4, "🔥", "Brûlure runique");
       else if (s.el === "poison") runeDot(en, "poison", Math.max(2, Math.round(stats.atk * 0.05 * f)), 8, "☠️", "Venin runique");
       else if (s.el === "givre") {
-        const now = performance.now();
-        if (Math.random() < Math.min(0.35, 0.10 * f) && !(en._rlFrz && now - en._rlFrz < 6000)) {
-          en._rlFrz = now;
-          if (en.boss || en.guardian) {
-            en.debuffs = en.debuffs || {};
-            en.debuffs.atk = { pct: Math.max(0.2, (en.debuffs.atk && en.debuffs.atk.pct) || 0), left: 8 };
-            setTimeout(() => addCanvasFloat("enemy", "❄️ RALENTI", "#7dd3fc"), D);
-          } else if (!(en.stun > 0)) {
-            en.stun = 1; setTimeout(() => addCanvasFloat("enemy", "❄️ GELÉ", "#bae6fd"), D);
-            addExpLog(`❄️ La lame de givre fige ${en.nom} dans la glace !`, "text-sky-300");
-          }
+        en.chill = FROST_SLOW_DUR;
+        if (!frostFrozen(en) && !((en.frzCd || 0) > 0) && Math.random() < Math.min(0.35, 0.10 * f)) {
+          const dur = frostFreezeDur(s);
+          en.frz = dur; en.frzCd = dur + FROST_FRZ_CD;
+          setTimeout(() => addCanvasFloat("enemy", `❄️ GELÉ ${dur.toFixed(1).replace(".", ",")} s`, "#bae6fd"), D);
+          addExpLog(`❄️ La lame de givre fige ${en.nom} dans la glace pendant ${dur.toFixed(1).replace(".", ",")} s !`, "text-sky-300");
         }
       } else if (s.el === "foudre") {
         if (Math.random() < Math.min(0.6, 0.2 * f)) {
@@ -3447,7 +3447,7 @@
         spawnAttackFx({ sword: s.i, delay });
         const def = s.el === "neant" ? enemy.def * 0.8 : enemy.def;
         const raw = Math.max(2, mitig(stats.atk, def, 1));
-        const dmg = Math.max(1, Math.round(raw * (0.9 + Math.random() * 0.25) * (crit ? stats.critMult : 1) * s.share * s.trMult * (s.el === "arcane" ? 1 + 0.08 * s.f : 1)));
+        const dmg = Math.max(1, Math.round(raw * (0.9 + Math.random() * 0.25) * (crit ? stats.critMult : 1) * s.share * s.trMult * (s.el === "arcane" ? 1 + 0.08 * s.f : 1) * (s.el === "givre" ? frostDmgMult(enemy) : 1)));
         enemy.pv = Math.max(0, enemy.pv - dmg); total += dmg;
         RUNE_HIT_SKIP = true; try { onHeroHit(enemy, stats, dmg, crit); } finally { RUNE_HIT_SKIP = false; }
         total += runeProc(enemy, stats, s, dmg, crit, delay);
@@ -3543,7 +3543,7 @@
       if (w.el === "sang") coopApplyDot(p, "bleed", Math.max(2, Math.round(s.atk * 0.07 * f)), 5, "Saignement runique", true);
       else if (w.el === "flamme") coopApplyDot(p, "burn", Math.max(2, Math.round(s.atk * 0.08 * f)), 4, "Brûlure runique", true);
       else if (w.el === "poison") coopApplyDot(p, "poison", Math.max(2, Math.round(s.atk * 0.05 * f)), 8, "Venin runique", true);
-      else if (w.el === "givre") { if (!en.boss && !(en.stun > 0) && Math.random() < Math.min(0.25, 0.08 * f)) { en.stun = 1; coopEv({ k: "txt", to: "enemy", v: "❄️ GELÉ", c: "#bae6fd" }); } }
+      else if (w.el === "givre") { if (!(en.stun > 0) && Math.random() < Math.min(0.25, 0.08 * f)) { en.stun = 1; en._frzC = true; coopEv({ k: "txt", to: "enemy", v: "❄️ GELÉ", c: "#bae6fd" }); } }
       else if (w.el === "foudre") { if (en.pv > 0 && Math.random() < Math.min(0.6, 0.2 * f)) { const x = Math.max(1, Math.round(dmg * 0.45)); en.pv = Math.max(0, en.pv - x); p.dealt += x; coopEv({ k: "dmg", to: "enemy", v: x, crit: 0, by: p.id }); } }
       else if (w.el === "neant") { const h = Math.round(dmg * 0.05 * f); if (h > 0) p.pv = Math.min(s.pvMax, p.pv + h); }
       else if (w.el === "arcane") p.pm = Math.min(s.pmMax, p.pm + Math.round(2 * f));
@@ -3553,7 +3553,7 @@
       sw.forEach((w, i) => {
         if (en.pv <= 0) return;
         const crit = Math.random() < s.critChance, def = w.el === "neant" ? en.def * 0.8 : en.def;
-        const dmg = Math.max(1, Math.round(Math.max(2, mitig(s.atk, def, 1)) * (0.9 + Math.random() * 0.25) * (crit ? s.critMult : 1) * w.share * w.trMult * (w.el === "arcane" ? 1 + 0.08 * w.f : 1)));
+        const dmg = Math.max(1, Math.round(Math.max(2, mitig(s.atk, def, 1)) * (0.9 + Math.random() * 0.25) * (crit ? s.critMult : 1) * w.share * w.trMult * (w.el === "arcane" ? 1 + 0.08 * w.f : 1) * (w.el === "givre" ? (en.stun > 0 && en._frzC ? 1.15 : 0.9) : 1)));
         hurt(dmg, crit); tot += dmg; coopAddUlt(p, i === 0 ? 10 + (crit ? 4 : 0) : 3);
         coopRuneProc(p, s, en, w, dmg);
       });
@@ -14597,6 +14597,8 @@ function wmDraw(ctx, t, opt) {
       (en.dots || []).forEach(d => out.push(`${d.icon} ${d.dps}/s (${d.ticksLeft}s)`));
       if (en.debuffs && en.debuffs.def) out.push(`🧪 DEF −${Math.round(en.debuffs.def.pct * 100)}% (${Math.ceil(en.debuffs.def.left)}s)`);
       if (en.debuffs && en.debuffs.atk) out.push(`🧪 ATQ −${Math.round(en.debuffs.atk.pct * 100)}% (${Math.ceil(en.debuffs.atk.left)}s)`);
+      if (en.frz > 0) out.push(`❄️ Gelé (${en.frz.toFixed(1).replace(".", ",")}s)`);
+      if (en.chill > 0) out.push(`🧊 Ralenti −25% vit. / −5% dégâts (${Math.ceil(en.chill)}s)`);
       if (en.stun > 0) out.push(`💫 Étourdi (${en.stun} tour${en.stun > 1 ? "s" : ""})`);
       if (en.shield > 0) out.push(`🛡️ Bouclier ${en.shield}`);
       if (en.ritual) out.push(`🔮 Rituel ×${en.ritual}`);
@@ -14823,7 +14825,7 @@ function wmDraw(ctx, t, opt) {
       updateCombatUI();
     }
     // Vitesse d'action des monstres (indépendante de celle du héros)
-    function enemySpeed(en) { return (en.spd || 1) * (1 + Math.min(0.45, (en.niveau || 1) * 0.004)) * (en.boss ? 1.12 : (en.elite || en.guardian) ? 1.06 : 1); }
+    function enemySpeed(en) { return (en.chill > 0 ? 1 - FROST_SLOW_SPD : 1) * (en.spd || 1) * (1 + Math.min(0.45, (en.niveau || 1) * 0.004)) * (en.boss ? 1.12 : (en.elite || en.guardian) ? 1.06 : 1); }
     function startEnemyAction(c) {
       c.turn = "ENEMY"; c.eatb = 0; updateCombatUI();
       setTimeout(() => {
@@ -14840,7 +14842,7 @@ function wmDraw(ctx, t, opt) {
           cur.turn = "PLAYER"; updateCombatUI();
           return;
         }
-        let atkNow = Math.round(en.atk * (1 - (en.debuffs && en.debuffs.atk ? en.debuffs.atk.pct : 0))), heavy = 1;
+        let atkNow = Math.round(en.atk * (1 - (en.debuffs && en.debuffs.atk ? en.debuffs.atk.pct : 0)) * (en.chill > 0 ? 1 - FROST_SLOW_DMG : 1)), heavy = 1;
         if ((en.boss || en.guardian) && !en.ai && en.pv < en.pvMax * 0.3) {
           atkNow = Math.round(atkNow * 1.25);
           if (!cur.enraged) { cur.enraged = true; addExpLog(`🔥 ${en.nom} entre en RAGE ! (+25% ATQ)`, "text-orange-400 font-bold"); }
@@ -17826,7 +17828,7 @@ function wmDraw(ctx, t, opt) {
     /* --- Action de l'ennemi --- */
     function coopEnemyAct() {
       const R = COOP.room, en = R.enemy;
-      if (en.stun > 0) { en.stun--; coopLog(`💫 ${en.nom} est étourdi et rate son tour !`, "text-yellow-300"); coopEv({ k: "txt", to: "enemy", v: "💫", c: "#fde047" }); return 900; }
+      if (en.stun > 0) { en.stun--; if (!en.stun) en._frzC = false; coopLog(`💫 ${en.nom} est étourdi et rate son tour !`, "text-yellow-300"); coopEv({ k: "txt", to: "enemy", v: "💫", c: "#fde047" }); return 900; }
       en.n++;
       let atk = en.atk * (1 - (en.debuffs.atk ? en.debuffs.atk.pct : 0));
       if ((en.boss || en.elite) && en.pv < en.pvMax * 0.3) atk *= 1.25;
@@ -19017,9 +19019,10 @@ function wmDraw(ctx, t, opt) {
           const c = state.expedition.combat;
           tickCombatStatuses(c, dt);
           if (!state.expedition.combat) return requestAnimationFrame(gameLoop);
-          if (c.turn === "PLAYER" && c.enemy.pv > 0) {   // jauge d'action du monstre (se remplit en même temps que la tienne)
-            c.eatb = Math.min(100, (c.eatb === undefined ? -12 : c.eatb) + dt * 52 * enemySpeed(c.enemy));
-            const eb = document.getElementById("combat-enemy-atb-bar"); if (eb) eb.style.width = `${Math.max(0, c.eatb)}%`;
+          { const E = c.enemy; if (E.frz > 0) E.frz = Math.max(0, E.frz - dt); if (E.chill > 0) E.chill = Math.max(0, E.chill - dt); if (E.frzCd > 0) E.frzCd = Math.max(0, E.frzCd - dt); }
+          if (c.turn === "PLAYER" && c.enemy.pv > 0) {   // jauge d'action du monstre (se remplit en même temps que la tienne ; bloquée si gelé)
+            if (!(c.enemy.frz > 0)) c.eatb = Math.min(100, (c.eatb === undefined ? -12 : c.eatb) + dt * 52 * enemySpeed(c.enemy));
+            const eb = document.getElementById("combat-enemy-atb-bar"); if (eb) { eb.style.width = `${Math.max(0, c.eatb)}%`; eb.style.filter = c.enemy.frz > 0 ? "grayscale(1) brightness(1.6) hue-rotate(180deg)" : ""; }
             if (c.eatb >= 100) { startEnemyAction(c); return requestAnimationFrame(gameLoop); }
           }
           if (c.turn === "PLAYER" && c.atb < 100) {
@@ -19678,8 +19681,14 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.54";
+    const GAME_VERSION = "1.55";
     const PATCH_NOTES = [
+      { v: "1.55", date: "21/11/2026", titre: "Runelame : refonte des lames de Givre", items: [
+        "❄️ Le Givre ne réduit plus l'attaque des boss de 20 %. À la place, chaque coup d'une lame de Givre RALENTIT l'ennemi pendant 4 s : vitesse d'attaque −25 % et dégâts −5 %.",
+        "🧊 GEL : la jauge d'action du monstre ou du BOSS est bloquée pendant 2 s (+0,1 s par rang d'Essence, jusqu'à 3,5 s). Ensuite, il ne peut pas être regelé pendant 6 s.",
+        "⚔️ En contrepartie, les lames de Givre infligent 90 % de leurs dégâts, mais 115 % sur un ennemi gelé.",
+        "La jauge du monstre devient bleu glacé tant qu'il est gelé, et l'état apparaît sous sa barre de vie."
+      ] },
       { v: "1.54", date: "21/11/2026", titre: "Runelame : 1 point d'Autel par niveau", items: [
         "🔮 Le Runelame gagne maintenant 1 point d'enchantement à l'Autel Runique à chaque niveau (avant : environ 0,6 par niveau).",
         "Les Runelames existants récupèrent automatiquement tous les points correspondant à leur niveau : rendez-vous à l'Autel pour les dépenser !",
