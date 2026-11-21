@@ -734,6 +734,7 @@
             <button type="button" data-nav="heros" class="nav-item ui-btn"><span class="ni-ic">🧙</span><span class="ni-tx">Héros</span><span id="sb-free-pts" class="hidden px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-bold text-[10px]">0</span></button>
             <button type="button" data-nav="inventaire" class="nav-item ui-btn"><span class="ni-ic">🎒</span><span class="ni-tx">Inventaire</span><span id="sb-bag-count" class="nb tabular-nums">3/24</span></button>
             <button type="button" data-nav="competences" class="nav-item ui-btn"><span class="ni-ic">🌳</span><span class="ni-tx">Compétences</span><span id="sb-skill-new" class="nb tabular-nums"></span></button>
+            <button type="button" data-nav="autel" class="nav-item ui-btn" style="display:none"><span class="ni-ic">🔮</span><span class="ni-tx">Autel Runique</span><span id="sb-rune-pts" class="nb tabular-nums"></span></button>
             <button type="button" data-nav="garderobe" class="nav-item ui-btn"><span class="ni-ic">🎭</span><span class="ni-tx">Apparence</span></button>
             <button type="button" data-nav="autovente" class="nav-item ui-btn"><span class="ni-ic">💰</span><span class="ni-tx">Vente auto</span><span id="sb-autosell-state" class="nb">OFF</span></button>
             </div>
@@ -1247,6 +1248,7 @@
                5. ONGLET HÉROS & MAÎTRISES
                ------------------------------------------------------------- -->
           <section id="view-garderobe" class="hidden game-view grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"></section>
+          <section id="view-autel" class="hidden game-view space-y-4"></section>
 
           <section id="view-autovente" class="hidden game-view space-y-6"></section>
           <section id="view-tuto" class="hidden game-view space-y-6"></section>
@@ -1670,6 +1672,29 @@
             soinRatio: 0,
             desc: "Déchaîne une comète arcanique infligeant 260% de dégâts."
           }
+        },
+        runelame: {
+          id: "runelame",
+          nom: "Runelame",
+          arme: "Lames Runiques",
+          nouveau: true,
+          sprite: "",
+          armeSprite: "",
+          tenueDefaut: "#312e81",
+          bonusTexte: "Aucune arme : 1 à 3 lames runiques orbitent et frappent • Autel Runique",
+          bonuses: { pvFlat: 15, pmFlat: 15, atkFlat: 0, defFlat: 2 },
+          ultime: {
+            nom: "Tempête de Lames", mult: 4.4, stat: "esprit", impacts: [520, 700, 880, 1080], dur: 1.95, critBonus: 0.1, soinRatio: 0, pmRatio: 0.15,
+            desc: "Vos lames se démultiplient en une tempête spectrale qui s'abat 4 fois : 440% de dégâts magiques, +15% PM. Chaque impact déclenche l'élément de vos lames."
+          },
+          competence: {
+            nom: "Ordre des Lames",
+            coutPm: 12,
+            mult: 2.0,
+            stat: "esprit",
+            soinRatio: 0,
+            desc: "Toutes vos lames convergent sur l'ennemi : 200% de dégâts magiques et déclenche l'élément de chaque lame."
+          }
         }
       },
 
@@ -2070,6 +2095,15 @@
           stat2: { esprit: 8, chance: 6 }, desc2: "+8 Esprit, +6 Chance",
           effet4: { id: "corrosion", nom: "Corrosion du Néant", stat: { esprit: 4, pvMax: 40 },
             desc: "Attaques et compétences infligent une Corrosion (jusqu'à 6 charges) : −4 % DEF ennemie par charge et dégâts de poison à chaque tour. (+4 Esprit, +40 PV)" }
+        },
+        runelame: {
+          id: "set_eveil", classe: "runelame", icone: "🔯", nom: "Sceau de l'Éveil", theme: "runic", need: 3,
+          pieces: { casque: "Diadème de l'Éveil Runique", armure: "Mantelet de l'Éveil Runique", anneau: "Sceau-Anneau de l'Éveil" },
+          affinite: { esprit: 4, chance: 1 },
+          stat2: { esprit: 6, pmMax: 40 }, desc2: "+6 Esprit, +40 PM Max",
+          effet4: { id: "eveil", nom: "Éveil Élémentaire", stat: { esprit: 3 },
+            desc: "Choisissez une voie à l'Autel Runique : toutes vos lames prennent cet élément (Résonance totale) et ses effets gagnent +25 %. (+3 Esprit)" },
+          apparence: "Éveillé : diadème de glyphes, mantelet d'astres, cape runique et aura stellaire"
         }
       },
 
@@ -2989,8 +3023,10 @@
       let chance = h.baseStats.chance + (lin.bonuses.chance || 0);
 
       let eqAtk = 0, eqDef = 0, eqPv = 0, eqPm = 0, eqCrit = 0;
+      const _rl = h.classe === "runelame" ? runeStatBonus(h) : null;
+      if (_rl) { force += _rl.force; agilite += _rl.agilite; esprit += _rl.esprit; chance += _rl.chance; eqCrit += _rl.crit; }
       Object.values(state.equipementPorte).forEach(it => {
-        if (!it) return;
+        if (!it || (_rl && it.slot === "arme")) return;
         const rf = 1 + RENFORT_PER_LVL * (it.renfort || 0), R = v => Math.round((v || 0) * rf);
         force += R(it.stats.force);
         agilite += R(it.stats.agilite);
@@ -3024,9 +3060,10 @@
       const rawPvMax = 100 + (h.niveau - 1) * 18 + force * 3 + (lin.bonuses.pvFlat || 0) + (cls.bonuses.pvFlat || 0) + bMinage.pvFlat + bRecolte.pvFlat + eqPv + _bb.pv;
       const pvMax = Math.max(20, Math.round(rawPvMax * injuryMult));
       const pmMax = 25 + (h.niveau - 1) * 5 + Math.floor(esprit * 2.5) + (lin.bonuses.pmFlat || 0) + (cls.bonuses.pmFlat || 0) + bPeche.pmFlat + eqPm;
-      const rawAtk = 8 + (h.niveau - 1) * 2 + Math.floor(force * 1.3) + Math.floor(agilite * 0.4) + (cls.bonuses.atkFlat || 0) + eqAtk + _bb.atk;
+      const rawAtk = _rl ? 8 + (h.niveau - 1) * 2 + Math.floor(esprit * 1.3) + Math.floor(agilite * 0.4) + (cls.bonuses.atkFlat || 0) + eqAtk + _rl.swordAtk + _bb.atk
+        : 8 + (h.niveau - 1) * 2 + Math.floor(force * 1.3) + Math.floor(agilite * 0.4) + (cls.bonuses.atkFlat || 0) + eqAtk + _bb.atk;
       const atk = Math.max(1, Math.round(rawAtk * (1 + bMinage.physDmgMult) * injuryMult));
-      const rawMagic = 8 + (h.niveau - 1) * 2 + Math.floor(esprit * 1.5) + (cls.bonuses.atkFlat || 0) + eqAtk + _bb.atk;
+      const rawMagic = 8 + (h.niveau - 1) * 2 + Math.floor(esprit * 1.5) + (cls.bonuses.atkFlat || 0) + eqAtk + (_rl ? Math.round(_rl.swordAtk * 0.9) : 0) + _bb.atk;
       const magicAtk = Math.max(1, Math.round(rawMagic * injuryMult));
       const rawDef = 2 + Math.floor((h.niveau - 1) * 1.2) + Math.floor(force * 0.3 + agilite * 0.25) + (cls.bonuses.defFlat || 0) + bMinage.defFlat + eqDef + _bb.def;
       const def = Math.max(0, Math.round(rawDef * injuryMult));
@@ -3073,6 +3110,7 @@
     }
     // Effets « à l'impact » des panoplies (appelé après chaque coup du héros)
     function onHeroHit(enemy, stats, dmg, crit) {
+      if (state.hero.classe === "runelame" && !RUNE_HIT_SKIP && enemy.pv > 0) { try { runeProcAll(enemy, stats, dmg); } catch (e) { console.error(e); } }
       const se = stats.setEffect; if (!se || enemy.pv <= 0) return;
       if (se.id === "hiver" && Math.random() < 0.22) {
         if (enemy.boss || enemy.guardian) {
@@ -3211,21 +3249,312 @@
       { id: "a_vigil",  br: "mixtures", lvl: 20,  type: "active",  nom: "Philtre de Vigilance", icon: "🛡️", pm: 14, cd: 5, desc: "+40% de DEF et 1,5% de PV par seconde pendant 25 s.", act: _bf("philtre", "Philtre de Vigilance", "🛡️", 25, { defPct: 0.40, regenPct: 0.015 }) },
       { id: "a_resist", br: "poisons",  lvl: 20,  type: "passive", nom: "Résistance aux Poisons", icon: "🧬", desc: "−5% de dégâts subis.", fx: { dmgReduc: 0.05 } },
       { id: "a_peste",  br: "poisons",  lvl: 24,  type: "active",  nom: "Peste Noire",         icon: "🦠", pm: 20, cd: 4, desc: "80% de dégâts et poison virulent (8 s).", act: { mult: 0.8, dot: { kind: "poison", dps: 8, dur: 8, icon: "🦠", nom: "Peste noire" } } },
-      { id: "a_corro",  br: "poisons",  lvl: 30,  type: "passive", nom: "Corrosion Persistante", icon: "⚗️", desc: "+25% de dégâts des DoT et +2 s de durée.", fx: { dotPct: 0.25, dotDur: 2 } },
+      { id: "a_corro",  br: "poisons",  lvl: 30,  type: "passive", nom: "Corrosion Persistante", icon: "⚗️", desc: "+25% de dégâts des DoT, +2 s de durée et +10% d'ATQ.", fx: { dotPct: 0.25, dotDur: 2, atkPct: 0.10 } },
       { id: "a_para",   br: "fleaux",   lvl: 34,  type: "active",  nom: "Fiole Paralysante",   icon: "💫", pm: 18, cd: 5, desc: "120% de dégâts et étourdit 1 tour (les boss résistent).", act: { mult: 1.2, stun: 1 } },
       { id: "a_pur",    br: "fleaux",   lvl: 36,  type: "passive", nom: "Réactifs Purs",       icon: "🔬", desc: "Affaiblissements +15% plus puissants.", fx: { debuffPct: 0.15 } },
       { id: "a_meta",   br: "mixtures", lvl: 42,  type: "passive", nom: "Métabolisme Accéléré", icon: "💚", desc: "Récupère 2% des PV Max à chaque tour.", fx: { turnHeal: 0.02 } },
       { id: "a_brouet", br: "fleaux",   lvl: 44,  type: "active",  nom: "Brouet Affaiblissant", icon: "🍵", pm: 22, cd: 6, desc: "ATQ ennemie −40% et DEF −25% pendant 15 s.", act: { atkDebuff: { pct: 0.40, dur: 15 }, defDebuff: 0.25 } },
       { id: "a_cata",   br: "mixtures", lvl: 56,  type: "active",  nom: "Catalyseur",          icon: "🧫", pm: 26, cd: 6, desc: "Prolonge de 4 s vos poisons sur l'ennemi et de 8 s vos buffs ; soigne 15% des PV.", act: { extend: true, heal: 0.15 } },
       { id: "a_alambic", br: "mixtures", lvl: 55, type: "passive", nom: "Alambic Maître",      icon: "🏺", desc: "Potions +20% plus efficaces.", fx: { potionPct: 0.20 } },
-      { id: "a_viru",   br: "poisons",  lvl: 65,  type: "passive", nom: "Virulence",           icon: "☣️", desc: "+35% de dégâts des DoT.", fx: { dotPct: 0.35 } },
-      { id: "a_sage",   br: "mixtures", lvl: 80,  type: "passive", nom: "Sage Alchimiste",     icon: "📜", desc: "+10% d'Esprit.", fx: { espritPct: 0.10 } },
+      { id: "a_viru",   br: "poisons",  lvl: 65,  type: "passive", nom: "Virulence",           icon: "☣️", desc: "+35% de dégâts des DoT et +12% d'ATQ.", fx: { dotPct: 0.35, atkPct: 0.12 } },
+      { id: "a_sage",   br: "mixtures", lvl: 80,  type: "passive", nom: "Sage Alchimiste",     icon: "📜", desc: "+10% d'Esprit et +12% d'ATQ.", fx: { espritPct: 0.10, atkPct: 0.12 } },
       { id: "a_pande",  br: "poisons",  lvl: 80,  type: "active",  nom: "Pandémie",            icon: "🌑", pm: 36, cd: 7, desc: "200% de dégâts, poison mortel (10 s) et DEF −30%.", act: { mult: 2.0, defDebuff: 0.30, dot: { kind: "poison", dps: 14, dur: 10, icon: "☣️", nom: "Pandémie" } } },
       { id: "a_immo",   br: "mixtures", lvl: 100, type: "passive", nom: "Immortalité Chimique", icon: "♾️", desc: "+12% de PV Max et +2% de PV par tour.", fx: { pvPct: 0.12, turnHeal: 0.02 } },
       { id: "a_quint",  br: "mixtures", lvl: 110, type: "active",  nom: "Quintessence",        icon: "✨", pm: 45, cd: 9, desc: "+25% ATQ/DEF, +10% critique et 2% PV/s pendant 30 s ; soigne 30%.", act: { heal: 0.30, ..._bf("quint", "Quintessence", "✨", 30, { atkPct: 0.25, defPct: 0.25, critAdd: 0.10, regenPct: 0.02 }) } },
       { id: "a_oeuvre", br: "fleaux",   lvl: 150, type: "passive", nom: "Grand Œuvre",         icon: "🏆", desc: "DoT +50%, buffs +50% plus longs, affaiblissements +20%.", fx: { dotPct: 0.50, buffDur: 0.50, debuffPct: 0.20 } }
     ];
 
+    // =======================================================================
+    //  v1.36 — RUNELAME : lames runiques, éléments, Résonance, Éveil et absorption d'âmes
+    // =======================================================================
+    SKILL_BRANCHES.runelame = [
+      { id: "lames", nom: "Voie des Lames", icon: "⚔️", col: "violet", desc: "Puissance, critiques et vitesse des lames" },
+      { id: "runes", nom: "Voie des Runes", icon: "🔷", col: "cyan",   desc: "Éléments, altérations et mana" },
+      { id: "egide", nom: "Voie de l'Égide", icon: "🛡️", col: "sky",   desc: "Lames protectrices, vol de vie et survie" }
+    ];
+    SKILL_STAT.runelame = "esprit";
+    SKILL_TREES.runelame = [
+      { id: "rl_affut",    br: "lames", lvl: 3,   type: "passive", nom: "Lames Affûtées",      icon: "🗡️", desc: "+6% d'ATQ.", fx: { atkPct: 0.06 } },
+      { id: "rl_volee",    br: "lames", lvl: 5,   type: "active",  nom: "Volée Runique",       icon: "🌀", pm: 8, cd: 2, desc: "Vos lames tournoient et frappent : 150% de dégâts.", act: { mult: 1.5 } },
+      { id: "rl_rune",     br: "runes", lvl: 7,   type: "passive", nom: "Gravure Élémentaire", icon: "🔷", desc: "+15% de dégâts des altérations (saignement, brûlure, venin).", fx: { dotPct: 0.15 } },
+      { id: "rl_parade",   br: "egide", lvl: 9,   type: "active",  nom: "Parade d'Acier",      icon: "🛡️", pm: 10, cd: 4, desc: "Les lames forment un mur : +40% de DEF pendant 20 s.", act: _bf("rl_parade", "Parade d'Acier", "🛡️", 20, { defPct: 0.4 }) },
+      { id: "rl_orbite",   br: "lames", lvl: 12,  type: "passive", nom: "Orbite Rapide",       icon: "💫", desc: "+6% de vitesse d'action.", fx: { speedPct: 0.06 } },
+      { id: "rl_sacrif",   br: "lames", lvl: 16,  type: "active",  nom: "Lame Sacrifiée",      icon: "🗡️", pm: 14, cd: 4, desc: "Une lame vole en éclats dans l'ennemi : 260% de dégâts et saignement (6 s).", act: { mult: 2.6, dot: { kind: "bleed", dps: 4, dur: 6, icon: "🩸", nom: "Éclats de lame" } } },
+      { id: "rl_sceau",    br: "runes", lvl: 18,  type: "active",  nom: "Sceau d'Âme",         icon: "🔯", pm: 12, cd: 3, desc: "120% de dégâts et récupère 10% des PM Max.", act: { mult: 1.2, pmGain: 0.10 } },
+      { id: "rl_ecran",    br: "egide", lvl: 22,  type: "passive", nom: "Écran de Lames",      icon: "🔰", desc: "−5% de dégâts subis.", fx: { dmgReduc: 0.05 } },
+      { id: "rl_eclat",    br: "runes", lvl: 26,  type: "passive", nom: "Éclat Runique",       icon: "💠", desc: "+20% de dégâts des altérations et +2 s de durée.", fx: { dotPct: 0.20, dotDur: 2 } },
+      { id: "rl_tourb",    br: "lames", lvl: 30,  type: "active",  nom: "Tourbillon d'Acier",  icon: "🌪️", pm: 20, cd: 4, desc: "Les lames tranchent en spirale : 280% de dégâts.", act: { mult: 2.8 } },
+      { id: "rl_vamp",     br: "egide", lvl: 34,  type: "passive", nom: "Lames Avides",        icon: "🩸", desc: "Vous soigne de 4% des dégâts infligés.", fx: { lifesteal: 0.04 } },
+      { id: "rl_chaine",   br: "runes", lvl: 40,  type: "active",  nom: "Chaîne Runique",      icon: "⛓️", pm: 22, cd: 5, desc: "220% de dégâts et DEF ennemie −30% pendant 15 s.", act: { mult: 2.2, defDebuff: 0.30 } },
+      { id: "rl_maitre",   br: "lames", lvl: 48,  type: "passive", nom: "Maître des Lames",    icon: "⚜️", desc: "+12% d'ATQ et +4% de critique.", fx: { atkPct: 0.12, critAdd: 0.04 } },
+      { id: "rl_bastion",  br: "egide", lvl: 55,  type: "active",  nom: "Bastion d'Épées",     icon: "🏰", pm: 24, cd: 6, desc: "Soigne 12% des PV Max et +60% de DEF pendant 20 s.", act: { heal: 0.12, ..._bf("rl_bastion", "Bastion d'Épées", "🏰", 20, { defPct: 0.6 }) } },
+      { id: "rl_ame",      br: "runes", lvl: 65,  type: "passive", nom: "Âme Runique",         icon: "🔮", desc: "+12% d'Esprit.", fx: { espritPct: 0.12 } },
+      { id: "rl_jugement", br: "lames", lvl: 80,  type: "active",  nom: "Jugement des Lames",  icon: "⚖️", pm: 36, cd: 7, desc: "380% de dégâts et charge de 30% la jauge d'ultime.", act: { mult: 3.8, ult: 30 } },
+      { id: "rl_inv",      br: "egide", lvl: 95,  type: "passive", nom: "Garde Invincible",    icon: "💎", desc: "−8% de dégâts subis et +10% de PV Max.", fx: { dmgReduc: 0.08, pvPct: 0.10 } },
+      { id: "rl_cata",     br: "runes", lvl: 110, type: "active",  nom: "Cataclysme Runique",  icon: "☄️", pm: 48, cd: 8, desc: "460% de dégâts et étourdit l'ennemi 1 tour.", act: { mult: 4.6, stun: 1 } },
+      { id: "rl_dieu",     br: "lames", lvl: 140, type: "passive", nom: "Dieu des Lames",      icon: "👑", desc: "+20% d'ATQ et +30% de dégâts critiques.", fx: { atkPct: 0.20, critMultAdd: 0.30 } }
+    ];
+
+    const RUNE_EL = {
+      arcane: { nom: "Arcane", ic: "🔷", col: "#a78bfa", core: "#ede9fe", dark: "#4c1d95", glow: "#8b5cf6", desc: e => `+${Math.round(8 * e)} % de dégâts sur chaque coup et +${Math.round(2 * e)} PM.` },
+      sang:   { nom: "Sang",   ic: "🩸", col: "#ef4444", core: "#fecaca", dark: "#450a0a", glow: "#dc2626", desc: (e, a) => `Saignement : ${Math.max(2, Math.round(a * 0.07 * e))} dégâts/s pendant 5 s.` },
+      givre:  { nom: "Givre",  ic: "❄️", col: "#7dd3fc", core: "#f0f9ff", dark: "#0c4a6e", glow: "#38bdf8", desc: e => `${Math.round(Math.min(0.35, 0.10 * e) * 100)} % de chance de geler l'ennemi 1 tour (boss : ATQ −20 % pendant 8 s).` },
+      flamme: { nom: "Flamme", ic: "🔥", col: "#fb923c", core: "#fef08a", dark: "#7f1d1d", glow: "#f97316", desc: (e, a) => `Brûlure : ${Math.max(2, Math.round(a * 0.08 * e))} dégâts/s pendant 4 s.` },
+      foudre: { nom: "Foudre", ic: "⚡", col: "#fde047", core: "#fefce8", dark: "#713f12", glow: "#facc15", desc: e => `${Math.round(Math.min(0.6, 0.2 * e) * 100)} % de chance de déclencher un arc (+45 % de dégâts).` },
+      poison: { nom: "Poison", ic: "☠️", col: "#a3e635", core: "#d9f99d", dark: "#1a2e05", glow: "#65a30d", desc: (e, a) => `Venin : ${Math.max(2, Math.round(a * 0.05 * e))} dégâts/s pendant 8 s.` },
+      neant:  { nom: "Néant",  ic: "🌑", col: "#c084fc", core: "#f5d0fe", dark: "#07030f", glow: "#a855f7", desc: e => `Ignore 20 % de la DEF et vous soigne de ${(5 * e).toFixed(1).replace(".0", "")} % des dégâts infligés.` }
+    };
+    const RUNE_SWORD_LVLS = [1, 20, 45];
+    const RUNE_RANK_MAX = 15;
+    const RUNE_SHARES = { 1: [1], 2: [0.75, 0.45], 3: [0.6, 0.4, 0.35] };
+    const RUNE_ABS_PTS = { commun: 1, rare: 1, maitre: 2, legendaire: 3 };
+    const RUNE_ABS_LBL = { atk: "ATQ", force: "FOR", agilite: "AGI", esprit: "ESP", chance: "CHA" };
+    const RUNE_CRIT_MAX = 25;   // 25 × 0,2 % = 5 % de critique au maximum
+    let RUNE_HIT_SKIP = false;
+
+    function runeNewSword() { return { el: "arcane", tr: 0, ess: 0, chg: 0 }; }
+    function runeState(h) {
+      h = h || state.hero;
+      if (!h.rune || typeof h.rune !== "object") h.rune = {};
+      const R = h.rune;
+      if (!Array.isArray(R.swords)) R.swords = [];
+      while (R.swords.length < 3) R.swords.push(runeNewSword());
+      if (!R.absorb || typeof R.absorb !== "object") R.absorb = {};
+      R.absorbN = R.absorbN | 0; R.absorbW = R.absorbW | 0;
+      if (R.eveil && !RUNE_EL[R.eveil]) R.eveil = null;
+      return R;
+    }
+    function runeSanitize(r) {
+      const o = { swords: [], absorb: {}, absorbN: 0, absorbW: 0, eveil: null };
+      try {
+        const N = (v, hi) => Math.max(0, Math.min(hi, Math.round(Number(v) || 0)));
+        const sw = (r && Array.isArray(r.swords)) ? r.swords : [];
+        for (let i = 0; i < 3; i++) { const s = sw[i] || {}; o.swords.push({ el: RUNE_EL[s.el] ? s.el : "arcane", tr: N(s.tr, RUNE_RANK_MAX), ess: N(s.ess, RUNE_RANK_MAX), chg: 0 }); }
+        const a = (r && r.absorb) || {};
+        ["atk", "force", "agilite", "esprit", "chance"].forEach(k => { o.absorb[k] = N(a[k], 3000); });
+        o.absorb.crit = N(a.crit, RUNE_CRIT_MAX);
+        o.absorbN = N(r && r.absorbN, 6000); o.absorbW = N(r && r.absorbW, 99999);
+        o.eveil = r && RUNE_EL[r.eveil] ? r.eveil : null;
+      } catch (e) {}
+      return o;
+    }
+    function runeSwordCount(h) { const L = (h || state.hero).niveau || 1; return RUNE_SWORD_LVLS.filter(l => L >= l).length; }
+    function runePointsTotal(h) { return Math.min(RUNE_RANK_MAX * 6, 1 + Math.floor(((h || state.hero).niveau || 1) * 0.6)); }
+    function runePointsUsed(h) { return runeState(h).swords.reduce((a, s) => a + (s.tr | 0) + (s.ess | 0), 0); }
+    function runeAbsorbCap(h) { return 2 * ((h || state.hero).niveau || 1); }
+    function runeElCost(h, s) { return s && s.chg > 0 ? 25 * ((h || state.hero).niveau || 1) : 0; }
+    function runeEveilActive(h) {
+      h = h || state.hero; const R = runeState(h); if (!R.eveil) return false;
+      const ss = h === state.hero ? getHeroSetState(h) : (h.__set || {});
+      return ss.setId === "set_eveil" && (ss.count | 0) >= 4;
+    }
+    function runeSwordName(el, i) {
+      return { arcane: "Lame Arcanique", sang: i % 2 === 0 ? "Faux Sanglante" : "Lame Saignante", givre: "Lame de Givre", flamme: "Flamberge Ardente", foudre: "Lame Fulgurante", poison: "Kriss Venimeux", neant: "Lame du Néant" }[el] || "Lame Runique";
+    }
+    function runeActiveSwords(h) {
+      h = h || state.hero; const R = runeState(h), n = runeSwordCount(h), ev = runeEveilActive(h) ? R.eveil : null;
+      const list = R.swords.slice(0, n).map((s, i) => ({ i, el: ev || (RUNE_EL[s.el] ? s.el : "arcane"), tr: s.tr | 0, ess: s.ess | 0 }));
+      const cnt = {}; list.forEach(s => { cnt[s.el] = (cnt[s.el] || 0) + 1; });
+      const sh = RUNE_SHARES[n] || RUNE_SHARES[1];
+      list.forEach(s => {
+        s.rz = cnt[s.el] >= 3 ? 1.35 : (cnt[s.el] === 2 ? 1.15 : 1);
+        s.f = (1 + 0.06 * s.ess) * s.rz * (ev ? 1.25 : 1);
+        s.trMult = 1 + 0.02 * s.tr;
+        s.share = sh[s.i] || 0.35;
+      });
+      return list;
+    }
+    // Bonus de stats des lames (équivalent d'arme + âmes absorbées)
+    function runeStatBonus(h) {
+      const R = runeState(h), a = R.absorb;
+      return { swordAtk: Math.round(seriesPowerAt(h.niveau || 1) * 0.85) + (a.atk || 0), force: a.force || 0, agilite: a.agilite || 0, esprit: a.esprit || 0, chance: a.chance || 0, crit: (a.crit || 0) * 0.002 };
+    }
+
+    // ---- Combat ----
+    function runeDot(en, kind, dps, dur, icon, nom) {
+      const ex = (en.dots || []).find(d => d.kind === kind);
+      if (!ex) { applyEnemyDot(en, kind, dps, dur, icon, nom); return; }
+      const p = getSkillPassives(); dps = Math.round(dps * (1 + (p.dotPct || 0))); dur = dur + (p.dotDur || 0);
+      if (dps >= ex.dps || ex.ticksLeft < dur) Object.assign(ex, { dps, ticksLeft: dur, t: 0, icon, nom, total: dur });
+    }
+    function runeProc(en, stats, s, dmg, crit, delay) {
+      if (en.pv <= 0) return 0;
+      const f = s.f, D = Math.round((delay || 0) * 1000) + 230; let extra = 0;
+      if (s.el === "sang") runeDot(en, "bleed", Math.max(2, Math.round(stats.atk * 0.07 * f)), 5, "🩸", "Saignement runique");
+      else if (s.el === "flamme") runeDot(en, "burn", Math.max(2, Math.round(stats.atk * 0.08 * f)), 4, "🔥", "Brûlure runique");
+      else if (s.el === "poison") runeDot(en, "poison", Math.max(2, Math.round(stats.atk * 0.05 * f)), 8, "☠️", "Venin runique");
+      else if (s.el === "givre") {
+        const now = performance.now();
+        if (Math.random() < Math.min(0.35, 0.10 * f) && !(en._rlFrz && now - en._rlFrz < 6000)) {
+          en._rlFrz = now;
+          if (en.boss || en.guardian) {
+            en.debuffs = en.debuffs || {};
+            en.debuffs.atk = { pct: Math.max(0.2, (en.debuffs.atk && en.debuffs.atk.pct) || 0), left: 8 };
+            setTimeout(() => addCanvasFloat("enemy", "❄️ RALENTI", "#7dd3fc"), D);
+          } else if (!(en.stun > 0)) {
+            en.stun = 1; setTimeout(() => addCanvasFloat("enemy", "❄️ GELÉ", "#bae6fd"), D);
+            addExpLog(`❄️ La lame de givre fige ${en.nom} dans la glace !`, "text-sky-300");
+          }
+        }
+      } else if (s.el === "foudre") {
+        if (Math.random() < Math.min(0.6, 0.2 * f)) {
+          extra = Math.max(1, Math.round(dmg * 0.45)); en.pv = Math.max(0, en.pv - extra);
+          setTimeout(() => addCanvasFloat("enemy", `⚡ -${extra}`, "#fde047"), D + 90);
+        }
+      } else if (s.el === "neant") {
+        const h = Math.round(dmg * 0.05 * f);
+        if (h > 0) { state.hero.pv = Math.min(stats.pvMax, state.hero.pv + h); setTimeout(() => addCanvasFloat("hero", `+${h} PV`, "#d8b4fe"), D); }
+      } else if (s.el === "arcane") {
+        state.hero.pm = Math.min(stats.pmMax, state.hero.pm + Math.round(2 * f));
+      }
+      const se = stats.setEffect;
+      if (se && se.id === "fantome" && crit && en.pv > 0) {
+        const ph = Math.max(1, Math.round(dmg * 0.5)); en.pv = Math.max(0, en.pv - ph); extra += ph; addUltCharge(3);
+        setTimeout(() => addCanvasFloat("enemy", `👻 -${ph}`, "#e9d5ff"), D + 160);
+        addExpLog(`👻 Une Lame Fantôme surgit et frappe ${en.nom} : ${ph} dégâts !`, "text-violet-300");
+      }
+      return extra;
+    }
+    function runeProcAll(en, stats, dmg) {
+      const sw = runeActiveSwords(state.hero); if (!sw.length) return;
+      sw.forEach(s => runeProc(en, stats, s, dmg / sw.length, false, 0.15));
+    }
+    function runeBasicAttack(combat, stats, enemy) {
+      combat.turn = "BUSY"; combat.atb = 0; heroPoseTimer = 0.45;
+      const sw = runeActiveSwords(state.hero); let total = 0, n = 0;
+      sw.forEach((s, i) => {
+        if (i > 0 && enemy.pv <= 0) return;
+        n++;
+        const crit = Math.random() < stats.critChance, delay = i * 0.16, E = RUNE_EL[s.el];
+        spawnAttackFx({ sword: s.i, delay });
+        const def = s.el === "neant" ? enemy.def * 0.8 : enemy.def;
+        const raw = Math.max(2, mitig(stats.atk, def, 1));
+        const dmg = Math.max(1, Math.round(raw * (0.9 + Math.random() * 0.25) * (crit ? stats.critMult : 1) * s.share * s.trMult * (s.el === "arcane" ? 1 + 0.08 * s.f : 1)));
+        enemy.pv = Math.max(0, enemy.pv - dmg); total += dmg;
+        RUNE_HIT_SKIP = true; try { onHeroHit(enemy, stats, dmg, crit); } finally { RUNE_HIT_SKIP = false; }
+        total += runeProc(enemy, stats, s, dmg, crit, delay);
+        addUltCharge(i === 0 ? 10 + (crit ? 4 : 0) : 3 + (crit ? 2 : 0));
+        setTimeout(() => { RetroAudio.hit(crit); addCanvasFloat("enemy", crit ? `CRIT -${dmg}` : `-${dmg}`, crit ? "#ffd54f" : E.core); }, Math.round(delay * 1000) + 210);
+        addExpLog(`${E.ic} ${runeSwordName(s.el, s.i)} frappe ${enemy.nom} : ${dmg} dégâts${crit ? " (CRITIQUE)" : ""} !`, i === 0 ? "text-white" : "text-violet-200");
+      });
+      applyLifesteal(stats, total);
+      updateCombatUI();
+      setTimeout(resolveAfterPlayerAction, 560 + (n - 1) * 160);
+    }
+
+    // ---- Absorption d'âmes (armes ramassées) ----
+    let runePulseT = -99;
+    function runeMsg(m, cls, src) { if (src === "loot" || src === "chest") addExpLog(m, cls); else if (src !== "coop") showToast(m); }
+    function runeAbsorb(item, src) {
+      const h = state.hero, R = runeState(h), cap = runeAbsorbCap(h);
+      runePulseT = performance.now() / 1000;
+      try { RetroAudio.magic(); } catch (e) {}
+      R.absorbW = (R.absorbW | 0) + 1;
+      if ((R.absorbN | 0) >= cap) {
+        const gold = (UNIVERS_CONFIG.raretes[item.rarete] || {}).valeurOr || 10;
+        state.or += gold; state.ressources.eclat_forge = (state.ressources.eclat_forge || 0) + 1;
+        runeMsg(`🔮 Vos lames sont rassasiées (${cap}/${cap}) : [${item.nom}] se dissout en +${gold} Or et 1 Éclat de Forge. Montez de niveau pour absorber davantage.`, "text-violet-300", src);
+        return "";
+      }
+      const keys = Object.keys(item.stats || {}).filter(k => ["atk", "force", "agilite", "esprit", "chance", "critChance"].includes(k) && item.stats[k] > 0);
+      if (!keys.length) keys.push("atk");
+      const pts = Math.min(RUNE_ABS_PTS[item.rarete] || 1, cap - (R.absorbN | 0)), got = {};
+      for (let i = 0; i < pts; i++) {
+        let k = keys[Math.floor(Math.random() * keys.length)];
+        if (k === "critChance") k = (R.absorb.crit || 0) >= RUNE_CRIT_MAX ? "atk" : "crit";
+        R.absorb[k] = (R.absorb[k] || 0) + 1; got[k] = (got[k] || 0) + 1;
+      }
+      R.absorbN = (R.absorbN | 0) + pts;
+      const txt = Object.entries(got).map(([k, v]) => k === "crit" ? `+${(v * 0.2).toFixed(1)} % CRIT` : `+${v} ${RUNE_ABS_LBL[k]}`).join(", ");
+      runeMsg(`🔮 Vos lames battent comme un cœur et absorbent l'âme de [${item.nom}] : ${txt} (${R.absorbN}/${cap}).`, "text-violet-300 font-semibold", src);
+      try { if (state.expedition && state.expedition.active) addCanvasFloat("hero", "🔮 " + txt, "#c4b5fd"); } catch (e) {}
+      return txt;
+    }
+    function runeLootPush(arr, item) {
+      if (state.hero.classe === "runelame" && item && item.slot === "arme") { runeAbsorb(item, "loot"); return false; }
+      arr.push(item); return true;
+    }
+    // Coop : l'arme va à l'allié si elle l'améliore vraiment, sinon le Runelame l'absorbe
+    function runeCoopSort(equips, lines) {
+      const allies = ((typeof COOP !== "undefined" && COOP.roster) || []).filter(r => r.id !== COOP.myId && r.classe !== "runelame" && r.gear);
+      const free = {}; allies.forEach(a => { free[a.id] = a.gear.free | 0; });
+      for (let i = equips.length - 1; i >= 0; i--) {
+        const it = equips[i]; if (!it || it.slot !== "arme") continue;
+        equips.splice(i, 1);
+        const atk = (it.stats && it.stats.atk) || 0;
+        const cand = allies.filter(a => free[a.id] > 0 && atk > (a.gear.wAtk || 0) * 1.05).sort((x, y) => (atk - (y.gear.wAtk || 0)) - (atk - (x.gear.wAtk || 0)) || ((x.gear.wAtk || 0) - (y.gear.wAtk || 0)));
+        const best = cand[0];
+        if (best) { free[best.id]--; coopSendGift(best.id, it); lines.push(`🎁 [${it.nom}] offerte à ${best.name} : elle surpasse son arme (+${atk - (best.gear.wAtk || 0)} ATQ).`); }
+        else {
+          const got = runeAbsorb(it, "coop");
+          lines.push(`🔮 Le Runelame a déterminé que cette arme est trop faible : [${it.nom}] est absorbée${got ? " (" + got + ")" : ""}.`);
+          showToast("🔮 Le Runelame a déterminé que cette arme est trop faible.");
+        }
+      }
+    }
+    function coopSendGift(to, item) {
+      const msg = { t: "gift", to, item: JSON.parse(JSON.stringify(item)) };
+      if (COOP.role === "host") coopRouteGift(COOP.myId, msg);
+      else if (COOP.hostLink) COOP.hostLink.send(msg);
+    }
+    function coopRouteGift(fromPid, m) {
+      const R = COOP.room; if (!R || !m) return;
+      const from = R.players.find(p => p.id === fromPid), fromName = from ? from.name : "Un allié";
+      if (m.to === COOP.myId) { coopReceiveGift(m.item, fromName); return; }
+      const t = R.players.find(p => p.id === m.to); if (t && t.link && !t.left) t.link.send({ t: "gift", item: m.item, from: fromName });
+    }
+    function coopCleanGift(r) {
+      if (!r || typeof r !== "object" || r.slot !== "arme") return null;
+      const L = Math.max(1, Math.min(999, r.niveau | 0)), cap = Math.round(seriesPowerAt(L) * 2.2) + 10, s = r.stats || {};
+      const N = (v, hi) => Math.max(0, Math.min(hi, Math.round(Number(v) || 0)));
+      const stats = { atk: Math.max(1, N(s.atk, cap)) };
+      ["force", "agilite", "esprit", "chance"].forEach(k => { const v = N(s[k], 20 + L); if (v) stats[k] = v; });
+      const rar = UNIVERS_CONFIG.raretes[r.rarete] ? r.rarete : "commun";
+      return { uid: "eq_" + Date.now() + "_" + Math.floor(Math.random() * 100000), nom: String(r.nom || "Arme").replace(/[<>]/g, "").slice(0, 48), slot: "arme", rarete: rar,
+        qualite: UNIVERS_CONFIG.raretes[rar].nom, niveau: L, provenance: "Cadeau d'un Runelame", stats };
+    }
+    function coopReceiveGift(raw, fromName) {
+      const it = coopCleanGift(raw); if (!it) return;
+      addEquipmentToInventory(it);
+      showToast(`🎁 ${String(fromName || "Un allié").replace(/[<>]/g, "").slice(0, 16)} (Runelame) t'offre [${it.nom}] !`);
+      try { updateGlobalHUD(); } catch (e) {}
+      saveGame();
+    }
+    function coopRuneProc(p, s, en, w, dmg) {
+      const f = w.f;
+      if (w.el === "sang") coopApplyDot(p, "bleed", Math.max(2, Math.round(s.atk * 0.07 * f)), 5, "Saignement runique", true);
+      else if (w.el === "flamme") coopApplyDot(p, "burn", Math.max(2, Math.round(s.atk * 0.08 * f)), 4, "Brûlure runique", true);
+      else if (w.el === "poison") coopApplyDot(p, "poison", Math.max(2, Math.round(s.atk * 0.05 * f)), 8, "Venin runique", true);
+      else if (w.el === "givre") { if (!en.boss && !(en.stun > 0) && Math.random() < Math.min(0.25, 0.08 * f)) { en.stun = 1; coopEv({ k: "txt", to: "enemy", v: "❄️ GELÉ", c: "#bae6fd" }); } }
+      else if (w.el === "foudre") { if (en.pv > 0 && Math.random() < Math.min(0.6, 0.2 * f)) { const x = Math.max(1, Math.round(dmg * 0.45)); en.pv = Math.max(0, en.pv - x); p.dealt += x; coopEv({ k: "dmg", to: "enemy", v: x, crit: 0, by: p.id }); } }
+      else if (w.el === "neant") { const h = Math.round(dmg * 0.05 * f); if (h > 0) p.pv = Math.min(s.pvMax, p.pv + h); }
+      else if (w.el === "arcane") p.pm = Math.min(s.pmMax, p.pm + Math.round(2 * f));
+    }
+    function coopRuneAtk(p, s, en, hurt) {
+      const sw = runeActiveSwords(p.snap.hero); let tot = 0;
+      sw.forEach((w, i) => {
+        if (en.pv <= 0) return;
+        const crit = Math.random() < s.critChance, def = w.el === "neant" ? en.def * 0.8 : en.def;
+        const dmg = Math.max(1, Math.round(Math.max(2, mitig(s.atk, def, 1)) * (0.9 + Math.random() * 0.25) * (crit ? s.critMult : 1) * w.share * w.trMult * (w.el === "arcane" ? 1 + 0.08 * w.f : 1)));
+        hurt(dmg, crit); tot += dmg; coopAddUlt(p, i === 0 ? 10 + (crit ? 4 : 0) : 3);
+        coopRuneProc(p, s, en, w, dmg);
+      });
+      coopLog(`⚔️ ${p.name} lance ${sw.length} lame${sw.length > 1 ? "s" : ""} runique${sw.length > 1 ? "s" : ""} : ${tot} dégâts.`, "text-violet-200");
+    }
+
+    // v1.38 — Difficulté de prise en main des classes (1 = débutant … 5 = expert)
+    const CLASS_DIFF = {
+      chevalier:  { n: 1, lab: "Débutant",      col: "#4ade80", why: "Robuste et se soigne en frappant : il pardonne les erreurs. Idéal pour découvrir le jeu." },
+      rodeur:     { n: 2, lab: "Accessible",    col: "#a3e635", why: "Rapide, critique souvent et son compagnon combat tout seul. Plus fragile au corps à corps." },
+      occultiste: { n: 3, lab: "Intermédiaire", col: "#facc15", why: "Énormes dégâts magiques mais peu de PV : il faut gérer ses PM et ne pas se faire toucher." },
+      alchimiste: { n: 4, lab: "Avancé",        col: "#fb923c", why: "Gagne sur la durée : poisons, affaiblissements et potions à enchaîner au bon moment." },
+      runelame:   { n: 5, lab: "Expert",        col: "#f472b6", why: "Pas d'arme : éléments, Résonance, points de l'Autel et âmes absorbées à optimiser. Demande de bien connaître le jeu." }
+    };
+    function classDiffHtml(id, full) {
+      const d = CLASS_DIFF[id]; if (!d) return "";
+      const pips = Array.from({ length: 5 }, (_, k) => `<span style="display:inline-block;width:9px;height:9px;margin-right:2px;border-radius:2px;background:${k < d.n ? d.col : "#1e293b"};box-shadow:${k < d.n ? "0 0 4px " + d.col + "aa" : "none"}"></span>`).join("");
+      return `<div class="mt-1.5 flex items-center gap-1.5 text-[10px]"><span class="text-slate-400">Prise en main</span><span class="inline-flex items-center">${pips}</span><b style="color:${d.col}">${d.lab}</b></div>${full ? `<div class="text-[10px] text-slate-400 mt-0.5 leading-snug">${d.why}</div>` : ""}`;
+    }
     function getSkillList(classe) { return (SKILL_TREES[classe || state.hero.classe] || []).slice().sort((a, b) => a.lvl - b.lvl); }
     function getUnlockedSkills() { return getSkillList().filter(k => state.hero.niveau >= k.lvl); }
     function getTreeActives() { return getUnlockedSkills().filter(k => k.type === "active"); }
@@ -3257,6 +3586,11 @@
     }
     function getSkillCd(id) { const c = state.expedition.combat; return c && c.cds && c.cds[id] > 0 ? c.cds[id] : 0; }
     function checkNewSkills(oldLvl, newLvl) {
+      if (state.hero.classe === "runelame") {
+        RUNE_SWORD_LVLS.filter(l => l > oldLvl && l <= newLvl).forEach(l => { const k = RUNE_SWORD_LVLS.indexOf(l); runePulseT = performance.now() / 1000;
+          addExpLog(`⚔️ UNE NOUVELLE LAME RUNIQUE SE MATÉRIALISE : vous commandez désormais ${k + 1} lames !`, "text-violet-300 font-bold"); showToast(`⚔️ Lame ${["I", "II", "III"][k]} matérialisée ! Accordez-la à l'Autel Runique.`); });
+        if (runePointsTotal({ niveau: newLvl }) > runePointsTotal({ niveau: oldLvl })) addExpLog("🔮 Nouveau point d'enchantement disponible à l'Autel Runique.", "text-violet-300");
+      }
       getSkillList().filter(k => k.lvl > oldLvl && k.lvl <= newLvl).forEach(k => {
         addExpLog(`✨ NOUVELLE COMPÉTENCE : ${k.icon} ${k.nom} (${k.type === "active" ? "Actif" : "Passif"}) !`, "text-fuchsia-300 font-bold");
         showToast(`✨ Compétence débloquée : ${k.nom}`);
@@ -3699,6 +4033,7 @@
         else if (cl === "rodeur") { for (let i = 0; i < 4; i++) P(13 + i, 16 + i * 2, 2, 2, "#78350f"); P(16, 15, 3, 1, "#fef08a"); }
         else if (cl === "alchimiste") { P(16, 17, 3, 7, "#78350f"); P(17, 18, 1, 1, "#4ade80"); P(12, 21, 2, 3, "#78350f"); P(12, 20, 1, 1, "#38bdf8"); }
         else if (cl === "occultiste") { P(17, 16, 2, 3, "#e879f9"); P(12, 15, 7, 1, shade(outfit)); }
+        else if (cl === "runelame") { P(12, 22, 7, 1, "#1e1b4b"); P(16, 22, 2, 1, "#22d3ee"); P(17, 17, 1, 3, "#a78bfa"); P(15, 18, 1, 1, "#67e8f9"); }
       } else {
         const K = A.kind;
         P(12, 22, 7, 2, A.trim); P(16, 16, 1, 6, A.trim);
@@ -4298,7 +4633,8 @@
     const LEGEND_LINES = {
       aube: { nom: "Héraut de l'Aube", icon: "🌅", emb: "sun", fx: "holy", desc: "Lignée solaire : blanc, or et cramoisi." },
       dunes: { nom: "Vagabond des Dunes", icon: "🏜️", emb: "spiral", fx: "sand", desc: "Lignée des sables : sable, turquoise et bronze." },
-      celeste: { nom: "Paladin Céleste", icon: "🌟", emb: "star", fx: "cosmic", desc: "Lignée des étoiles : argent, bleu nuit et lumière." }
+      celeste: { nom: "Paladin Céleste", icon: "🌟", emb: "star", fx: "cosmic", desc: "Lignée des étoiles : argent, bleu nuit et lumière." },
+      runique: { nom: "Ascète Runique", icon: "🔯", emb: "star", fx: "void", desc: "Lignée des runes (Runelame) : nuit, violet et cyan." }
     };
     const LEGEND_SKIN_DEFS = {
       aube: [
@@ -4321,7 +4657,10 @@
         ["alchimiste", "casque", "Bandeau Solaire", "headband", "#b91c1c", "#fbbf24"],
         ["alchimiste", "cape", "Cape d'Ambre", "cape", "#c2410c", "#fbbf24"],
         ["alchimiste", "arme", "Alambic Solaire", "lflask", "#fbbf24", "#7c2d12", "#fde047"],
-        ["alchimiste", "bouclier", "Fiole d'Aurore", "lvial", "#7c2d12", "#fbbf24", "#fde047"]
+        ["alchimiste", "bouclier", "Fiole d'Aurore", "lvial", "#7c2d12", "#fbbf24", "#fde047"],
+        ["runelame", "armure", "Mantelet de l'Aube Runique", "robe", "#f8fafc", "#f59e0b", "#fde047"],
+        ["runelame", "casque", "Diadème du Lever", "sunrays", "#fbbf24", "#7c3aed", "#fde047"],
+        ["runelame", "cape", "Étole de l'Aurore", "cape", "#b91c1c", "#fde68a"]
       ],
       dunes: [
         ["chevalier", "armure", "Armure du Vagabond", "lplate", "#e7d3a8", "#0d9488", "#2dd4bf"],
@@ -4343,7 +4682,10 @@
         ["alchimiste", "casque", "Turban de l'Alchimiste", "turban", "#e7e5e4", "#0d9488", "#fde68a"],
         ["alchimiste", "cape", "Cape de l'Oasis", "cape", "#a1824f", "#0d9488"],
         ["alchimiste", "arme", "Gourde d'Élixir", "lflask", "#b45309", "#134e4a", "#2dd4bf"],
-        ["alchimiste", "bouclier", "Fiole d'Oasis", "lvial", "#134e4a", "#b45309", "#2dd4bf"]
+        ["alchimiste", "bouclier", "Fiole d'Oasis", "lvial", "#134e4a", "#b45309", "#2dd4bf"],
+        ["runelame", "armure", "Robe du Lame-Sable", "robe", "#e7d3a8", "#0d9488", "#2dd4bf"],
+        ["runelame", "casque", "Turban Runique", "turban", "#f5f5f4", "#0d9488", "#2dd4bf", { veil: true }],
+        ["runelame", "cape", "Voile du Simoun", "cape", "#c2a36b", "#14b8a6"]
       ],
       celeste: [
         ["chevalier", "armure", "Armure du Paladin Céleste", "lplate", "#1e3a8a", "#cbd5e1", "#67e8f9"],
@@ -4365,10 +4707,19 @@
         ["alchimiste", "casque", "Diadème d'Azur", "circlet", "#cbd5e1", "#67e8f9", "#ffffff"],
         ["alchimiste", "cape", "Cape Lunaire", "cape", "#c7d2fe", "#67e8f9"],
         ["alchimiste", "arme", "Alambic d'Azur", "lflask", "#cbd5e1", "#1e1b4b", "#67e8f9"],
-        ["alchimiste", "bouclier", "Fiole de Lune", "lvial", "#1e1b4b", "#cbd5e1", "#67e8f9"]
+        ["alchimiste", "bouclier", "Fiole de Lune", "lvial", "#1e1b4b", "#cbd5e1", "#67e8f9"],
+        ["runelame", "armure", "Robe Astrale des Lames", "robe", "#1e3a8a", "#cbd5e1", "#67e8f9"],
+        ["runelame", "casque", "Halo des Lames", "halo", "#67e8f9", "#e0f2fe", "#ffffff"],
+        ["runelame", "cape", "Cape de la Voûte Runique", "cape", "#e0e7ff", "#67e8f9"]
+      ],
+      runique: [
+        ["runelame", "armure", "Robe de l'Ascète Runique", "robe", "#0f0a24", "#7c3aed", "#22d3ee"],
+        ["runelame", "casque", "Couronne de Glyphes", "halo", "#22d3ee", "#a78bfa", "#e0f2fe"],
+        ["runelame", "cape", "Ailes de Lames", "wings", "#1e1b4b", "#a78bfa"],
+        ["runelame", "aura", "Cercle Runique", "vortex", "#22d3ee", "#a78bfa"]
       ]
     };
-    const CLASS_NOMS = { chevalier: "Chevalier", rodeur: "Rôdeur", occultiste: "Occultiste", alchimiste: "Alchimiste" };
+    const CLASS_NOMS = { chevalier: "Chevalier", rodeur: "Rôdeur", occultiste: "Occultiste", alchimiste: "Alchimiste", runelame: "Runelame" };
     Object.entries(LEGEND_SKIN_DEFS).forEach(([line, defs]) => defs.forEach(([cls, slot, nom, kind, main, trim, glow, extra]) => {
       const L = LEGEND_LINES[line];
       SKIN_CATALOG.push(Object.assign({ id: `leg_${line}_${cls}_${slot}`, slot, nom, rarete: "legendaire", kind, main, trim, glow, emb: L.emb, cls, ligne: line, ach: "leg_" + line,
@@ -4507,6 +4858,15 @@
         effet4: { id: "chaine", nom: "Réaction en Chaîne", stat: { esprit: 4, critChance: 0.12 },
           desc: "+12 % de Critique ; chaque coup critique déclenche une explosion infligeant 60 % de dégâts supplémentaires. (+4 Esprit)" },
         apparence: "Artificier Fou : casquette à lunettes de laiton, gilet de cartouchières, lance-bombes et sacoche d'explosifs"
+      },
+      runelame: {
+        id: "set_fantome", classe: "runelame", icone: "👻", nom: "Ordre des Lames Fantômes", theme: "runic", need: 3,
+        pieces: { casque: "Capuche de l'Ordre Fantôme", armure: "Manteau de l'Ordre Fantôme", anneau: "Anneau des Lames Fantômes" },
+        affinite: { esprit: 3, agilite: 2 }, mats: { a: "poudre_runique", b: "ame_liche" },
+        stat2: { esprit: 5, critChance: 0.04 }, desc2: "+5 Esprit, +4 % Critique",
+        effet4: { id: "fantome", nom: "Lames Fantômes", stat: { agilite: 3, critChance: 0.06 },
+          desc: "Chaque coup critique d'une lame invoque une Lame Fantôme qui frappe à nouveau (50 % des dégâts) et charge l'ultime. (+3 Agilité, +6 % Critique)" },
+        apparence: "Spectre-Lame : capuche d'ombre, manteau spectral, cape violette et vortex fantomatique"
       }
     };
     function getAllSets() { return [...Object.values(UNIVERS_CONFIG.panoplies), ...Object.values(UNIVERS_CONFIG.panopliesExtra)]; }
@@ -4520,6 +4880,7 @@
         anneau: { [B]: 3, [A]: 6, eclat_neant: 2, fragment_etoile: 2, larme_astrale: 1 }
       };
       Object.entries(STAR_SLOT_RECIPES).forEach(([slot, d]) => {
+        if (!pan.pieces[slot]) return;
         UNIVERS_CONFIG.recettesForge.push({
           id: `star_${pan.id}_${slot}`, nom: pan.pieces[slot], cat: "Forge Étoilée",
           type: "equipement", slot, puissance: d.puissance, niveauForgeReq: d.niveauForgeReq, niveauPersoReq: d.niveauPersoReq, xpForge: d.xpForge, coutOr: d.coutOr,
@@ -4531,6 +4892,7 @@
     });
     Object.values(UNIVERS_CONFIG.panoplies).forEach(pan => {
       Object.entries(STAR_SLOT_RECIPES).forEach(([slot, d]) => {
+        if (!pan.pieces[slot]) return;
         UNIVERS_CONFIG.recettesForge.push({
           id: `star_${pan.id}_${slot}`, nom: pan.pieces[slot], cat: "Forge Étoilée",
           type: "equipement", slot, puissance: d.puissance, niveauForgeReq: d.niveauForgeReq, niveauPersoReq: d.niveauPersoReq, xpForge: d.xpForge, coutOr: d.coutOr,
@@ -4681,8 +5043,9 @@
     function getActiveSetInfo() {
       const sets = getClassSets(state.hero.classe);
       if (!sets.length) return null;
-      let best = { pan: sets[0], count: countSetPieces(sets[0].id) };
-      sets.slice(1).forEach(p => { const c = countSetPieces(p.id); if (c > best.count) best = { pan: p, count: c }; });
+      const nc = (p, c) => (p.need && c >= p.need) ? 4 : c;   // panoplie de 3 pièces complète = effet « complet »
+      let best = { pan: sets[0], count: nc(sets[0], countSetPieces(sets[0].id)) };
+      sets.slice(1).forEach(p => { const c = nc(p, countSetPieces(p.id)); if (c > best.count) best = { pan: p, count: c }; });
       return best;
     }
     function setTagHtml(it) {
@@ -4698,11 +5061,11 @@
     function setCardOne(pan, count) {
       const row = (ok, label, txt) => `<div class="text-[11px] ${ok ? "text-emerald-300" : "text-slate-500"}">${ok ? "✔" : "○"} <b>${label}</b> : ${txt}</div>`;
       return `<div class="melvor-card p-3 border-l-4 ${count >= 2 ? "border-l-fuchsia-400" : "border-l-slate-600"} space-y-1">
-        <div class="flex items-center justify-between gap-2"><span class="text-xs font-bold text-fuchsia-300">${pan.icone} Panoplie ${pan.nom} — ${count}/4 pièces</span>
+        <div class="flex items-center justify-between gap-2"><span class="text-xs font-bold text-fuchsia-300">${pan.icone} Panoplie ${pan.nom} — ${count}/${pan.need || 4} pièces</span>
           <button type="button" data-set-preview="${pan.id}" title="Aperçu du set sur votre personnage" class="ui-btn px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-fuchsia-500/40 text-xs">🔍 Aperçu</button></div>
         ${row(count >= 2, "2 pièces", pan.desc2)}
-        ${row(count >= 4, "4 pièces — " + pan.effet4.nom, pan.effet4.desc)}
-        ${(() => { const ap = { set_traqueur: "Assassin Stellaire : capuche masquée, tenue d'ombre, arc et carquois", set_rempart: "Paladin Stellaire : heaume à cimier d'étoiles, plates d'or, épée et écu étoilés", set_vide: "Archimage du Vide : couronne flottante, robe cosmique, sceptre-croissant et orbe", set_corrosif: "Alchimiste du Néant : masque à bec, manteau à fioles, sceptre-alambic et flacon" }[pan.id] || pan.apparence; return ap ? row(count >= 2, "Apparence (2 pièces)", ap + " — attaques animées") + row(count >= 4, "Cape, aura & ultime (4 pièces)", pan.theme ? "Cape et aura thématiques + ultime personnalisé" : "Cape étoilée, aura de constellation + ultime stellaire") : ""; })()}
+        ${row(count >= (pan.need || 4), (pan.need || 4) + " pièces — " + pan.effet4.nom, pan.effet4.desc)}
+        ${(() => { const ap = { set_traqueur: "Assassin Stellaire : capuche masquée, tenue d'ombre, arc et carquois", set_rempart: "Paladin Stellaire : heaume à cimier d'étoiles, plates d'or, épée et écu étoilés", set_vide: "Archimage du Vide : couronne flottante, robe cosmique, sceptre-croissant et orbe", set_corrosif: "Alchimiste du Néant : masque à bec, manteau à fioles, sceptre-alambic et flacon" }[pan.id] || pan.apparence; return ap ? (pan.need === 3 ? row(count >= 2, "Apparence (2 pièces)", ap.split(" : ")[0] + " : diadème et tenue de la panoplie") + row(count >= 3, "Cape & aura (3 pièces)", ap.split(" : ")[1] || "Cape et aura thématiques") : row(count >= 2, "Apparence (2 pièces)", ap + " — attaques animées") + row(count >= 4, "Cape, aura & ultime (4 pièces)", pan.theme ? "Cape et aura thématiques + ultime personnalisé" : "Cape étoilée, aura de constellation + ultime stellaire")) : ""; })()}
         ${false ? `${row(count >= 2, "Apparence", "Assassin Stellaire : capuche masquée + tenue d'ombre (2 pièces)")}${row(count >= 4, "Aura", "Cape d'ombre étoilée + aura de constellation (4 pièces)")}` : ""}
         <div class="text-[10px] text-slate-500">Se forge à la 🌠 Forge Étoilée (Forge niv. ${STAR_FORGE_MIN_LVL}+).</div>
       </div>`;
@@ -4721,7 +5084,7 @@
         <div class="flex items-center justify-between"><h3 class="text-base font-bold text-fuchsia-300">🔍 ${pan.icone} ${pan.nom} — aperçu sur ${state.hero.nom}</h3>
           <button type="button" data-close-preview class="ui-btn px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs">✕ Fermer</button></div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          ${[["Sans le set", "sp-c0"], ["2 pièces", "sp-c2"], ["4 pièces", "sp-c4"]].map(([l, id]) => `<div class="melvor-card p-3 text-center space-y-2"><div class="text-xs font-semibold text-slate-300">${l}</div>
+          ${[["Sans le set", "sp-c0"], ["2 pièces", "sp-c2"], [(pan.need || 4) + " pièces", "sp-c4"]].map(([l, id]) => `<div class="melvor-card p-3 text-center space-y-2"><div class="text-xs font-semibold text-slate-300">${l}</div>
             <div class="rounded-lg bg-slate-950 border border-slate-800 flex justify-center"><canvas id="${id}" width="128" height="128" class="pixelated w-40 h-40"></canvas></div></div>`).join("")}
         </div>
         <div class="melvor-card p-3 space-y-2"><div class="text-xs font-semibold text-slate-300">En selle (4 pièces)${getActiveMount() ? "" : " — aperçu sur Destrier Blanc"}</div>
@@ -4792,6 +5155,20 @@
       }
     };
     const SET_LOOKS = {
+      set_eveil: {
+        armor: { id: "rune_mantle", slot: "armure", kind: "stellar_robe", main: "#140b33", trim: "#6d28d9", glow: "#22d3ee" },
+        helm: { id: "rune_diadem", slot: "casque", kind: "stellar_crown", main: "#140b33", trim: "#7c3aed", glow: "#22d3ee" },
+        weapon: null, shield: null,
+        cape: { id: "rune_cape", slot: "cape", kind: "stellar", main: "#120a2e", trim: "#22d3ee", glow: "#a5f3fc" },
+        aura: { id: "rune_aura", slot: "aura", kind: "stellar", main: "#6d28d9", trim: "#67e8f9" }
+      },
+      set_fantome: {
+        armor: { id: "phantom_coat", slot: "armure", kind: "frost_robe", main: "#1e1b2e", trim: "#a78bfa", glow: "#e9d5ff" },
+        helm: { id: "phantom_hood", slot: "casque", kind: "hood", main: "#1e1b2e", trim: "#a78bfa", glow: "#e9d5ff" },
+        weapon: null, shield: null,
+        cape: { id: "phantom_cape", slot: "cape", kind: "cape", main: "#2e1065", trim: "#c4b5fd" },
+        aura: { id: "phantom_aura", slot: "aura", kind: "vortex", main: "#a78bfa", trim: "#e9d5ff" }
+      },
       set_traqueur: STELLAR_LOOK, set_rempart: STELLAR_LOOKS.chevalier, set_vide: STELLAR_LOOKS.occultiste, set_corrosif: STELLAR_LOOKS.alchimiste,
       set_carnage: {
         armor: { id: "blood_plate", slot: "armure", kind: "blood_plate", main: "#1c1414", trim: "#7f1d1d", glow: "#ef4444" },
@@ -4839,6 +5216,7 @@
       const s = hero.skins || {};
       const gs = id => { const k = getSkin(id); return k && skinForClass(k, hero.classe) ? k : null; };
       const look = { armor: gs(s.armure), weapon: gs(s.arme), shield: gs(s.bouclier), helm: gs(s.casque), cape: gs(s.cape), aura: gs(s.aura) };
+      if (hero.classe === "runelame") { look.weapon = null; look.shield = null; }
       if (hero.setLookOff) return look;
       const ss = hero === state.hero ? getHeroSetState(hero) : (hero.__set ? { setId: hero.__set.setId, count: hero.__set.count | 0 } : { count: 0 });
       const n = ss.count;
@@ -5764,6 +6142,11 @@
             <div class="space-y-1.5"><div class="text-xs text-slate-400">Marque du visage</div><div class="flex flex-wrap gap-2">${MARK_OPTS.map(([v, l]) => chip((h.marque || "aucune") === v, `data-opt="marque:${v}"`, l)).join("")}</div></div>
             <p class="text-[11px] text-slate-500">L'apparence est purement cosmétique et modifiable à tout moment. La lignée et la classe restent liées à vos statistiques.</p>
           </div>`;
+      } else if (h.classe === "runelame" && (wardrobeTab === "arme" || wardrobeTab === "bouclier")) {
+        content = `<div class="melvor-card p-6 text-center space-y-3"><div class="text-3xl">🔮</div>
+          <div class="text-sm font-bold text-violet-200">Le Runelame ne manie ni arme ni objet en main</div>
+          <div class="text-xs text-slate-400 max-w-md mx-auto">L'apparence de ses lames dépend de leur élément : faux et épées ruisselantes de sang, lames de cristal givré, flamberges ardentes, éclairs, kriss venimeux ou obsidienne du Néant. Tout se règle à l'Autel Runique.</div>
+          <button type="button" data-nav-go="autel" class="ui-btn px-4 py-2 rounded-lg bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold">🔮 Ouvrir l'Autel Runique</button></div>`;
       } else {
         const slot = wardrobeTab, equipped = h.skins[slot];
         const list = myCat.filter(k => k.slot === slot).sort((a, b) => UNIVERS_CONFIG.raretes[a.rarete].ordre - UNIVERS_CONFIG.raretes[b.rarete].ordre);
@@ -5806,6 +6189,7 @@
       const slk = document.getElementById("ward-setlook");
       if (slk) slk.addEventListener("change", () => { RetroAudio.confirm(); h.setLookOff = !slk.checked; redraw(); });
       box.querySelectorAll("[data-ward-tab]").forEach(b => b.addEventListener("click", () => { RetroAudio.cursor(); wardrobeTab = b.dataset.wardTab; renderWardrobeView(); }));
+      box.querySelectorAll("[data-nav-go]").forEach(b => b.addEventListener("click", () => { RetroAudio.cursor(); switchView(b.dataset.navGo); }));
       box.querySelectorAll("[data-opt]").forEach(b => b.addEventListener("click", () => { RetroAudio.cursor(); const [k, v] = b.dataset.opt.split(":"); h[k] = v; redraw(); }));
       box.querySelectorAll("[data-col]").forEach(b => b.addEventListener("click", () => { RetroAudio.cursor(); h[b.dataset.col] = b.dataset.val; redraw(); }));
       box.querySelectorAll("[data-colinput]").forEach(i => {
@@ -5823,9 +6207,10 @@
     }
 
     function drawWardrobeCanvases(tSec) {
-      document.querySelectorAll("canvas[data-face-prev]").forEach(cv => {
+      RUNE_NO_ORBIT = true;
+      try { document.querySelectorAll("canvas[data-face-prev]").forEach(cv => {
         drawHero128(cv, { ...state.hero, visage: cv.dataset.facePrev, skins: {} }, 0, 0, false, false);
-      });
+      }); } finally { RUNE_NO_ORBIT = false; }
       drawHero128(document.getElementById("wardrobe-canvas"), state.hero, tSec, heroPoseTimer, false, false);
       document.querySelectorAll("canvas[data-skin-prev]").forEach(cv => {
         const [slot, id] = cv.dataset.skinPrev.split(":");
@@ -5841,6 +6226,7 @@
       if (!canvas) return;
       drawHero128Base(canvas, hero, timeSec, poseTimer, isWalking, isCampfire, workMode, rider);
       try { drawSkinFx(canvas.getContext("2d"), getHeroLook(hero), timeSec, false); } catch (e) {}
+      if (hero && hero.classe === "runelame" && !workMode && !rider && !RUNE_NO_ORBIT) { try { runeOrbitOverlay(canvas, hero, timeSec, isCampfire); } catch (e) { console.error(e); } }
     }
     function drawHero128Base(canvas, hero, timeSec, poseTimer = 0, isWalking = false, isCampfire = false, workMode = false, rider = null) {
       if (!canvas) return;
@@ -5936,6 +6322,12 @@
       } else if (hero.classe === "occultiste") {
         px(tx + 1, 22 + yOff, tw - 2, 3, outfit);
         px(15, 18 + yOff, 2, 3, "#e879f9");
+      } else if (hero.classe === "runelame") {
+        px(tx, 22 + yOff, tw, 2, "#1e1b4b");
+        px(15, 22 + yOff, 2, 2, "#22d3ee");
+        px(tx + 1, 17 + yOff, 1, 5, "#a78bfa");
+        px(tx + tw - 2, 17 + yOff, 1, 5, "#a78bfa");
+        px(15, 18 + yOff, 2, 2, "#67e8f9");
       }
 
       if (look.armor) drawArmorSkin(px, look.armor, tx, tw, yOff);
@@ -6031,6 +6423,8 @@
       } else if (hero.classe === "occultiste") {
         px(ix + 1, iy + 2, 2, 10, "#78350f");
         px(ix, iy, 4, 3, "#c084fc");
+      } else if (hero.classe === "runelame" && !rider) {
+        px(rx, isPose ? armY - 2 : armY + 6, 2, 1, (Math.floor(timeSec * 4) % 2) ? "#a5f3fc" : "#a78bfa");
       }
 
       if (isPose) {
@@ -8442,15 +8836,19 @@
       }
 
       // 5. Dessin du Héros en marche ou en combat
-      drawHero128(heroBufferCanvas, state.hero, timeSec, heroPoseTimer, isWalking, false);
+      const _rlS = state.hero.classe === "runelame";
+      RUNE_NO_ORBIT = _rlS;
+      try { drawHero128(heroBufferCanvas, state.hero, timeSec, heroPoseTimer, isWalking, false); } finally { RUNE_NO_ORBIT = false; }
       const hk = timeSec - heroHitT, heroHurt = hk >= 0 && hk < 0.22;
       if (heroHurt) { const g = heroBufferCanvas.getContext("2d"); g.globalCompositeOperation = "source-atop"; g.fillStyle = `rgba(239,68,68,${0.6 * (1 - hk / 0.22)})`; g.fillRect(0, 0, 128, 128); g.globalCompositeOperation = "source-over"; }
       const heroX = (state.expedition.combat ? 145 : 165) - (heroHurt ? Math.round(6 * Math.sin(hk / 0.22 * Math.PI)) : 0);
       const petT = getPetType();
       if (petT) drawBeast(ctx, petT, heroX + (state.expedition.combat ? 150 : 175), 180, 1, timeSec + 0.4, isWalking, false);
       const mnt = getActiveMount();
+      if (_rlS) { RUNE_SCENE.cx = heroX + 52; RUNE_SCENE.cy = mnt ? 106 : 128; RUNE_SCENE.t = timeSec; try { drawRuneOrbit(ctx, state.hero, RUNE_SCENE.cx, RUNE_SCENE.cy, RUNE_SCENE.sc, timeSec, "back", true); } catch (e) {} }
       if (mnt) drawRider(ctx, mnt.id, state.hero, heroX + 52, 176, timeSec, isWalking, 1, heroPoseTimer);
       else ctx.drawImage(heroBufferCanvas, heroX, 74, 104, 104);
+      if (_rlS) { try { drawRuneOrbit(ctx, state.hero, RUNE_SCENE.cx, RUNE_SCENE.cy, RUNE_SCENE.sc, timeSec, "front", true); } catch (e) {} }
 
       // 6. Si découverte d'événement interactif sur le bord du chemin
       if (state.expedition.pendingEvent) {
@@ -8586,16 +8984,17 @@
       }));
 
       const clsBox = document.getElementById("creator-classes-grid");
-      clsBox.innerHTML = Object.values(UNIVERS_CONFIG.classes).map(c => {
+      clsBox.innerHTML = Object.values(UNIVERS_CONFIG.classes).sort((a, b) => ((CLASS_DIFF[a.id] || {}).n || 3) - ((CLASS_DIFF[b.id] || {}).n || 3)).map(c => {
         const act = h.classe === c.id;
         return `
           <button type="button" data-cls="${c.id}"
             class="cr-pick ui-btn ${act ? "on" : ""}">
             <div class="flex items-center justify-between gap-1">
-              <div class="font-bold text-sm">${act ? "▶ " : ""}${c.nom}</div>
+              <div class="font-bold text-sm">${act ? "▶ " : ""}${c.nom}${c.nouveau ? ` <span class="ml-1 text-[9px] px-1 py-0.5 rounded bg-violet-600 text-white align-middle">NOUVEAU</span>` : ""}</div>
               <span class="text-[10px] px-1.5 py-0.5 bg-slate-950 rounded text-amber-200">${c.arme}</span>
             </div>
             <div class="text-[11px] text-emerald-300 mt-1">${c.bonusTexte}</div>
+            ${classDiffHtml(c.id, act)}
           </button>
         `;
       }).join("");
@@ -8741,6 +9140,7 @@
     let lastAutoRecycleToast = 0;
 
     function addEquipmentToInventory(item, logCallback = null) {
+      if (state.hero.classe === "runelame" && item && item.slot === "arme") { runeAbsorb(item, logCallback ? "chest" : "bag"); return true; }
       if (getUsedBagSlots() >= getMaxBagSlots()) {
         const gold = UNIVERS_CONFIG.raretes[item.rarete].valeurOr;
         state.or += gold;
@@ -10679,6 +11079,7 @@
     function canCraftRecipe(rec) {
       if (state.metiers.forge.niveau < rec.niveauForgeReq) return false;
       if (rec.classeReq && rec.classeReq !== state.hero.classe) return false;
+      if (state.hero.classe === "runelame" && ["arme", "bouclier"].includes(forgeRecSlot(rec))) return false;
       if (rec.niveauPersoReq && state.hero.niveau < rec.niveauPersoReq) return false;
       if (rec.type === "sac" && (state.sacsForges[rec.id] || 0) >= rec.maxCraft) return false;
       if (rec.type === "skin" && state.skinsPossedes[rec.skinId]) return false;
@@ -10917,10 +11318,15 @@
       { const fb = document.getElementById("forge-slot-filter"); if (fb && (state.forgeCat === "Renforcement" || state.forgeCat === "Retravail")) fb.innerHTML = ""; }
       if (state.forgeCat === "Renforcement") { renderRenfortView(document.getElementById("forge-recipes-list")); return; }
       if (state.forgeCat === "Retravail") { renderRetravailView(document.getElementById("forge-recipes-list")); return; }
-      const list = UNIVERS_CONFIG.recettesForge.filter(r => r.cat === state.forgeCat && !r.legacy)
+      const _rlF = state.hero.classe === "runelame";
+      const list = UNIVERS_CONFIG.recettesForge.filter(r => r.cat === state.forgeCat && !r.legacy && !(_rlF && ["arme", "bouclier"].includes(forgeRecSlot(r))))
         .sort((a, b) => (a.niveauForgeReq - b.niveauForgeReq) || ((a.niveauPersoReq || 0) - (b.niveauPersoReq || 0)));
       let lastHdr = "";
       const grid = document.getElementById("forge-recipes-list");
+      if (_rlF && !list.length) {
+        grid.innerHTML = `<div class="col-span-full melvor-card p-6 text-center space-y-2"><div class="text-3xl">🔮</div><div class="text-sm font-bold text-violet-200">Le Runelame ne forge ni armes ni skins d'armes</div><div class="text-xs text-slate-400">Ses lames se renforcent à l'Autel Runique et en absorbant les armes trouvées en expédition.</div></div>`;
+        const fb0 = document.getElementById("forge-slot-filter"); if (fb0) fb0.innerHTML = ""; return;
+      }
 
       const slotsHere = [...new Set(list.map(forgeRecSlot))].filter(Boolean);
       if (state.forgeSlot && !slotsHere.includes(state.forgeSlot)) state.forgeSlot = null;
@@ -11580,9 +11986,9 @@
         + (st.critChance ? `<div class="t-sec">Équipé : augmente vos chances de critique de ${(st.critChance * rf * 100).toFixed(1).replace(".0", "")} %.</div>` : "");
       let setHtml = "";
       if (it.setId) { const pan = getAllSets().find(p => p.id === it.setId); if (pan) { const n = countSetPieces(pan.id);
-        setHtml = `<div class="t-set">${pan.icone} Panoplie ${pan.nom} (${n}/4)</div>
+        setHtml = `<div class="t-set">${pan.icone} Panoplie ${pan.nom} (${n}/${pan.need || 4})</div>
           <div class="${n >= 2 ? "t-sec" : "t-off"}" style="font-size:11px">(2) Bonus : ${formatEquipStatsLine(pan.stat2) || "statistiques"}</div>
-          <div class="${n >= 4 ? "t-sec" : "t-off"}" style="font-size:11px">(4) ${pan.effet4 ? (pan.effet4.nom || "Effet") + (pan.effet4.desc ? " : " + pan.effet4.desc : "") : "Effet de combat"}</div>`; } }
+          <div class="${n >= (pan.need || 4) ? "t-sec" : "t-off"}" style="font-size:11px">(${pan.need || 4}) ${pan.effet4 ? (pan.effet4.nom || "Effet") + (pan.effet4.desc ? " : " + pan.effet4.desc : "") : "Effet de combat"}</div>`; } }
       return `<div class="t-name">${it.nom}${it.renfort ? ` <span style="color:#fbbf24">+${it.renfort}</span>` : ""}</div>
         <div class="t-lvl">Niveau d'objet ${it.niveau}</div>
         <div class="t-sub"><span>${lab}</span><span>${it.setId ? "Panoplie" : rar.nom}</span></div>
@@ -11629,6 +12035,7 @@
     }
     function pdScore(base, nw) { return (nw.atk - base.atk) * 1 + (nw.magicAtk - base.magicAtk) * 0.6 + (nw.def - base.def) * 1.2 + (nw.pvMax - base.pvMax) * 0.25 + (nw.pmMax - base.pmMax) * 0.15 + (nw.critChance - base.critChance) * 300; }
     function openPdPicker(slot) {
+      if (slot === "arme" && state.hero.classe === "runelame") { switchView("autel"); return; }
       let m = document.getElementById("pd-picker"); if (!m) { m = document.createElement("div"); m.id = "pd-picker"; document.body.appendChild(m); }
       const lab = { arme: "Armes", armure: "Armures (torse)", casque: "Casques", anneau: "Anneaux" }[slot];
       const cur = state.equipementPorte[slot], base = getHeroTotalStats(), noneSt = pdStatsWith(slot, null);
@@ -11657,14 +12064,144 @@
     function closePdPicker() { const m = document.getElementById("pd-picker"); if (m) m.classList.remove("show"); document.body.classList.remove("pk-open"); }
     document.addEventListener("keydown", e => { if (e.key === "Escape") closePdPicker(); });
 
+    // =======================================================================
+    //  v1.36 — AUTEL RUNIQUE (Runelame) : éléments, Tranchant, Essence, Éveil et âmes absorbées
+    // =======================================================================
+    let rlResetArmed = false;
+    function runeUpgrade(i, key) {
+      const h = state.hero, R = runeState(h), s = R.swords[i];
+      if (!s || i >= runeSwordCount(h) || !["tr", "ess"].includes(key)) return;
+      if (runePointsTotal(h) - runePointsUsed(h) <= 0) { showToast("🔮 Plus de points d'enchantement : montez de niveau."); return; }
+      if ((s[key] | 0) >= RUNE_RANK_MAX) return;
+      s[key] = (s[key] | 0) + 1; runePulseT = performance.now() / 1000;
+      RetroAudio.confirm(); saveGame(); updateGlobalHUD(); renderAutelView();
+    }
+    function runeSetEl(i, el) {
+      const h = state.hero, R = runeState(h), s = R.swords[i];
+      if (!s || !RUNE_EL[el] || i >= runeSwordCount(h) || s.el === el || runeEveilActive(h)) return;
+      const cost = runeElCost(h, s);
+      if (state.or < cost) { showToast(`🪙 Il faut ${cost.toLocaleString("fr-FR")} Or pour réaccorder cette lame.`); return; }
+      state.or -= cost; s.el = el; s.chg = (s.chg | 0) + 1; runePulseT = performance.now() / 1000;
+      RetroAudio.magic(); showToast(`${RUNE_EL[el].ic} Lame ${["I", "II", "III"][i]} accordée à l'élément ${RUNE_EL[el].nom}.`);
+      saveGame(); updateGlobalHUD(); renderAutelView();
+    }
+    function runeAbsorbBag() {
+      const list = state.inventaireEquip.filter(e => e.slot === "arme" && !e.fav);
+      if (!list.length) return;
+      list.forEach(e => { const i = state.inventaireEquip.indexOf(e); if (i >= 0) state.inventaireEquip.splice(i, 1); runeAbsorb(e, "bag"); });
+      showToast(`🔮 ${list.length} arme${list.length > 1 ? "s" : ""} absorbée${list.length > 1 ? "s" : ""} par vos lames.`);
+      saveGame(); updateGlobalHUD(); renderAutelView();
+    }
+    function renderAutelView() {
+      const box = document.getElementById("view-autel"); if (!box) return;
+      const h = state.hero;
+      if (h.classe !== "runelame") { box.innerHTML = `<div class="melvor-panel p-6 text-center text-sm text-slate-400">🔮 L'Autel Runique est réservé au Runelame.</div>`; return; }
+      const R = runeState(h), n = runeSwordCount(h), sw = runeActiveSwords(h), st = getHeroTotalStats(), ev = runeEveilActive(h);
+      const tot = runePointsTotal(h), free = tot - runePointsUsed(h), cap = runeAbsorbCap(h), abs = R.absorbN | 0, rb = runeStatBonus(h);
+      const ss = getHeroSetState(h), eveilSet = ss.setId === "set_eveil" && ss.count >= 4;
+      const nextLvl = RUNE_SWORD_LVLS.find(l => h.niveau < l);
+      const seg = v => `<div class="flex gap-[2px]">${Array.from({ length: RUNE_RANK_MAX }, (_, k) => `<span class="h-1.5 flex-1 rounded-sm ${k < v ? "bg-violet-400 shadow-[0_0_4px_rgba(167,139,250,0.8)]" : "bg-slate-800"}"></span>`).join("")}</div>`;
+      const ROM = ["I", "II", "III"];
+      const card = i => {
+        if (i >= n) return `<div class="melvor-card p-4 flex items-center gap-4 opacity-60"><div class="w-[72px] h-[190px] shrink-0 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-2xl">🔒</div>
+          <div><div class="text-sm font-bold text-slate-300">Lame ${ROM[i]}</div><div class="text-xs text-slate-500">Se matérialise au niveau ${RUNE_SWORD_LVLS[i]}.</div></div></div>`;
+        const s = R.swords[i], a = sw[i], E = RUNE_EL[a.el], cost = runeElCost(h, s);
+        const chips = Object.entries(RUNE_EL).map(([k, e]) => `<button type="button" data-rl-el="${i}:${k}" title="${e.nom}" class="ui-btn w-8 h-8 rounded-lg border text-sm transition ${a.el === k ? "border-amber-300 bg-slate-700 ring-1 ring-amber-300/60" : "border-slate-700 bg-slate-900 hover:border-slate-500"} ${ev ? "opacity-40 pointer-events-none" : ""}">${e.ic}</button>`).join("");
+        const up = (key, lab, val, txt) => `<div class="space-y-1"><div class="flex items-center justify-between gap-2 text-[11px]"><span class="text-slate-300">${lab} <b class="text-white">${val}/${RUNE_RANK_MAX}</b> <span class="text-slate-500">• ${txt}</span></span>
+          <button type="button" data-rl-up="${i}:${key}" class="ui-btn w-7 h-6 rounded bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed" ${free <= 0 || val >= RUNE_RANK_MAX ? "disabled" : ""}>+</button></div>${seg(val)}</div>`;
+        return `<div class="melvor-card p-3 sm:p-4 flex gap-3 sm:gap-4" style="border-color:${E.col}66;box-shadow:inset 0 0 24px ${E.glow}22">
+          <div class="shrink-0 rounded-lg bg-slate-950/80 border border-slate-800 overflow-hidden"><canvas data-rl-sword="${i}" width="72" height="190" class="block w-[72px] h-[190px]"></canvas></div>
+          <div class="min-w-0 flex-1 space-y-2">
+            <div class="flex items-center gap-2 flex-wrap"><span class="text-sm font-bold" style="color:${E.col}">Lame ${ROM[i]} — ${runeSwordName(a.el, i)}</span>
+              ${a.rz > 1 ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-violet-950 text-violet-200 border border-violet-500/40">Résonance ×${a.rz}</span>` : ""}
+              ${ev ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950 text-amber-200 border border-amber-500/40">✸ Éveillée</span>` : ""}
+              <span class="text-[10px] text-slate-500 ml-auto">Part de l'attaque : ${Math.round(a.share * 100)} %</span></div>
+            <div class="flex flex-wrap gap-1">${chips}</div>
+            <div class="text-[10px] text-slate-500">${ev ? "L'Éveil impose son élément à toutes les lames." : cost > 0 ? `Réaccorder cette lame : ${cost.toLocaleString("fr-FR")} 🪙` : "Premier changement d'élément gratuit."}</div>
+            <div class="text-[11px] text-slate-200 leading-snug">${E.ic} <b style="color:${E.col}">${E.nom}</b> : ${E.desc(a.f, st.atk)}</div>
+            ${up("tr", "⚔️ Tranchant", s.tr | 0, `+${(s.tr | 0) * 2} % de dégâts`)}
+            ${up("ess", "✨ Essence", s.ess | 0, `+${(s.ess | 0) * 6} % d'effet élémentaire`)}
+          </div></div>`;
+      };
+      const cnt = {}; sw.forEach(s => { cnt[s.el] = (cnt[s.el] || 0) + 1; });
+      const rez = Object.entries(cnt).filter(([, c]) => c >= 2).map(([el, c]) => `<div class="flex items-center justify-between text-[11px]"><span>${RUNE_EL[el].ic} ${RUNE_EL[el].nom} ×${c}</span><b class="text-violet-200">+${c >= 3 ? 35 : 15} % d'effet</b></div>`).join("");
+      const absStats = [["atk", "ATQ"], ["esprit", "ESP"], ["force", "FOR"], ["agilite", "AGI"], ["chance", "CHA"]].filter(([k]) => R.absorb[k]).map(([k, l]) => `<span class="px-2 py-0.5 rounded bg-violet-950/70 border border-violet-600/40 text-violet-200 tabular-nums">+${R.absorb[k]} ${l}</span>`).join(" ")
+        + (R.absorb.crit ? ` <span class="px-2 py-0.5 rounded bg-violet-950/70 border border-violet-600/40 text-violet-200 tabular-nums">+${(R.absorb.crit * 0.2).toFixed(1)} % CRIT</span>` : "");
+      const bagW = state.inventaireEquip.filter(e => e.slot === "arme" && !e.fav).length;
+      box.innerHTML = `
+        <div class="melvor-panel p-4 sm:p-5 flex flex-wrap items-center gap-3 justify-between" style="background:radial-gradient(120% 140% at 0% 0%,rgba(109,40,217,0.25),transparent 60%),#0f172a">
+          <div><h2 class="text-base sm:text-lg font-bold text-violet-200">🔮 Autel Runique</h2>
+            <div class="text-[11px] text-slate-400">Le Runelame ne manie aucune arme : il enchante les lames qui gravitent autour de lui. ${nextLvl ? `Prochaine lame au niveau ${nextLvl}.` : "Les trois lames sont éveillées."}</div></div>
+          <div class="flex items-center gap-2">
+            <div class="px-3 py-1.5 rounded-lg bg-slate-950 border ${free > 0 ? "border-violet-400 text-violet-200" : "border-slate-700 text-slate-400"} text-xs font-bold tabular-nums">✨ ${free} point${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""} <span class="text-slate-500 font-normal">/ ${tot}</span></div>
+            <button type="button" id="rl-reset" class="ui-btn px-3 py-1.5 rounded-lg ${rlResetArmed ? "bg-rose-700 hover:bg-rose-600 text-white" : "bg-slate-800 hover:bg-slate-700 text-slate-300"} border border-slate-600 text-xs" ${tot - free <= 0 ? "disabled" : ""}>${rlResetArmed ? `Confirmer (${(30 * h.niveau).toLocaleString("fr-FR")} 🪙)` : "↺ Réinitialiser"}</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          <div class="lg:col-span-5 space-y-4">
+            <div class="melvor-panel p-4 flex flex-col items-center" style="background:radial-gradient(60% 55% at 50% 58%,rgba(139,92,246,0.28),transparent 70%),#0b1020">
+              <canvas id="autel-hero" width="128" height="128" class="pixelated w-56 h-56 sm:w-64 sm:h-64 cursor-pointer" title="Cliquez pour la pose de combat"></canvas>
+              <div class="text-sm font-bold text-amber-300 -mt-1">${h.nom}</div>
+              <div class="grid grid-cols-3 gap-2 w-full mt-3 text-center">
+                <div class="melvor-card p-2"><div class="text-[10px] text-slate-400">Puissance des lames</div><div class="text-sm font-bold text-violet-200 tabular-nums">+${rb.swordAtk}</div></div>
+                <div class="melvor-card p-2"><div class="text-[10px] text-slate-400">Lames</div><div class="text-sm font-bold text-white">${n} / 3</div></div>
+                <div class="melvor-card p-2"><div class="text-[10px] text-slate-400">ATQ totale</div><div class="text-sm font-bold text-amber-200 tabular-nums">${st.atk}</div></div>
+              </div>
+            </div>
+            <div class="melvor-panel p-4 space-y-2">
+              <div class="text-xs font-bold text-violet-200">🌀 Résonance</div>
+              ${rez || `<div class="text-[11px] text-slate-500">Accordez 2 lames au même élément (+15 % d'effet) ou les 3 (+35 %).</div>`}
+            </div>
+            <div class="melvor-panel p-4 space-y-2">
+              <div class="flex items-center justify-between"><div class="text-xs font-bold text-amber-200">✸ Éveil élémentaire</div><span class="text-[10px] ${eveilSet ? "text-emerald-300" : "text-slate-500"}">${eveilSet ? "Sceau de l'Éveil complet" : "Sceau de l'Éveil 3/3 requis"}</span></div>
+              ${eveilSet ? `<div class="text-[11px] text-slate-300">Choisissez la voie de vos lames : toutes prennent cet élément (Résonance totale) et ses effets gagnent +25 %.</div>
+                <div class="flex flex-wrap gap-1.5">${Object.entries(RUNE_EL).map(([k, e]) => `<button type="button" data-rl-eveil="${k}" class="ui-btn px-2 py-1 rounded-lg border text-[11px] ${R.eveil === k ? "border-amber-300 bg-amber-950/60 text-amber-100" : "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"}">${e.ic} ${e.nom}</button>`).join("")}
+                ${R.eveil ? `<button type="button" data-rl-eveil="" class="ui-btn px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-slate-400 text-[11px]">✕ Aucune</button>` : ""}</div>`
+              : `<div class="text-[11px] text-slate-500">Forgez la panoplie <b class="text-slate-300">🔯 Sceau de l'Éveil</b> à la Forge Étoilée (3 pièces : Tête, Torse, Anneau) pour choisir une voie : Sang, Givre, Flamme, Foudre, Poison, Néant ou Arcane.</div>`}
+            </div>
+            <div class="melvor-panel p-4 space-y-2">
+              <div class="flex items-center justify-between"><div class="text-xs font-bold text-violet-200">💜 Âmes absorbées</div><span class="text-[11px] tabular-nums ${abs >= cap ? "text-amber-300" : "text-slate-400"}">${abs} / ${cap}</span></div>
+              <div class="h-1.5 bg-slate-900 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-violet-600 to-fuchsia-400" style="width:${Math.min(100, abs / Math.max(1, cap) * 100)}%"></div></div>
+              <div class="flex flex-wrap gap-1 text-[11px]">${absStats || `<span class="text-slate-500">Aucune âme pour l'instant.</span>`}</div>
+              <div class="text-[10px] text-slate-500 leading-snug">Chaque arme trouvée en expédition fait battre vos lames comme un cœur : elles en absorbent 1 point de statistique au hasard (2 pour une Maîtresse, 3 pour une Légendaire). Plafond : 2 × votre niveau. En groupe, une arme qui améliore vraiment un allié lui est offerte.</div>
+              ${bagW ? `<button type="button" id="rl-absorb-bag" class="ui-btn w-full py-2 rounded-lg bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold">🔮 Absorber les armes du sac (${bagW})</button>` : ""}
+            </div>
+          </div>
+          <div class="lg:col-span-7 space-y-3">
+            ${[0, 1, 2].map(card).join("")}
+            <div class="space-y-2">${setCardHtml()}</div>
+          </div>
+        </div>`;
+      box.querySelectorAll("[data-rl-up]").forEach(b => b.addEventListener("click", () => { const [i, k] = b.dataset.rlUp.split(":"); runeUpgrade(+i, k); }));
+      box.querySelectorAll("[data-rl-el]").forEach(b => b.addEventListener("click", () => { const [i, k] = b.dataset.rlEl.split(":"); runeSetEl(+i, k); }));
+      box.querySelectorAll("[data-rl-eveil]").forEach(b => b.addEventListener("click", () => {
+        R.eveil = b.dataset.rlEveil || null; runePulseT = performance.now() / 1000; RetroAudio.levelUp();
+        if (R.eveil) showToast(`✸ Éveil : vos lames embrassent la voie ${RUNE_EL[R.eveil].nom === "Arcane" ? "arcanique" : "du " + RUNE_EL[R.eveil].nom}.`);
+        saveGame(); renderAutelView();
+      }));
+      const ab = document.getElementById("rl-absorb-bag"); if (ab) ab.addEventListener("click", runeAbsorbBag);
+      const hc = document.getElementById("autel-hero"); if (hc) hc.addEventListener("click", () => { RetroAudio.confirm(); heroPoseTimer = 0.6; runePulseT = performance.now() / 1000; });
+      const rs = document.getElementById("rl-reset");
+      if (rs) rs.addEventListener("click", () => {
+        if (!rlResetArmed) { rlResetArmed = true; RetroAudio.cursor(); renderAutelView(); setTimeout(() => { if (rlResetArmed) { rlResetArmed = false; if (state.activeView === "autel") renderAutelView(); } }, 4000); return; }
+        rlResetArmed = false; const c = 30 * h.niveau;
+        if (state.or < c) { showToast(`🪙 Il faut ${c.toLocaleString("fr-FR")} Or.`); renderAutelView(); return; }
+        state.or -= c; R.swords.forEach(s => { s.tr = 0; s.ess = 0; }); RetroAudio.confirm(); showToast("↺ Enchantements réinitialisés : tous vos points sont libres.");
+        saveGame(); updateGlobalHUD(); renderAutelView();
+      });
+    }
+
     function renderPaperdoll() {
-      const mk = ([k, lab]) => { const it = state.equipementPorte[k], key = it ? (it.setId ? "set" : it.rarete) : "empty";
+      const mk = ([k, lab]) => {
+        if (k === "arme" && state.hero.classe === "runelame") return `<div class="pd-slot"><div class="pd-box r-maitre" data-pd-rune role="button" tabindex="0" title="Lames Runiques — ouvrir l'Autel Runique" style="box-shadow:0 0 12px rgba(139,92,246,0.55)"><canvas width="32" height="32" data-pd-rune-ic style="width:100%;height:100%"></canvas></div><span class="pd-lab">Lames</span></div>`; const it = state.equipementPorte[k], key = it ? (it.setId ? "set" : it.rarete) : "empty";
         return `<div class="pd-slot"><div class="pd-box ${it ? "r-" + key : "empty"} ${it && it.setId ? "inv-set" : ""}" data-pd-slot="${k}" role="button" tabindex="0"><canvas width="16" height="16" data-pd-icon="${k}:${key}"></canvas>${it && it.renfort ? `<span class="pd-rf">+${it.renfort}</span>` : ""}</div><span class="pd-lab">${lab}</span></div>`; };
       const L = document.getElementById("pd-left"), Rr = document.getElementById("pd-right"); if (!L || !Rr) return;
       L.innerHTML = PD_SLOTS.left.map(mk).join(""); Rr.innerHTML = PD_SLOTS.right.map(mk).join("");
       document.querySelectorAll("[data-pd-icon]").forEach(cv => { const [k, key] = cv.dataset.pdIcon.split(":"); drawSlotIcon(cv, k, key); });
       const eq = Object.values(state.equipementPorte).filter(Boolean), il = document.getElementById("pd-ilvl");
       if (il) il.textContent = eq.length ? `Niveau d'objet moyen : ${Math.round(eq.reduce((a, i) => a + i.niveau, 0) / eq.length)}` : "Aucun équipement porté";
+      document.querySelectorAll("[data-pd-rune]").forEach(b => b.addEventListener("click", () => { RetroAudio.cursor(); switchView("autel"); }));
+      try { drawAutelCanvases(performance.now() / 1000); } catch (e) {}
       document.querySelectorAll("[data-pd-slot]").forEach(b => {
         const k = b.dataset.pdSlot;
         b.addEventListener("mouseenter", () => { if (!_pdPinned && matchMedia("(hover: hover)").matches) pdShow(k, b, false); });
@@ -11795,9 +12332,9 @@
         if (curSet && setAfter && (curSet.pan.id !== setAfter.pan.id || curSet.count !== setAfter.count)) {
           const lost = curSet.count >= 4 && !(setAfter.pan.id === curSet.pan.id && setAfter.count >= 4), lost2 = curSet.count >= 2 && !(setAfter.pan.id === curSet.pan.id && setAfter.count >= 2);
           const gain = setAfter.count >= 4 && !(curSet.pan.id === setAfter.pan.id && curSet.count >= 4);
-          if (lost) setWarn += `<div class="text-[11px] text-rose-300">⚠️ Vous perdez l'effet ${curSet.pan.effet4.nom} (${curSet.pan.nom} 4/4).</div>`;
+          if (lost) setWarn += `<div class="text-[11px] text-rose-300">⚠️ Vous perdez l'effet ${curSet.pan.effet4.nom} (${curSet.pan.nom} complète).</div>`;
           else if (lost2) setWarn += `<div class="text-[11px] text-rose-300">⚠️ Vous perdez le bonus 2 pièces de ${curSet.pan.nom}.</div>`;
-          if (gain) setWarn += `<div class="text-[11px] text-emerald-300">✨ Active l'effet ${setAfter.pan.effet4.nom} (${setAfter.pan.nom} 4/4) !</div>`;
+          if (gain) setWarn += `<div class="text-[11px] text-emerald-300">✨ Active l'effet ${setAfter.pan.effet4.nom} (${setAfter.pan.nom} complète) !</div>`;
         }
         box.innerHTML = `
           <div class="melvor-card p-4 border-l-4 rarity-${eq.rarete} space-y-4">
@@ -11827,7 +12364,7 @@
             <div class="grid grid-cols-3 gap-2.5">
               <button id="btn-inv-equip" type="button"
                 class="ui-btn py-2.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-xs">
-                ⚔️ Équiper
+                ${state.hero.classe === "runelame" && eq.slot === "arme" ? "🔮 Absorber" : "⚔️ Équiper"}
               </button>
               <button id="btn-inv-recycle" type="button" ${eq.fav ? "disabled title=\"Objet favori : retire l'étoile pour le recycler\"" : ""}
                 class="ui-btn py-2.5 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs text-sky-300">
@@ -11850,6 +12387,7 @@
         document.getElementById("btn-inv-equip").addEventListener("click", () => {
           const idx = state.inventaireEquip.findIndex(i => i.uid === eq.uid);
           if (idx === -1) return;
+          if (state.hero.classe === "runelame" && eq.slot === "arme") { state.inventaireEquip.splice(idx, 1); runeAbsorb(eq, "bag"); renderInventoryView(); updateGlobalHUD(); saveGame(); return; }
           const prev = state.equipementPorte[eq.slot];
           state.inventaireEquip.splice(idx, 1);
           if (prev) state.inventaireEquip.push(prev);
@@ -12016,9 +12554,9 @@
 
       document.getElementById("hero-view-free-pts").textContent = h.pointsLibres;
       const attrs = [
-        { k: "force", nom: "Force", icone: "⚔️", tot: tot.force, role: "Robustesse et coups physiques", eff: ["+3 PV max", "+1,3 Attaque", "+0,3 Défense"] },
+        { k: "force", nom: "Force", icone: "⚔️", tot: tot.force, role: state.hero.classe === "runelame" ? "Robustesse (vos lames ignorent la Force)" : "Robustesse et coups physiques", eff: state.hero.classe === "runelame" ? ["+3 PV max", "+0,3 Défense"] : ["+3 PV max", "+1,3 Attaque", "+0,3 Défense"] },
         { k: "agilite", nom: "Agilité", icone: "💨", tot: tot.agilite, role: "Vitesse et précision", eff: ["+0,8 % vitesse de jauge ATB", "+0,4 % chance de critique", "+0,4 Attaque", "+0,25 Défense"] },
-        { k: "esprit", nom: "Esprit", icone: "🔮", tot: tot.esprit, role: "Magie et réserve de mana", eff: ["+2,5 PM max", "+1,5 Puissance magique (sorts)"] },
+        { k: "esprit", nom: "Esprit", icone: "🔮", tot: tot.esprit, role: state.hero.classe === "runelame" ? "Puissance des lames, magie et mana" : "Magie et réserve de mana", eff: state.hero.classe === "runelame" ? ["+2,5 PM max", "+1,3 Attaque des lames", "+1,5 Puissance magique"] : ["+2,5 PM max", "+1,5 Puissance magique (sorts)"] },
         { k: "chance", nom: "Chance", icone: "🍀", tot: tot.chance, role: "Critiques, butin et expérience", eff: ["+0,5 % chance de critique", "+0,01 aux dégâts critiques", "+0,4 % butin rare", "+0,2 % d'XP"] }
       ];
       const attrBox = document.getElementById("hero-attributes-list");
@@ -13184,7 +13722,9 @@ function wmDraw(ctx, t, opt) {
       const cls = UNIVERS_CONFIG.classes[state.hero.classe];
       const enemy = combat.enemy;
 
-      if (action === "attack") {
+      if (action === "attack" && state.hero.classe === "runelame") {
+        runeBasicAttack(combat, stats, enemy);
+      } else if (action === "attack") {
         combat.turn = "BUSY";
         combat.atb = 0;
         heroPoseTimer = 0.45;
@@ -13260,7 +13800,8 @@ function wmDraw(ctx, t, opt) {
         state.hero.ultCharge = 0;
         heroPoseTimer = 0.9;
         { const ss = getHeroSetState(state.hero), th = ss.count >= 4 ? getSetTheme(ss.setId) : null;
-          ultFx = { classe: cls.id, t0: performance.now() / 1000, dur: u.dur, stellar: th === "stellar", theme: th, seed: Math.random() * 1000 }; }
+          ultFx = { classe: cls.id, t0: performance.now() / 1000, dur: u.dur, stellar: th === "stellar", theme: th, seed: Math.random() * 1000 };
+          if (cls.id === "runelame") { ultFx.rlEls = runeActiveSwords(state.hero).map(x => x.el); ultFx.rlEv = runeEveilActive(state.hero); ultFx.stellar = false; ultFx.theme = null; } }
         RetroAudio.magic();
         addExpLog(`🌟 ULTIME — ${u.nom} !`, "text-amber-300 font-bold");
         const baseOff = u.stat === "esprit" ? stats.magicAtk : stats.atk;
@@ -13280,7 +13821,7 @@ function wmDraw(ctx, t, opt) {
             addCanvasFloat("enemy", crit ? `CRIT -${dmg}` : `-${dmg}`, crit ? "#ffd54f" : "#fbbf24");
           }
           if (idx === 0) {
-            if (u.dot && enemy.pv > 0) applyEnemyDot(enemy, u.dot.kind, Math.round(u.dot.dps * (1 + stats.esprit / 30)), u.dot.dur, u.dot.icon, u.dot.nom);
+            if (u.dot && enemy.pv > 0) applyEnemyDot(enemy, u.dot.kind, Math.round(u.dot.dps * (1 + stats.esprit / 30) + stats.magicAtk * DOT_POW), u.dot.dur, u.dot.icon, u.dot.nom);
             if (u.soinRatio > 0) {
               const heal = Math.round(stats.pvMax * u.soinRatio);
               state.hero.pv = Math.min(stats.pvMax, state.hero.pv + heal);
@@ -13321,7 +13862,7 @@ function wmDraw(ctx, t, opt) {
           addExpLog(`${k.icon} ${k.nom} inflige ${dmg} dégâts${crit ? " (CRITIQUE)" : ""} !`, "text-sky-200");
         }
         { const stt2 = SKILL_STAT[state.hero.classe] || "force", sp = getSkillPassives();
-          if (a.dot && enemy.pv > 0) applyEnemyDot(enemy, a.dot.kind, Math.round(a.dot.dps * (1 + stats[stt2] / 30)), a.dot.dur, a.dot.icon, a.dot.nom);
+          if (a.dot && enemy.pv > 0) applyEnemyDot(enemy, a.dot.kind, Math.round(a.dot.dps * (1 + stats[stt2] / 30) + (stt2 === "esprit" ? stats.magicAtk : stats.atk) * DOT_POW), a.dot.dur, a.dot.icon, a.dot.nom);
           if (a.atkDebuff && enemy.pv > 0) {
             const pc = Math.min(0.8, a.atkDebuff.pct * (1 + (sp.debuffPct || 0)));
             enemy.debuffs = enemy.debuffs || {};
@@ -13461,6 +14002,7 @@ function wmDraw(ctx, t, opt) {
       const acid = en.debuffs && en.debuffs.def ? en.debuffs.def.pct : 0;
       en.def = Math.max(0, Math.round(en.baseDef * (1 - 0.04 * (en.corro || 0)) * (1 - acid)));
     }
+    const DOT_POW = 0.07;   // v1.38 : les altérations des compétences suivent la puissance (ATQ / Magie) du héros
     function applyEnemyDot(en, kind, dps, dur, icon, nom) {
       { const _p = getSkillPassives(); dps = Math.round(dps * (1 + (_p.dotPct || 0))); dur = dur + (_p.dotDur || 0); }
       en.dots = en.dots || [];
@@ -13680,8 +14222,7 @@ function wmDraw(ctx, t, opt) {
             bonusTier: biome.bonusTier + diffTier(biome) + (c.enemy.elite ? 1 : 0),
             provenance: `Butin de ${c.enemy.nom}`
           });
-          state.expedition.unsecuredLoot.equips.push(loot);
-          addExpLog(`⚔️ LOOT RARE trouvé : [${loot.nom}] (${UNIVERS_CONFIG.raretes[loot.rarete].nom}) !`, "text-amber-300 font-semibold");
+          if (runeLootPush(state.expedition.unsecuredLoot.equips, loot)) addExpLog(`⚔️ LOOT RARE trouvé : [${loot.nom}] (${UNIVERS_CONFIG.raretes[loot.rarete].nom}) !`, "text-amber-300 font-semibold");
         }
 
         if (c.enemy.boss) {
@@ -13689,7 +14230,7 @@ function wmDraw(ctx, t, opt) {
           state.expedition.unsecuredLoot.ressources[c.enemy.lootComp] = (state.expedition.unsecuredLoot.ressources[c.enemy.lootComp] || 0) + q;
           const bossRes = UNIVERS_CONFIG.ressources[c.enemy.lootComp];
           const bossGear = generateEquipment({ level: c.enemy.niveau, bonusTier: biome.bonusTier + diffTier(biome) + 2, provenance: `Butin de ${c.enemy.nom}` });
-          state.expedition.unsecuredLoot.equips.push(bossGear);
+          runeLootPush(state.expedition.unsecuredLoot.equips, bossGear);
           addExpLog(`👑 BOSS VAINCU ! +${q} ${bossRes.icone} ${bossRes.nom} et [${bossGear.nom}] (${UNIVERS_CONFIG.raretes[bossGear.rarete].nom}) !`, "text-fuchsia-300 font-bold");
           rollSkinDrop(0.6, biome); rollMountDrop("boss", biome);
           state.expedition.combat = null;
@@ -13703,7 +14244,7 @@ function wmDraw(ctx, t, opt) {
             const tr = UNIVERS_CONFIG.ressources[path.tresor];
             state.expedition.unsecuredLoot.ressources[path.tresor] = (state.expedition.unsecuredLoot.ressources[path.tresor] || 0) + q;
             const gGear = generateEquipment({ level: c.enemy.niveau, bonusTier: biome.bonusTier + diffTier(biome) + 1, provenance: `Butin de ${c.enemy.nom}` });
-            state.expedition.unsecuredLoot.equips.push(gGear);
+            runeLootPush(state.expedition.unsecuredLoot.equips, gGear);
             addExpLog(`🏺 GARDIEN VAINCU ! Trésor : +${q} ${tr.icone} ${tr.nom} et [${gGear.nom}] (${UNIVERS_CONFIG.raretes[gGear.rarete].nom}) !`, "text-fuchsia-300 font-bold");
           }
           rollSkinDrop(0.18, biome); rollMountDrop("elite", biome);
@@ -14746,6 +15287,15 @@ function wmDraw(ctx, t, opt) {
       void:      { core: "#f5d0fe", main: "#a855f7", dark: "#3b0764", label: "🌑" }
     };
     function spawnAttackFx(opts = {}) {
+      if (state.hero.classe === "runelame") {
+        const sw = runeActiveSwords(state.hero), now = performance.now() / 1000, ev = runeEveilActive(state.hero);
+        const pick = opts.sword !== undefined ? sw.filter(x => x.i === opts.sword) : sw;
+        pick.forEach((x, k) => {
+          const fx = { cls: "runelame", rl: 1, i: x.i, el: x.el, ev, t0: now + (opts.delay || 0) + (opts.sword !== undefined ? 0 : k * 0.09), big: opts.big ? 1.25 : 1, seed: Math.random() * 1000, dur: 0.68 };
+          atkFx.push(fx); RUNE_FLY[x.i] = { a: fx.t0, b: fx.t0 + fx.dur };
+        });
+        return;
+      }
       const cls = state.hero.classe, ss = getHeroSetState(state.hero), th = ss.count >= 2 ? getSetTheme(ss.setId) : null, st = th === "stellar";
       const fx = { cls, st, th, t0: performance.now() / 1000 + (opts.delay || 0), big: opts.big ? 1.35 : 1, seed: Math.random() * 1000 };
       if (th && th !== "stellar") fx.dur = { blood: 0.6, sylvan: 0.7, frost: 0.75, bomb: 0.95 }[th];
@@ -14884,6 +15434,7 @@ function wmDraw(ctx, t, opt) {
         const a = now - f.t0; if (a < 0) return;
         const B = f.big, S = f.seed;
         ctx.save();
+        if (f.rl) { drawRuneAttack(ctx, f, a, EX, EY); ctx.restore(); return; }
         if (f.th && f.th !== "stellar") { drawThemeAttack(ctx, f, a, HX, HY, EX, EY); ctx.restore(); return; }
         // ---------------- GUERRIER : slash d'épée ----------------
         if (f.cls === "chevalier") {
@@ -15542,7 +16093,9 @@ function wmDraw(ctx, t, opt) {
       const u = UNIVERS_CONFIG.classes[ultFx.classe].ultime;
       ctx.save();
       const env = fxClamp(e / 0.25) * fxClamp((d - e) / 0.35);
-      if (ultFx.theme && ultFx.theme !== "stellar") {
+      if (ultFx.classe === "runelame") {
+        fxRuneStorm(ctx, e, u, ultFx);
+      } else if (ultFx.theme && ultFx.theme !== "stellar") {
         fxThemeUlt(ctx, e, u, ultFx.seed || 1, ultFx.theme);
       } else if (ultFx.stellar) {
         fxCosmicSky(ctx, e, d, ultFx.seed || 1);
@@ -15561,15 +16114,425 @@ function wmDraw(ctx, t, opt) {
         ctx.font = "bold 13px 'Press Start 2P', monospace";
         ctx.textAlign = "center";
         const TH = { blood: ["CARNAGE ÉCARLATE", "#f87171", "SOIF DE SANG 4/4"], sylvan: ["COLÈRE DE LA FORÊT", "#a3e635", "GARDIEN SYLVESTRE 4/4"], frost: ["ZÉRO ABSOLU", "#bae6fd", "SANCTUM DU GIVRE 4/4"], bomb: ["FEU D'ARTIFICE INFERNAL", "#fdba74", "ARSENAL DE L'ARTIFICIER 4/4"] }[ultFx.theme];
-        const col = TH ? TH[1] : ultFx.stellar ? "#67e8f9" : { chevalier: "#fde68a", alchimiste: "#86efac", rodeur: "#fdba74", occultiste: "#fb923c" }[ultFx.classe];
+        const col = TH ? TH[1] : ultFx.stellar ? "#67e8f9" : { chevalier: "#fde68a", alchimiste: "#86efac", rodeur: "#fdba74", occultiste: "#fb923c", runelame: "#c4b5fd" }[ultFx.classe];
         const SN = { chevalier: "JUGEMENT STELLAIRE", rodeur: "PLUIE D'ÉTOILES FILANTES", occultiste: "CATACLYSME ASTRAL", alchimiste: "SUPERNOVA CORROSIVE" };
         const label = TH ? `✸ ${TH[0]} ✸` : ultFx.stellar ? `★ ${SN[ultFx.classe]} ★` : `✦ ${u.nom.toUpperCase()} ✦`;
         ctx.fillStyle = "#000"; ctx.fillText(label, 322, 32);
         ctx.fillStyle = col; ctx.fillText(label, 320, 30);
         if (ultFx.stellar || TH) { ctx.font = "bold 8px 'Press Start 2P', monospace"; ctx.fillStyle = "#fde68a"; ctx.fillText(TH ? TH[2] : "PANOPLIE ÉTOILÉE 4/4", 320, 46); }
+        else if (ultFx.rlEv && ultFx.rlEls) { ctx.font = "bold 8px 'Press Start 2P', monospace"; ctx.fillStyle = "#fde68a"; ctx.fillText("ÉVEIL — " + ((RUNE_EL[ultFx.rlEls[0]] || {}).nom || "").toUpperCase(), 320, 46); }
         ctx.textAlign = "left";
       }
       ctx.restore();
+    }
+
+    // =======================================================================
+    //  v1.36 — RUNELAME : rendu des lames (une forme et des effets par élément), orbite, attaques et ultime
+    // =======================================================================
+    const RUNE_FLY = [{ a: 0, b: 0 }, { a: 0, b: 0 }, { a: 0, b: 0 }];
+    let RUNE_NO_ORBIT = false, _rlTmp = null, RL_CUR = 1;
+    const RL_LEN = 1.6;   // allongement des lames (la poignée garde sa taille)
+    const RUNE_SCENE = { cx: 197, cy: 128, t: 0, sc: 1.2 };
+    function rlA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${Math.max(0, Math.min(1, a)).toFixed(3)})`; }
+    function rlR(i, s) { const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v); }
+    function rlHB(dt) { if (!(dt >= 0) || dt > 2.4) return 0; const c = dt % 0.9, g = x => Math.exp(-(x * x) / 0.0036); return Math.max(g(c), 0.75 * g(c - 0.22), g(c - 0.9)) * (1 - dt / 2.4); }
+    function rlGlow(ctx, x, y, r, col, a) {
+      if (!(a > 0) || r <= 0) return;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, rlA(col, a)); g.addColorStop(0.45, rlA(col, a * 0.45)); g.addColorStop(1, rlA(col, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    }
+    function rlPath(ctx, P) { ctx.beginPath(); P.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); }
+    function rlUn(ctx, fn) { ctx.save(); ctx.scale(1, 1 / RL_CUR); fn(); ctx.restore(); }
+    function rlHilt(ctx, grip, guard, gem, w) { rlUn(ctx, () => rlHilt0(ctx, grip, guard, gem, w)); }
+    function rlHilt0(ctx, grip, guard, gem, w) {
+      ctx.fillStyle = grip; ctx.fillRect(-1.3, -15, 2.6, 8);
+      ctx.fillStyle = "rgba(0,0,0,0.35)"; for (let k = 0; k < 3; k++) ctx.fillRect(-1.3, -14 + k * 2.6, 2.6, 0.8);
+      ctx.fillStyle = guard; ctx.beginPath(); ctx.moveTo(-w, -7.6); ctx.lineTo(w, -7.6); ctx.lineTo(w - 1.6, -5); ctx.lineTo(-w + 1.6, -5); ctx.closePath(); ctx.fill();
+      ctx.fillRect(-w - 0.6, -8.6, 1.6, 2); ctx.fillRect(w - 1, -8.6, 1.6, 2);
+      ctx.beginPath(); ctx.arc(0, -16.6, 2.1, 0, 7); ctx.fill();
+      ctx.fillStyle = gem; ctx.beginPath(); ctx.arc(0, -6.3, 1.4, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(0, -16.6, 0.9, 0, 7); ctx.fill();
+    }
+    // Gouttes qui se forment au point (x,y) puis tombent (sang, venin)
+    function rlDrips(ctx, t, S, x, y, col, dark, n, spd) {
+      ctx.save(); ctx.scale(1, 1 / RL_CUR); y = y * RL_CUR;
+      for (let k = 0; k < n; k++) {
+        const ph = (t * (spd || 0.8) + k / n + rlR(k, S) * 0.3) % 1;
+        if (ph < 0.28) { const r = 0.5 + ph * 3.4; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y + r * 0.7, r, 0, 7); ctx.fill(); continue; }
+        const q = (ph - 0.28) / 0.72, dy = q * q * 30;
+        ctx.globalAlpha = Math.max(0, 1 - q * 0.9); ctx.fillStyle = col;
+        ctx.beginPath(); ctx.moveTo(x, y + dy - 2.4); ctx.quadraticCurveTo(x + 1.6, y + dy + 0.4, x, y + dy + 1.5); ctx.quadraticCurveTo(x - 1.6, y + dy + 0.4, x, y + dy - 2.4); ctx.fill();
+        ctx.fillStyle = dark; ctx.fillRect(x - 0.35, y + dy + 0.3, 0.7, 0.7);
+        ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.fillRect(x - 0.6, y + dy - 0.8, 0.5, 0.5);
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    }
+    const RL_SHAPES = {
+      arcane(ctx, E, t, S) {
+        const g = ctx.createLinearGradient(-3, 0, 3, 0); g.addColorStop(0, "#4c1d95"); g.addColorStop(0.5, "#ede9fe"); g.addColorStop(1, "#7c3aed");
+        ctx.fillStyle = g; rlPath(ctx, [[-3, -5], [3, -5], [2.6, 16], [0, 24.5], [-2.6, 16]]); ctx.fill();
+        ctx.strokeStyle = "#c4b5fd"; ctx.lineWidth = 0.55; ctx.stroke();
+        const p = 0.5 + 0.5 * Math.sin(t * 4 + S);
+        ctx.fillStyle = rlA("#67e8f9", 0.55 + 0.45 * p);
+        [[-0.5, -3, 1, 3], [-1.3, 2, 2.6, 0.8], [-0.5, 4, 1, 3], [-1.3, 9, 2.6, 0.8], [-0.5, 11, 1, 3], [-1, 16, 2, 0.7]].forEach(r => ctx.fillRect(r[0], r[1], r[2], r[3]));
+        rlHilt(ctx, "#1e1b4b", "#a78bfa", "#22d3ee", 7);
+        ctx.globalCompositeOperation = "lighter";
+        for (let k = 0; k < 5; k++) { const a = t * 2.2 + k * 1.26 + S, r = 6 + 2 * Math.sin(t * 3 + k); ctx.fillStyle = rlA(k % 2 ? "#67e8f9" : "#c4b5fd", 0.85); ctx.fillRect(Math.cos(a) * r - 0.7, 8 + Math.sin(a) * r * 1.7 - 0.7, 1.4, 1.4); }
+        ctx.globalCompositeOperation = "source-over";
+      },
+      sang(ctx, E, t, S) {   // épée ruisselante de sang
+        const g = ctx.createLinearGradient(-3.4, 0, 3.4, 0); g.addColorStop(0, "#3f3f46"); g.addColorStop(0.45, "#e4e4e7"); g.addColorStop(1, "#52525b");
+        ctx.fillStyle = g; rlPath(ctx, [[-3.4, -5], [3.4, -5], [3, 15], [0, 24.5], [-3, 15]]); ctx.fill();
+        ctx.strokeStyle = "#18181b"; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.save(); rlPath(ctx, [[-3.4, -5], [3.4, -5], [3, 15], [0, 24.5], [-3, 15]]); ctx.clip();
+        for (let k = 0; k < 4; k++) {
+          const x0 = -2.4 + k * 1.6, L = 5 + 12 * ((Math.sin(t * 0.6 + k * 2.1 + S) + 1) / 2) + (k % 2) * 4;
+          ctx.fillStyle = "#991b1b"; ctx.fillRect(x0 - 0.55, -5, 1.1, L);
+          ctx.fillStyle = "#dc2626"; ctx.beginPath(); ctx.arc(x0, -5 + L, 0.95, 0, 7); ctx.fill();
+        }
+        ctx.fillStyle = "rgba(127,29,29,0.9)"; ctx.fillRect(-3.4, -5, 6.8, 2.4);
+        ctx.restore();
+        rlHilt(ctx, "#450a0a", "#7f1d1d", "#ef4444", 7.5);
+        rlDrips(ctx, t, S, 0, 24.3, "#dc2626", "#450a0a", 3, 0.7);
+      },
+      faux(ctx, E, t, S) {   // faux de sang : lame courbe sur un manche d'os noir
+        ctx.fillStyle = "#1c0a0a"; ctx.fillRect(-1.1, -16, 2.2, 38);
+        ctx.fillStyle = "#44201f"; ctx.fillRect(-1.1, -16, 0.7, 38);
+        for (let k = 0; k < 4; k++) { ctx.fillStyle = "#7f1d1d"; ctx.fillRect(-1.5, 1 + k * 5, 3, 1.2); }
+        ctx.fillStyle = "#b91c1c"; ctx.beginPath(); ctx.moveTo(-2, 22); ctx.lineTo(2, 22); ctx.lineTo(0, 26); ctx.closePath(); ctx.fill();
+        const g = ctx.createLinearGradient(0, -20, 6, 4); g.addColorStop(0, "#fecaca"); g.addColorStop(0.3, "#dc2626"); g.addColorStop(1, "#450a0a");
+        ctx.fillStyle = g; ctx.beginPath();
+        ctx.moveTo(0, -15.5); ctx.quadraticCurveTo(14, -21, 21, -6); ctx.quadraticCurveTo(19.4, -3, 17.6, 0.8); ctx.quadraticCurveTo(13, -12, 0, -10.6); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = "#2a0505"; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.strokeStyle = rlA("#fee2e2", 0.75 + 0.25 * Math.sin(t * 3 + S)); ctx.lineWidth = 0.55; ctx.beginPath(); ctx.moveTo(1, -10.9); ctx.quadraticCurveTo(13, -12.2, 17.6, 0.8); ctx.stroke();
+        ctx.fillStyle = "#7f1d1d"; ctx.fillRect(-2.1, -17, 4.2, 3.2); ctx.fillStyle = "#ef4444"; ctx.fillRect(-0.7, -16, 1.4, 1.4);
+        ctx.fillStyle = "#d6d3d1"; ctx.beginPath(); ctx.arc(0, -19, 2, 0, 7); ctx.fill(); ctx.fillStyle = "#1c0a0a"; ctx.fillRect(-1, -19.6, 0.8, 0.8); ctx.fillRect(0.3, -19.6, 0.8, 0.8);
+        rlDrips(ctx, t, S, 17.6, 1, "#dc2626", "#450a0a", 3, 0.7);
+        rlDrips(ctx, t, S + 3, 8, -10.2, "#b91c1c", "#450a0a", 2, 0.5);
+      },
+      givre(ctx, E, t, S) {   // lame de cristal de glace + brume glaciale
+        const P = [[-3.6, -5], [3.6, -5], [4.3, 3], [2.4, 8], [3.5, 14], [0, 25.5], [-3.5, 14], [-2.4, 8], [-4.3, 3]];
+        for (let k = 0; k < 6; k++) {   // brume qui retombe
+          const ph = (t * 0.32 + k / 6 + rlR(k, S)) % 1, x = (rlR(k + 9, S) - 0.5) * 15 + Math.sin(t + k) * 2, y = 4 + ph * 28, r = 2.5 + ph * 6;
+          const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(240,249,255,${0.3 * Math.sin(ph * Math.PI)})`); g.addColorStop(1, "rgba(240,249,255,0)");
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+        }
+        const g = ctx.createLinearGradient(-4, -5, 4, 25); g.addColorStop(0, "#f0f9ff"); g.addColorStop(0.5, "#7dd3fc"); g.addColorStop(1, "#0284c7");
+        ctx.globalAlpha = 0.9; ctx.fillStyle = g; rlPath(ctx, P); ctx.fill(); ctx.globalAlpha = 1;
+        ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 0.4; ctx.beginPath();
+        [[4.3, 3], [2.4, 8], [3.5, 14], [-3.5, 14], [-2.4, 8], [-4.3, 3]].forEach(([a, b]) => { ctx.moveTo(0, 6); ctx.lineTo(a, b); }); ctx.moveTo(0, -5); ctx.lineTo(0, 25); ctx.stroke();
+        ctx.save(); rlPath(ctx, P); ctx.clip(); const sh = ((t * 0.55 + rlR(1, S)) % 1.5) * 34 - 8; ctx.fillStyle = "rgba(255,255,255,0.75)"; ctx.beginPath(); ctx.moveTo(-5, sh); ctx.lineTo(5, sh - 3); ctx.lineTo(5, sh - 1.8); ctx.lineTo(-5, sh + 1.2); ctx.fill(); ctx.restore();
+        rlUn(ctx, () => {
+        ctx.fillStyle = "#0c4a6e"; ctx.fillRect(-1.3, -15, 2.6, 8); ctx.fillStyle = "#e0f2fe"; ctx.fillRect(-1.3, -13, 1, 1); ctx.fillRect(0.3, -10, 1, 1);
+        ctx.fillStyle = "#e0f2fe";
+        [[[-8.5, -6.5], [-2.5, -8], [-2.5, -4.6]], [[8.5, -6.5], [2.5, -8], [2.5, -4.6]], [[0, -10.5], [-1.8, -6], [1.8, -6]], [[-5.5, -9.5], [-2.2, -7.5], [-3.4, -6]], [[5.5, -9.5], [2.2, -7.5], [3.4, -6]]].forEach(T => { rlPath(ctx, T); ctx.fill(); });
+        ctx.fillStyle = "#bae6fd"; rlPath(ctx, [[0, -20], [1.8, -16.5], [0, -14.5], [-1.8, -16.5]]); ctx.fill();
+        });
+        ctx.globalCompositeOperation = "lighter";
+        for (let k = 0; k < 5; k++) { const tw = Math.sin(t * 5 + k * 2.3 + S); if (tw < 0.35) continue; const x = (rlR(k + 20, S) - 0.5) * 18, y = rlR(k + 30, S) * 30 - 4, r = 1.8 * tw; ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(x - r, y - 0.3, r * 2, 0.6); ctx.fillRect(x - 0.3, y - r, 0.6, r * 2); }
+        ctx.globalCompositeOperation = "source-over";
+      },
+      flamme(ctx, E, t, S) {   // flamberge ondulée en fusion + flammes vivantes
+        const L = [], R = [];
+        for (let y = -5; y <= 19.5; y += 1.5) { const w = 3.2 - Math.max(0, y - 12) * 0.27 + Math.sin(y * 0.95 + 1) * 0.85; R.push([w, y]); L.unshift([-w, y]); }
+        ctx.beginPath(); ctx.moveTo(-3.2, -5); R.forEach(p => ctx.lineTo(p[0], p[1])); ctx.lineTo(0, 25); L.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath();
+        const g = ctx.createLinearGradient(-4, 0, 4, 0); g.addColorStop(0, "#7f1d1d"); g.addColorStop(0.3, "#f97316"); g.addColorStop(0.5, "#fef08a"); g.addColorStop(0.7, "#f97316"); g.addColorStop(1, "#7f1d1d");
+        ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = "#451a03"; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.fillStyle = rlA("#fff7d6", 0.55 + 0.45 * Math.sin(t * 7 + S)); ctx.fillRect(-0.45, -4, 0.9, 22);
+        rlHilt(ctx, "#292524", "#b45309", "#f97316", 7.5);
+        ctx.globalCompositeOperation = "lighter";
+        for (let k = 0; k < 8; k++) {
+          const ph = (t * 1.5 + k / 8 + rlR(k, S)) % 1, side = k % 2 ? 1 : -1, y0 = -2 + rlR(k + 5, S) * 22;
+          const x = side * (2.8 + ph * 2.5) + Math.sin(t * 9 + k) * 0.9, y = y0 - ph * 13, r = (1 - ph) * 3.6 + 0.4;
+          const fg = ctx.createRadialGradient(x, y, 0, x, y, r * 1.6); fg.addColorStop(0, `rgba(254,240,138,${0.95 * (1 - ph)})`); fg.addColorStop(0.45, `rgba(249,115,22,${0.7 * (1 - ph)})`); fg.addColorStop(1, "rgba(185,28,28,0)");
+          ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(x, y - r * 2.2); ctx.quadraticCurveTo(x + r * 1.4, y + r * 0.4, x, y + r * 1.2); ctx.quadraticCurveTo(x - r * 1.4, y + r * 0.4, x, y - r * 2.2); ctx.fill();
+        }
+        for (let k = 0; k < 5; k++) { const ph = (t * 0.85 + k / 5 + rlR(k + 11, S)) % 1; ctx.fillStyle = rlA(k % 2 ? "#fdba74" : "#fde047", 1 - ph); ctx.fillRect((rlR(k + 13, S) - 0.5) * 13 + Math.sin(t * 3 + k) * 2, 20 - ph * 42, 1, 1); }
+        ctx.globalCompositeOperation = "source-over";
+      },
+      foudre(ctx, E, t, S) {   // lame en éclair + arcs crépitants
+        const P = [[-3, -5], [3, -5], [3.7, 2], [0.9, 4.6], [3.9, 10], [1.1, 12.6], [2.7, 17], [0, 25.5], [-1.4, 16], [-3.9, 13.5], [-0.9, 10.5], [-3.9, 6], [-0.7, 3.6], [-3.7, 1]];
+        const g = ctx.createLinearGradient(-4, 0, 4, 0); g.addColorStop(0, "#a16207"); g.addColorStop(0.5, "#fefce8"); g.addColorStop(1, "#ca8a04");
+        ctx.fillStyle = g; rlPath(ctx, P); ctx.fill(); ctx.strokeStyle = "#713f12"; ctx.lineWidth = 0.5; ctx.stroke();
+        const fl = Math.floor(t * 18 + S * 3);
+        ctx.strokeStyle = rlA("#ffffff", 0.6 + 0.4 * rlR(fl, S)); ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(0, -4); ctx.lineTo(0.8, 3); ctx.lineTo(-0.6, 6); ctx.lineTo(1, 11); ctx.lineTo(-0.4, 15); ctx.lineTo(0.4, 21); ctx.stroke();
+        rlHilt(ctx, "#1e293b", "#eab308", "#67e8f9", 7);
+        ctx.globalCompositeOperation = "lighter";
+        for (let k = 0; k < 4; k++) {
+          if (rlR(fl + k * 3, S) < 0.4) continue;
+          const y0 = -3 + rlR(fl + k + 7, S) * 26, sd = rlR(fl + k + 2, S) < 0.5 ? -1 : 1, x0 = sd * 3, len = 6 + rlR(fl + k + 9, S) * 8, ang = (sd > 0 ? 0 : Math.PI) + (rlR(fl + k + 4, S) - 0.5) * 1.6;
+          const pts = [[x0, y0]]; for (let j = 1; j <= 4; j++) { const d = len * j / 4, jit = (rlR(fl * 7 + k * 5 + j, S) - 0.5) * 4; pts.push([x0 + Math.cos(ang) * d - Math.sin(ang) * jit, y0 + Math.sin(ang) * d + Math.cos(ang) * jit]); }
+          for (let pass = 0; pass < 2; pass++) { ctx.strokeStyle = pass ? "#ffffff" : rlA("#67e8f9", 0.55); ctx.lineWidth = pass ? 0.5 : 1.8; ctx.beginPath(); pts.forEach(([a, b], j) => j ? ctx.lineTo(a, b) : ctx.moveTo(a, b)); ctx.stroke(); }
+        }
+        if (rlR(fl, S + 5) > 0.88) rlGlow(ctx, 0, 8, 22, "#fef9c3", 0.45);
+        ctx.globalCompositeOperation = "source-over";
+      },
+      poison(ctx, E, t, S) {   // kriss serpentin à tête de vipère, venin et bulles
+        const cxf = y => Math.sin(y * 0.42 + 0.6) * 2.2, L = [], R = [];
+        for (let y = -5; y <= 21; y += 1.3) { const c = cxf(y), w = 2.7 - Math.max(0, y - 10) * 0.19; R.push([c + w, y]); L.unshift([c - w, y]); }
+        const tip = [cxf(25), 25.5];
+        ctx.beginPath(); ctx.moveTo(L[L.length - 1][0], -5); R.forEach(p => ctx.lineTo(p[0], p[1])); ctx.lineTo(tip[0], tip[1]); L.forEach(p => ctx.lineTo(p[0], p[1])); ctx.closePath();
+        const g = ctx.createLinearGradient(-4, 0, 4, 0); g.addColorStop(0, "#1a2e05"); g.addColorStop(0.35, "#65a30d"); g.addColorStop(0.55, "#d9f99d"); g.addColorStop(0.75, "#4d7c0f"); g.addColorStop(1, "#1a2e05");
+        ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = "#14532d"; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.strokeStyle = "#1a2e05"; ctx.lineWidth = 0.6; ctx.beginPath(); for (let y = -4; y <= 22; y += 1) { const x = cxf(y); y === -4 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke();
+        rlUn(ctx, () => {
+        ctx.fillStyle = "#1a2e05"; ctx.fillRect(-1.3, -15, 2.6, 8); ctx.fillStyle = "#84cc16"; for (let k = 0; k < 3; k++) ctx.fillRect(-1.3, -14 + k * 2.6, 2.6, 0.7);
+        ctx.fillStyle = "#3f6212"; ctx.beginPath(); ctx.ellipse(0.5, -6.4, 5.8, 2.2, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = "#65a30d"; ctx.beginPath(); ctx.ellipse(-4.6, -6.8, 2.8, 2, -0.2, 0, 7); ctx.fill();
+        ctx.fillStyle = "#facc15"; ctx.fillRect(-5.7, -7.8, 1, 1); ctx.fillStyle = "#0a0a0a"; ctx.fillRect(-5.4, -7.8, 0.4, 1);
+        ctx.fillStyle = "#f8fafc"; ctx.fillRect(-6.8, -5.6, 0.5, 1.3); ctx.fillRect(-5.8, -5.4, 0.5, 1.2);
+        ctx.fillStyle = "#3f6212"; ctx.beginPath(); ctx.arc(0, -16.6, 2.1, 0, 7); ctx.fill(); ctx.fillStyle = "#a3e635"; ctx.beginPath(); ctx.arc(0, -16.6, 0.9, 0, 7); ctx.fill();
+        });
+        rlDrips(ctx, t, S, tip[0], tip[1] - 0.3, "#a3e635", "#365314", 2, 0.6);
+        ctx.lineWidth = 0.45;
+        for (let k = 0; k < 5; k++) {
+          const ph = (t * 0.7 + k / 5 + rlR(k, S)) % 1, y = 20 - ph * 32, x = cxf(Math.max(-5, y)) + (rlR(k + 3, S) - 0.5) * 6 + Math.sin(t * 4 + k) * 1, r = 0.6 + ph * 1.5;
+          ctx.strokeStyle = rlA("#bef264", 1 - ph); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.stroke();
+          ctx.fillStyle = rlA("#ecfccb", 0.8 * (1 - ph)); ctx.fillRect(x - r * 0.5, y - r * 0.5, 0.5, 0.5);
+        }
+        ctx.globalCompositeOperation = "lighter"; rlGlow(ctx, 0, 10, 13, "#65a30d", 0.16); ctx.globalCompositeOperation = "source-over";
+      },
+      neant(ctx, E, t, S) {   // lame d'obsidienne fissurée + particules aspirées
+        const P = [[-3.9, -5], [3.9, -5], [2.9, 14], [0, 25.5], [-2.9, 14]], pulse = 0.5 + 0.5 * Math.sin(t * 2.5 + S);
+        for (let k = 0; k < 9; k++) {
+          const ph = (t * 0.55 + k / 9 + rlR(k, S)) % 1, a0 = rlR(k + 4, S) * 6.283 + ph * 3.2, r = 17 * (1 - ph);
+          ctx.globalAlpha = ph < 0.15 ? ph / 0.15 : 1; ctx.fillStyle = k % 3 ? "#a855f7" : "#0a0612";
+          const sz = 0.6 + (1 - ph) * 1.3; ctx.fillRect(Math.cos(a0) * r - sz / 2, 8 + Math.sin(a0) * r * 1.3 - sz / 2, sz, sz);
+        }
+        ctx.globalAlpha = 1;
+        ctx.shadowColor = "#a855f7"; ctx.shadowBlur = 6; ctx.fillStyle = "#07030f"; rlPath(ctx, P); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.strokeStyle = rlA("#c084fc", 0.7 + 0.3 * pulse); ctx.lineWidth = 0.7; ctx.stroke();
+        ctx.strokeStyle = rlA("#f0abfc", 0.35 + 0.55 * pulse); ctx.lineWidth = 0.5; ctx.beginPath();
+        ctx.moveTo(0, -4); ctx.lineTo(-1.2, 2); ctx.lineTo(0.8, 7); ctx.lineTo(-0.6, 13); ctx.lineTo(0.4, 19); ctx.moveTo(-1.2, 2); ctx.lineTo(-2.4, 4.6); ctx.moveTo(0.8, 7); ctx.lineTo(2.2, 9.6); ctx.moveTo(-0.6, 13); ctx.lineTo(-1.8, 15); ctx.stroke();
+        rlHilt(ctx, "#0f0720", "#3b0764", "#e879f9", 8);
+        rlUn(ctx, () => { ctx.fillStyle = "#3b0764"; rlPath(ctx, [[-8, -7.6], [-11, -10.5], [-6, -7.6]]); ctx.fill(); rlPath(ctx, [[8, -7.6], [11, -10.5], [6, -7.6]]); ctx.fill(); });
+        ctx.globalCompositeOperation = "lighter"; rlGlow(ctx, 0, 8, 4 + pulse * 2.5, "#f5d0fe", 0.5); ctx.globalCompositeOperation = "source-over";
+      }
+    };
+    // Dessine une lame : (x,y) = garde, la pointe suit l'angle `ang` (π/2 = pointe vers le bas)
+    function drawRuneBlade(ctx, el, x, y, ang, s, t, o) {
+      o = o || {};
+      const E = RUNE_EL[el] || RUNE_EL.arcane, i = o.i || 0, S = i * 7.3 + 1.1, hb = o.hb || 0, ev = !!o.ev;
+      const shape = el === "sang" && i % 2 === 0 ? "faux" : (RL_SHAPES[el] ? el : "arcane");
+      ctx.save();
+      ctx.translate(x, y); ctx.rotate(ang - Math.PI / 2); const k = s * (1 + hb * 0.14); ctx.scale(k, k);
+      if (o.alpha !== undefined) ctx.globalAlpha = o.alpha;
+      if (el === "neant") { const g = ctx.createRadialGradient(0, 6, 2, 0, 6, 21); g.addColorStop(0, "rgba(0,0,0,0.5)"); g.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 6, 21, 0, 7); ctx.fill(); }
+      ctx.globalCompositeOperation = "lighter";
+      rlGlow(ctx, shape === "faux" ? 6 : 0, shape === "faux" ? -6 : 12, ev ? 30 : 22, E.glow, (ev ? 0.4 : 0.24) + 0.07 * Math.sin(t * 3 + S) + hb * 0.55);
+      if (hb > 0) rlGlow(ctx, 0, 4, 28, "#fde68a", hb * 0.6);
+      if (ev) {
+        ctx.strokeStyle = rlA(E.col, 0.6); ctx.lineWidth = 0.7; ctx.beginPath(); ctx.ellipse(0, 11, 15, 21, 0, 0, 7); ctx.stroke();
+        ctx.strokeStyle = rlA(E.core, 0.35); ctx.beginPath(); ctx.ellipse(0, 11, 12.5, 18, 0, 0, 7); ctx.stroke();
+        for (let q = 0; q < 8; q++) { const a = t * 0.9 + q * Math.PI / 4; ctx.fillStyle = rlA(E.core, 0.9); ctx.fillRect(Math.cos(a) * 15 - 0.9, 11 + Math.sin(a) * 21 - 0.9, 1.8, 1.8); }
+      }
+      ctx.globalCompositeOperation = "source-over";
+      if (shape === "faux") RL_SHAPES.faux(ctx, E, t, S);
+      else { RL_CUR = RL_LEN; ctx.save(); ctx.scale(1, RL_LEN); try { RL_SHAPES[shape](ctx, E, t, S); } finally { ctx.restore(); RL_CUR = 1; } }
+      if (ev) { ctx.globalCompositeOperation = "lighter"; const tw = 0.5 + 0.5 * Math.sin(t * 6 + S); ctx.fillStyle = rlA(E.core, tw); ctx.fillRect(-0.4, -22 - tw * 2, 0.8, 4); ctx.fillRect(-2, -20.4, 4, 0.8); ctx.globalCompositeOperation = "source-over"; }
+      ctx.restore();
+    }
+    function runeOrbitPos(i, n, t, cx, cy, rx, ry) {
+      const th = t * 0.95 + i * Math.PI * 2 / Math.max(1, n);
+      return { x: cx + Math.cos(th) * rx, y: cy + Math.sin(th) * ry - Math.sin(t * 2.3 + i * 1.7) * ry * 0.3, d: Math.sin(th), th };
+    }
+    function drawRuneOrbit(ctx, hero, cx, cy, sc, t, layer, scene) {
+      const sw = runeActiveSwords(hero), n = sw.length, ev = runeEveilActive(hero), now = performance.now() / 1000;
+      const hb = hero === state.hero || (hero && hero.nom === state.hero.nom && hero.classe === state.hero.classe) ? rlHB(now - runePulseT) : 0;
+      const rx = 56 * sc, ry = 13 * sc;
+      sw.forEach(s => {
+        if (scene && now >= RUNE_FLY[s.i].a && now < RUNE_FLY[s.i].b) return;
+        const p = runeOrbitPos(s.i, n, t, cx, cy, rx, ry);
+        if ((layer === "back") !== (p.d < 0)) return;
+        const k = (0.86 + 0.14 * p.d) * sc, tilt = -Math.cos(p.th) * 0.22;
+        drawRuneBlade(ctx, s.el, p.x, p.y - 18 * k, Math.PI / 2 + tilt, k * 0.95, t, { i: s.i, ev, hb, alpha: layer === "back" ? 0.82 : 1 });
+      });
+    }
+    // Orbite dessinée DANS le portrait 128×128 (fiche, garde-robe, groupe, campement…)
+    function runeOrbitOverlay(canvas, hero, t, camp) {
+      const ctx = canvas.getContext("2d"), W = canvas.width, H = canvas.height;
+      if (!_rlTmp) _rlTmp = document.createElement("canvas");
+      if (_rlTmp.width !== W || _rlTmp.height !== H) { _rlTmp.width = W; _rlTmp.height = H; }
+      const tc = _rlTmp.getContext("2d"); tc.clearRect(0, 0, W, H); tc.drawImage(canvas, 0, 0);
+      const k = W / 128, cx = 64 * k, cy = (camp ? 86 : 74) * k, sc = 0.8 * k, tt = camp ? t * 0.5 : t;
+      ctx.save(); ctx.clearRect(0, 0, W, H); ctx.imageSmoothingEnabled = true;
+      drawRuneOrbit(ctx, hero, cx, cy, sc, tt, "back", false);
+      ctx.drawImage(_rlTmp, 0, 0);
+      drawRuneOrbit(ctx, hero, cx, cy, sc, tt, "front", false);
+      ctx.restore();
+    }
+
+    // ---- Impacts élémentaires ----
+    function drawRuneImpact(ctx, el, x, y, p, S, B, ev) {
+      if (!(p >= 0) || p >= 1) return;
+      const E = RUNE_EL[el] || RUNE_EL.arcane, k = 1 - p, bg = (B || 1) * (ev ? 1.25 : 1);
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter"; rlGlow(ctx, x, y, (14 + p * 28) * bg, E.glow, 0.6 * k); ctx.globalCompositeOperation = "source-over";
+      if (el === "arcane") {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(p * 2.4);
+        const r = (8 + p * 22) * bg; ctx.strokeStyle = rlA("#c4b5fd", k); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke(); ctx.strokeStyle = rlA("#67e8f9", k); ctx.beginPath(); ctx.arc(0, 0, r * 0.72, 0, 7); ctx.stroke();
+        ctx.beginPath(); for (let a = 0; a < 2; a++) for (let j = 0; j <= 3; j++) { const ag = a * Math.PI / 3 + j * Math.PI * 2 / 3; j ? ctx.lineTo(Math.cos(ag) * r * 0.72, Math.sin(ag) * r * 0.72) : ctx.moveTo(Math.cos(ag) * r * 0.72, Math.sin(ag) * r * 0.72); } ctx.stroke();
+        for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx.fillStyle = rlA("#ede9fe", k); ctx.fillRect(Math.cos(a) * r - 1.5, Math.sin(a) * r - 1.5, 3, 3); }
+        ctx.restore();
+        fxBurst(ctx, x, y, p, S, 12, ["#c4b5fd", "#67e8f9", "#ffffff"], 40 * bg, 2);
+      } else if (el === "sang") {
+        for (let j = 0; j < 3; j++) { ctx.globalAlpha = k * (1 - j * 0.25); ctx.strokeStyle = j ? (j === 1 ? "#dc2626" : "#7f1d1d") : "#fecaca"; ctx.lineWidth = (6 - j * 1.6) * bg; ctx.beginPath(); ctx.arc(x + 8, y, (24 + j * 3) * bg, Math.PI * 0.62, Math.PI * 0.62 + Math.PI * 0.95 * Math.min(1, p * 4)); ctx.stroke(); }
+        for (let i = 0; i < 20; i++) {
+          const a = -2.9 + rlR(i, S) * 2.5, sp = (18 + rlR(i + 40, S) * 48) * bg, sz = 1.4 + rlR(i + 9, S) * 2.6;
+          ctx.globalAlpha = k; ctx.fillStyle = i % 3 ? "#b91c1c" : "#ef4444";
+          ctx.beginPath(); ctx.arc(x + Math.cos(a) * sp * p, y + Math.sin(a) * sp * p + 70 * p * p, sz, 0, 7); ctx.fill();
+        }
+        ctx.globalAlpha = 0.55 * k; ctx.fillStyle = "#7f1d1d"; ctx.beginPath(); ctx.ellipse(x, y + 48, (8 + p * 26) * bg, (2 + p * 4) * bg, 0, 0, 7); ctx.fill();
+      } else if (el === "givre") {
+        const gr = Math.min(1, p * 3.5);
+        ctx.strokeStyle = rlA("#e0f2fe", k); ctx.lineWidth = 2;
+        for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + 0.3, L = 20 * gr * bg; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * L, y + Math.sin(a) * L); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * L * 0.6, y + Math.sin(a) * L * 0.6); ctx.lineTo(x + Math.cos(a + 0.5) * L * 0.85, y + Math.sin(a + 0.5) * L * 0.85); ctx.stroke(); }
+        for (let i = 0; i < 10; i++) { const a = i * 0.628 + rlR(i, S) * 0.4, d = (10 + p * 44) * bg; ctx.save(); ctx.globalAlpha = k; ctx.translate(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.8); ctx.rotate(a); ctx.fillStyle = i % 2 ? "#7dd3fc" : "#f0f9ff"; ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(0, -2); ctx.lineTo(-4, 0); ctx.lineTo(0, 2); ctx.closePath(); ctx.fill(); ctx.restore(); }
+        fxRing(ctx, x, y, (10 + p * 34) * bg, 2, "#bae6fd", k, 0.8);
+        for (let i = 0; i < 7; i++) { const a = rlR(i + 20, S) * 6.28, d = (8 + p * 30) * bg, r = (6 + p * 12) * bg, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d * 0.6 + p * 10; const g = ctx.createRadialGradient(px, py, 0, px, py, r); g.addColorStop(0, `rgba(240,249,255,${0.35 * k})`); g.addColorStop(1, "rgba(240,249,255,0)"); ctx.fillStyle = g; ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(px, py, r, 0, 7); ctx.fill(); }
+        for (let i = 0; i < 6; i++) { ctx.globalAlpha = k; fxStar(ctx, x + (rlR(i + 9, S) - 0.5) * 70, y - 30 + p * 40 + rlR(i + 3, S) * 20, 3, "#e0f2fe"); }
+      } else if (el === "flamme") {
+        const r = (10 + p * 30) * bg;
+        ctx.globalAlpha = k; ctx.fillStyle = "#fde047"; ctx.beginPath(); ctx.arc(x, y, r * 0.55, 0, 7); ctx.fill();
+        ctx.globalAlpha = 0.8 * k; ctx.fillStyle = "#f97316"; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+        ctx.globalAlpha = 0.45 * k; ctx.fillStyle = "#b91c1c"; ctx.beginPath(); ctx.arc(x, y, r * 1.25, 0, 7); ctx.fill();
+        ctx.globalCompositeOperation = "lighter";
+        for (let i = 0; i < 6; i++) { const fx0 = x + (i - 2.5) * 9 * bg, fh = (14 + rlR(i, S) * 16) * bg * Math.sin(Math.min(1, p * 2) * Math.PI); const fg = ctx.createLinearGradient(0, y, 0, y - fh); fg.addColorStop(0, `rgba(249,115,22,${0.8 * k})`); fg.addColorStop(1, "rgba(254,240,138,0)"); ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(fx0 - 5, y); ctx.quadraticCurveTo(fx0, y - fh * 1.3, fx0 + 5, y); ctx.fill(); }
+        ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+        fxBurst(ctx, x, y, p, S, 16, ["#fde047", "#f97316", "#b91c1c", "#fff7d6"], 56 * bg, 3);
+      } else if (el === "foudre") {
+        if (p < 0.12) { ctx.fillStyle = `rgba(254,249,195,${0.22 * (1 - p / 0.12)})`; ctx.fillRect(0, 0, 640, 210); }
+        if (p < 0.4) {
+          const fl = Math.floor(performance.now() / 50); ctx.globalAlpha = 1 - p / 0.4;
+          const pts = [[x + (rlR(fl, S) - 0.5) * 30, 0]]; for (let j = 1; j <= 7; j++) pts.push([x + (rlR(fl + j, S) - 0.5) * 22 * (1 - j / 8), y * j / 7]);
+          for (let pass = 0; pass < 2; pass++) { ctx.strokeStyle = pass ? "#ffffff" : "rgba(253,224,71,0.6)"; ctx.lineWidth = pass ? 1.6 : 5; ctx.beginPath(); pts.forEach(([a, b], j) => j ? ctx.lineTo(a, b) : ctx.moveTo(a, b)); ctx.stroke(); }
+          ctx.globalAlpha = 1;
+        }
+        fxElectric(ctx, x, y, p, S, 8, 40 * bg);
+      } else if (el === "poison") {
+        for (let i = 0; i < 16; i++) { const a = -2.8 + rlR(i, S) * 2.4, sp = (14 + rlR(i + 30, S) * 40) * bg; ctx.globalAlpha = k; ctx.fillStyle = i % 3 ? "#84cc16" : "#d9f99d"; ctx.beginPath(); ctx.arc(x + Math.cos(a) * sp * p, y + Math.sin(a) * sp * p + 60 * p * p, 1.4 + rlR(i + 7, S) * 2, 0, 7); ctx.fill(); }
+        for (let i = 0; i < 6; i++) { const a = rlR(i + 50, S) * 6.28, d = (6 + p * 24) * bg, r = (6 + p * 14) * bg, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d * 0.6 - p * 10; const g = ctx.createRadialGradient(px, py, 0, px, py, r); g.addColorStop(0, `rgba(101,163,13,${0.45 * k})`); g.addColorStop(1, "rgba(101,163,13,0)"); ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, r, 0, 7); ctx.fill(); }
+        ctx.lineWidth = 1; for (let i = 0; i < 7; i++) { const ph = Math.min(1, p * 1.4 + rlR(i, S) * 0.3); ctx.strokeStyle = rlA("#bef264", 1 - ph); ctx.beginPath(); ctx.arc(x + (rlR(i + 60, S) - 0.5) * 40, y + 10 - ph * 46, 1.5 + ph * 2.5, 0, 7); ctx.stroke(); }
+      } else if (el === "neant") {
+        const r = (30 * (1 - p) + 3) * bg;
+        ctx.globalAlpha = 0.85 * k; ctx.fillStyle = "#05010f"; ctx.beginPath(); ctx.arc(x, y, r * 0.75, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+        fxRing(ctx, x, y, r, 2.5, "#c084fc", k, 0.9); fxRing(ctx, x, y, r * 1.35, 1, "#f0abfc", k * 0.6, 0.9);
+        for (let i = 0; i < 16; i++) { const a = rlR(i, S) * 6.28 + p * 2, d = (46 * (1 - p) + 4) * bg; ctx.globalAlpha = Math.min(1, p * 3) * k; ctx.fillStyle = i % 3 ? "#a855f7" : "#f5d0fe"; ctx.fillRect(x + Math.cos(a) * d - 1.5, y + Math.sin(a) * d * 0.8 - 1.5, 3, 3); }
+        if (p > 0.7) fxBurst(ctx, x, y, (p - 0.7) / 0.3, S + 9, 12, ["#a855f7", "#f0abfc", "#0a0612"], 50 * bg, 3);
+      }
+      ctx.restore(); ctx.globalAlpha = 1;
+    }
+
+    // ---- Attaque de base / compétences : chaque lame quitte l'orbite, frappe, puis revient ----
+    function drawRuneAttack(ctx, f, a, EX, EY) {
+      const B = f.big;
+      if (f.sx === undefined) {
+        const n = Math.max(1, runeSwordCount(state.hero)), sc = RUNE_SCENE.sc, p = runeOrbitPos(f.i, n, RUNE_SCENE.t || f.t0, RUNE_SCENE.cx, RUNE_SCENE.cy, 56 * sc, 13 * sc);
+        f.sx = p.x; f.sy = p.y - 18 * sc; f.n = n;
+      }
+      const T1 = 0.2, T2 = 0.34, T3 = f.dur, ix = EX - 16 - f.i * 6, iy = EY - 8 + f.i * 9;
+      const cxp = (f.sx + ix) / 2, cyp = Math.min(f.sy, iy) - 44 - f.i * 14;
+      const bez = (q, x0, y0, x1, y1, xc, yc) => [(1 - q) * (1 - q) * x0 + 2 * (1 - q) * q * xc + q * q * x1, (1 - q) * (1 - q) * y0 + 2 * (1 - q) * q * yc + q * q * y1];
+      const E = RUNE_EL[f.el] || RUNE_EL.arcane, tt = RUNE_SCENE.t || a;
+      let x, y, ang;
+      if (a < T1) {
+        const q = a / T1, e = q * q * (3 - 2 * q);
+        [x, y] = bez(e, f.sx, f.sy, ix, iy, cxp, cyp);
+        const [x2, y2] = bez(Math.min(1, e + 0.05), f.sx, f.sy, ix, iy, cxp, cyp);
+        const dir = Math.atan2(y2 - y, x2 - x); ang = q < 0.2 ? Math.PI / 2 + (dir - Math.PI / 2) * (q / 0.2) : dir;
+        ctx.globalCompositeOperation = "lighter";
+        for (let k = 1; k <= 7; k++) { const [tx, ty] = bez(Math.max(0, e - k * 0.045), f.sx, f.sy, ix, iy, cxp, cyp); rlGlow(ctx, tx, ty, (8 - k) * 1.5 * B, E.glow, 0.42 * (1 - k / 8)); }
+        ctx.globalCompositeOperation = "source-over";
+      } else if (a < T2) {
+        const q = (a - T1) / (T2 - T1); x = ix + 7 * q; y = iy + 2 * q; ang = Math.atan2(iy - cyp, ix - cxp) * 0.5 + 0.35;
+      } else {
+        const q = (a - T2) / (T3 - T2), e = q * q * (3 - 2 * q);
+        const p = runeOrbitPos(f.i, f.n, RUNE_SCENE.t || (f.t0 + a), RUNE_SCENE.cx, RUNE_SCENE.cy, 56 * RUNE_SCENE.sc, 13 * RUNE_SCENE.sc);
+        const xs = ix + 7, ys = iy + 2, tx = p.x, ty = p.y - 18 * RUNE_SCENE.sc, xc = (xs + tx) / 2, yc = Math.min(ys, ty) - 34;
+        [x, y] = bez(e, xs, ys, tx, ty, xc, yc);
+        const [x2, y2] = bez(Math.min(1, e + 0.05), xs, ys, tx, ty, xc, yc);
+        let dir = Math.atan2(y2 - y, x2 - x), d = Math.PI / 2 - dir; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+        ang = dir + d * Math.min(1, e * 1.3);
+      }
+      if (f.el === "sang" && f.i % 2 === 0 && a < T2) ang = a * 28;   // la faux tournoie comme un boomerang
+      drawRuneBlade(ctx, f.el, x, y, ang, (B > 1 ? 1.3 : 1.16), tt, { i: f.i, ev: f.ev });
+      if (a >= T1 - 0.02) drawRuneImpact(ctx, f.el, ix + 3, iy + 4, (a - T1 + 0.02) / 0.44, f.seed, B, f.ev);
+    }
+
+    // ---- Cercle runique (sol, sceau final) ----
+    function drawRuneSigil(ctx, x, y, r, t, el, a, sy) {
+      if (!(a > 0) || r <= 1) return;
+      const E = RUNE_EL[el] || RUNE_EL.arcane;
+      ctx.save(); ctx.translate(x, y); ctx.scale(1, sy); ctx.globalCompositeOperation = "lighter";
+      rlGlow(ctx, 0, 0, r * 1.35, E.glow, 0.35 * a);
+      ctx.strokeStyle = rlA(E.col, 0.9 * a); ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, r * 0.78, 0, 7); ctx.stroke();
+      ctx.save(); ctx.rotate(t * 0.9); ctx.strokeStyle = rlA(E.core, 0.75 * a); ctx.beginPath();
+      for (let i = 0; i < 2; i++) for (let j = 0; j <= 3; j++) { const ag = i * Math.PI / 3 + j * Math.PI * 2 / 3, px = Math.cos(ag) * r * 0.78, py = Math.sin(ag) * r * 0.78; j ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+      ctx.stroke(); ctx.restore();
+      ctx.fillStyle = rlA(E.core, a);
+      for (let i = 0; i < 12; i++) { ctx.save(); ctx.rotate(-t * 1.4 + i * Math.PI / 6); ctx.fillRect(r * 0.84, -1.5, 2.6, 3); if (i % 2) ctx.fillRect(r * 0.84 + 0.6, -3.2, 1.4, 1.4); ctx.restore(); }
+      ctx.restore();
+    }
+
+    // ---- ULTIME : « Tempête de Lames » ----
+    function fxRuneStorm(ctx, e, u, U) {
+      const els = (U.rlEls && U.rlEls.length) ? U.rlEls : ["arcane"], ev = !!U.rlEv, S = U.seed || 1, d = U.dur;
+      const HXc = RUNE_SCENE.cx, HYc = RUNE_SCENE.cy, EXc = 440, EYc = 124;
+      const env = fxClamp(e / 0.3) * fxClamp((d - e) / 0.4), E0 = RUNE_EL[els[0]] || RUNE_EL.arcane;
+      ctx.fillStyle = `rgba(6,2,20,${0.6 * env})`; ctx.fillRect(0, 0, 640, 210);
+      ctx.globalCompositeOperation = "lighter"; rlGlow(ctx, 330, 30, 280, E0.glow, 0.16 * env); ctx.globalCompositeOperation = "source-over";
+      drawRuneSigil(ctx, HXc, 178, 50 * fxClamp(e / 0.35), e, els[0], 0.9 * env, 0.3);
+      const N = 12, imp = u.impacts.map(ms => ms / 1000);
+      const rise = (k, tm) => {
+        const tS = 0.05 + k * 0.022, rq = fxClamp((tm - tS) / 0.3), re = rq * rq * (3 - 2 * rq);
+        const hx = 206 + (k / (N - 1)) * 250, hy = 66 - Math.sin(k / (N - 1) * Math.PI) * 14 + Math.sin(tm * 3 + k) * 2.5;
+        return { x: HXc + (hx - HXc) * re, y: HYc + (hy - HYc) * re - Math.sin(re * Math.PI) * 22, re, on: tm >= tS };
+      };
+      for (let k = 0; k < N; k++) {
+        const el = els[k % els.length], g = k % imp.length, ti = imp[g], launch = ti - 0.13;
+        let x, y, ang, alpha = 1;
+        if (e < launch) {
+          const r = rise(k, e); if (!r.on) continue; x = r.x; y = r.y;
+          const aim = Math.atan2(EYc - y, EXc - x); ang = (1 - r.re) * (-Math.PI / 2 + k * 0.7) + r.re * aim;
+        } else if (e < ti + 0.2) {
+          const r0 = rise(k, launch), q = fxClamp((e - launch) / 0.13);
+          const tx = EXc - 8 + (rlR(k, S) - 0.5) * 44, ty = EYc + 8 + (rlR(k + 5, S) - 0.5) * 34;
+          x = r0.x + (tx - r0.x) * q * q; y = r0.y + (ty - r0.y) * q * q; ang = Math.atan2(ty - r0.y, tx - r0.x);
+          if (q < 1) { ctx.globalCompositeOperation = "lighter"; for (let j = 1; j <= 5; j++) { const qq = Math.max(0, q - j * 0.12); rlGlow(ctx, r0.x + (tx - r0.x) * qq * qq, r0.y + (ty - r0.y) * qq * qq, (7 - j) * 1.8, (RUNE_EL[el] || E0).glow, 0.4 * (1 - j / 6)); } ctx.globalCompositeOperation = "source-over"; }
+          else alpha = Math.max(0, 1 - (e - ti) / 0.2);
+        } else continue;
+        drawRuneBlade(ctx, el, x, y, ang, 1.05, e + k, { i: k, ev, alpha });
+      }
+      imp.forEach((ti, g) => { const p = (e - ti) / 0.45; if (p >= 0 && p < 1) drawRuneImpact(ctx, els[g % els.length], EXc - 6, EYc + 4, p, S + g * 13, 1.5, ev); });
+      const fe = e - imp[imp.length - 1];
+      if (fe > 0) {
+        const fa = fxClamp((d - e) / 0.45);
+        drawRuneSigil(ctx, EXc, EYc + 10, 28 + 46 * fxClamp(fe / 0.25), e * 2, els[0], fa, 0.5);
+        ctx.globalCompositeOperation = "lighter";
+        const pw = 34 * fa, pg = ctx.createLinearGradient(EXc - pw, 0, EXc + pw, 0); pg.addColorStop(0, rlA(E0.glow, 0)); pg.addColorStop(0.5, rlA(E0.core, 0.55 * fa)); pg.addColorStop(1, rlA(E0.glow, 0));
+        ctx.fillStyle = pg; ctx.fillRect(EXc - pw, 0, pw * 2, EYc + 30);
+        ctx.globalCompositeOperation = "source-over";
+      }
+    }
+
+    // ---- Autel : canevas animés ----
+    function drawAutelCanvases(t) {
+      const hc = document.getElementById("autel-hero"); if (hc) drawHero128(hc, state.hero, t, heroPoseTimer, false, false);
+      const ev = runeEveilActive(state.hero), sw = runeActiveSwords(state.hero), hb = rlHB(performance.now() / 1000 - runePulseT);
+      document.querySelectorAll("canvas[data-rl-sword]").forEach(cv => {
+        const i = +cv.dataset.rlSword, s = sw[i]; if (!s) return;
+        const c = cv.getContext("2d"); c.clearRect(0, 0, cv.width, cv.height);
+        const E = RUNE_EL[s.el];
+        c.globalCompositeOperation = "lighter"; rlGlow(c, 36, 90, 62, E.glow, 0.16 + hb * 0.3); c.globalCompositeOperation = "source-over";
+        const faux = s.el === "sang" && i % 2 === 0, bob = Math.sin(t * 2 + i) * 2.5;
+        drawRuneBlade(c, s.el, faux ? 24 : 36, (faux ? 60 : 44) + bob, Math.PI / 2, faux ? 1.9 : 1.8, t, { i, ev, hb });
+      });
+      const pi = document.querySelector("canvas[data-pd-rune-ic]");
+      if (pi) { const c = pi.getContext("2d"); c.clearRect(0, 0, 32, 32); const s0 = sw[0] || { el: "arcane" }; drawRuneBlade(c, s0.el, s0.el === "sang" ? 12 : 16, s0.el === "sang" ? 15 : 7, Math.PI / 2, s0.el === "sang" ? 0.58 : 0.46, t, { i: 0, ev, hb }); }
     }
 
     /* =======================================================================
@@ -15726,7 +16689,8 @@ function wmDraw(ctx, t, opt) {
           dodge: s.dodge || 0, dmgReduc: s.dmgReduc || 0, lifesteal: s.lifesteal || 0,
           turnPm: s.turnPm || 0, turnHeal: s.turnHeal || 0, thorns: s.thorns || 0, survive: s.survive || 0, ultGain: s.ultGain || 0
         },
-        potions: state.ressources.potion_soin || 0
+        potions: state.ressources.potion_soin || 0,
+        gear: { wAtk: (() => { const w = state.equipementPorte.arme; return w && w.stats ? Math.round((w.stats.atk || 0) * (1 + RENFORT_PER_LVL * (w.renfort || 0))) : 0; })(), free: Math.max(0, getMaxBagSlots() - getUsedBagSlots()) }
       };
     }
     function coopCleanSnap(r) {
@@ -15737,6 +16701,8 @@ function wmDraw(ctx, t, opt) {
         const N = (v, lo, hi, d) => { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
         const s = r.stats || {};
         const L = Math.round(N(r.niveau, 1, 999, 1)), cap = (base, per) => base + L * per;   // plafonds généreux liés au niveau (anti-triche)
+        if (r.classe === "runelame") r.hero.rune = runeSanitize(r.hero.rune); else delete r.hero.rune;
+        const gq = r.gear || {}, gear = { wAtk: Math.round(N(gq.wAtk, 0, 99999, 0)), free: Math.round(N(gq.free, 0, 999, 0)) };
         return {
           nom: String(r.nom || "Héros").replace(/[<>]/g, "").slice(0, 16), classe: r.classe, niveau: Math.round(N(r.niveau, 1, 999, 1)), hero: r.hero, tok: typeof r.tok === "string" ? r.tok.replace(/[^a-z0-9]/gi, "").slice(0, 40) : "",
           stats: {
@@ -15748,7 +16714,7 @@ function wmDraw(ctx, t, opt) {
           },
           potions: Math.round(N(r.potions, 0, 9999, 0)),
           pass: (() => { const q = r.pass || {}, o = {}; ["petPct", "elemPct", "dotPct", "debuffPct", "buffDur"].forEach(k => { o[k] = N(q[k], 0, 5, 0); }); o.dotDur = Math.round(N(q.dotDur, 0, 20, 0)); return o; })(),
-          pet: r.classe === "rodeur" ? (PET_BY_LIGNEE[r.hero.lignee] || "loup") : null,
+          pet: r.classe === "rodeur" ? (PET_BY_LIGNEE[r.hero.lignee] || "loup") : null, gear,
           actives: getSkillList(r.classe).filter(k => k.type === "active" && k.lvl <= Math.round(N(r.niveau, 1, 999, 1)))
         };
       } catch (e) { return null; }
@@ -15923,6 +16889,7 @@ function wmDraw(ctx, t, opt) {
           coopBroadcastLobby(); RetroAudio.confirm();
           showToast(`🤝 ${nm} a rejoint le salon !`);
         } else if (m.t === "act" && pid) { coopHostAct(pid, String(m.a), m.tg ? String(m.tg) : null); }
+        else if (m.t === "gift" && pid) { coopRouteGift(pid, m); }
         else if (m.t === "chat" && pid) { coopChatIn(pid, m.txt); }
         else if (m.t === "bye" && pid) { coopHostDrop(pid, true, link); }
       };
@@ -16005,7 +16972,7 @@ function wmDraw(ctx, t, opt) {
       const pick = () => mobs[Math.floor(Math.random() * mobs.length)];
       if (R.raid && R.players.length >= 3) tplIds.push(b.elite, (d && d.boss) || b.boss); else { R.raid = false; tplIds.push(pick(), pick(), b.elite, pick(), (d && d.boss) || b.boss); }
       R.waves = tplIds; R.wave = 0;
-      const roster = R.players.map(p => ({ id: p.id, name: p.name, classe: p.snap.classe, niveau: p.snap.niveau, hero: p.snap.hero, pvMax: p.snap.stats.pvMax, pmMax: p.snap.stats.pmMax, actives: (p.snap.actives || []).map(k => ({ id: k.id, nom: k.nom, icon: k.icon, pm: k.pm, cd: k.cd, desc: k.desc })) }));
+      const roster = R.players.map(p => ({ id: p.id, name: p.name, classe: p.snap.classe, niveau: p.snap.niveau, hero: p.snap.hero, gear: p.snap.gear, pvMax: p.snap.stats.pvMax, pmMax: p.snap.stats.pmMax, actives: (p.snap.actives || []).map(k => ({ id: k.id, nom: k.nom, icon: k.icon, pm: k.pm, cd: k.cd, desc: k.desc })) }));
       const start = { t: "start", roster, biomeId: R.biomeId, diffId: R.diffId, code: R.code, nWaves: tplIds.length, raid: !!R.raid };
       R.startMsg = start;
       R.players.forEach(p => { if (p.link) p.link.send(start); });
@@ -16038,13 +17005,13 @@ function wmDraw(ctx, t, opt) {
     }
     function coopAddUlt(p, v) { p.ult = Math.min(100, p.ult + v * (1 + (p.snap.stats.ultGain || 0))); }
     function coopRecalcEnemy(en) { en.def = Math.round(en.baseDef * (1 - (en.debuffs.def ? en.debuffs.def.pct : 0))); }
-    function coopApplyDot(p, kind, dps, dur, nom) {
+    function coopApplyDot(p, kind, dps, dur, nom, quiet) {
       const en = COOP.room.enemy, sp = p.snap.pass || {};
       dps = Math.round(dps * (1 + (sp.dotPct || 0))); dur = dur + (sp.dotDur || 0);
       const rounds = coopRounds(dur), per = Math.max(1, Math.round(dps * dur / rounds));
       const ex = en.dots.find(d => d.kind === kind);
       if (ex) { if (per >= ex.per || ex.rounds < rounds) { ex.per = per; ex.rounds = rounds; ex.by = p.id; } } else en.dots.push({ kind, per, rounds, by: p.id });
-      coopLog(`${kind === "poison" ? "☠️" : (kind === "bleed" ? "🩸" : "🔥")} ${nom} : ${per} dégâts par manche (${rounds} manche${rounds > 1 ? "s" : ""}).`, kind === "poison" ? "text-lime-300" : "text-orange-300");
+      if (!(quiet && ex)) coopLog(`${kind === "poison" ? "☠️" : (kind === "bleed" ? "🩸" : "🔥")} ${nom} : ${per} dégâts par manche (${rounds} manche${rounds > 1 ? "s" : ""}).`, kind === "poison" ? "text-lime-300" : "text-orange-300");
     }
     function coopPetAttack(p, mult) {
       const R = COOP.room, en = R.enemy, type = p.snap.pet; if (!type || en.pv <= 0) return;
@@ -16171,7 +17138,9 @@ function wmDraw(ctx, t, opt) {
         coopEv(Object.assign({ k: "dmg", to: "enemy", v: dmg, crit: crit ? 1 : 0, by: p.id }, extra || {}));
         if (s.lifesteal) { const h = Math.round(dmg * s.lifesteal); if (h > 0) p.pv = Math.min(s.pvMax, p.pv + h); }
       };
-      if (a === "atk") {
+      if (a === "atk" && p.snap.classe === "runelame") {
+        coopRuneAtk(p, s, en, hurt);
+      } else if (a === "atk") {
         const crit = Math.random() < s.critChance;
         const dmg = Math.max(1, Math.round(Math.max(2, mitig(s.atk, en.def, 1)) * (0.9 + Math.random() * 0.25) * (crit ? s.critMult : 1)));
         hurt(dmg, crit); coopAddUlt(p, 10 + (crit ? 4 : 0));
@@ -16182,6 +17151,7 @@ function wmDraw(ctx, t, opt) {
         const dmg = Math.max(3, Math.round(mitig((baseOff + (s[sk.stat] || 0) * 0.9) * sk.mult, en.def, 0.6)));
         hurt(dmg, false, { big: 1 });
         coopLog(`✨ ${p.name} lance ${sk.nom} : ${dmg} dégâts.`, "text-sky-300");
+        if (p.snap.classe === "runelame") { const sw = runeActiveSwords(p.snap.hero); sw.forEach(w => coopRuneProc(p, s, en, w, dmg / Math.max(1, sw.length))); }
         if (sk.soinRatio > 0) R.players.forEach(q => { if (q.ko) return; const f = q === p ? 1 : 0.4, h = Math.round(q.snap.stats.pvMax * sk.soinRatio * f); q.pv = Math.min(q.snap.stats.pvMax, q.pv + h); coopEv({ k: "heal", to: q.id, v: h }); });
       } else if (a === "ult") {
         p.ult = 0; delay = 1500;
@@ -16193,7 +17163,7 @@ function wmDraw(ctx, t, opt) {
           total += Math.max(1, Math.round(raw * (0.92 + Math.random() * 0.16) * (crit ? s.critMult : 1))); anyCrit = anyCrit || crit;
         }
         hurt(total, anyCrit, { big: 1, ult: 1 });
-        if (u.dot) coopApplyDot(p, u.dot.kind || "poison", Math.round(u.dot.dps * (1 + s.esprit / 30)), u.dot.dur, u.dot.nom || u.nom);
+        if (u.dot) coopApplyDot(p, u.dot.kind || "poison", Math.round(u.dot.dps * (1 + s.esprit / 30) + s.magicAtk * DOT_POW), u.dot.dur, u.dot.nom || u.nom);
         if (u.soinRatio > 0) { const h = Math.round(s.pvMax * u.soinRatio); p.pv = Math.min(s.pvMax, p.pv + h); coopEv({ k: "heal", to: p.id, v: h }); }
         if (u.pmRatio > 0) p.pm = Math.min(s.pmMax, p.pm + Math.round(s.pmMax * u.pmRatio));
         coopLog(`🌟 ${p.name} — ${u.nom} : ${total} dégâts !`, "text-amber-300 font-bold");
@@ -16213,7 +17183,7 @@ function wmDraw(ctx, t, opt) {
           hurt(dmg, crit, { big: 1 });
           coopLog(`${k.icon} ${k.nom} : ${dmg} dégâts${crit ? " (CRITIQUE)" : ""}.`, "text-sky-200");
         }
-        if (A.dot && en.pv > 0) coopApplyDot(p, A.dot.kind, Math.round(A.dot.dps * (1 + (s[stt] || 0) / 30)), A.dot.dur, A.dot.nom);
+        if (A.dot && en.pv > 0) coopApplyDot(p, A.dot.kind, Math.round(A.dot.dps * (1 + (s[stt] || 0) / 30) + (stt === "esprit" ? s.magicAtk : s.atk) * DOT_POW), A.dot.dur, A.dot.nom);
         if (A.bleed && en.pv > 0) coopApplyDot(p, "bleed", Math.max(2, Math.round(3 + s.force / 8)), 6, "Saignement");
         if (A.atkDebuff && en.pv > 0) { const pc = Math.min(0.8, A.atkDebuff.pct * (1 + (sp.debuffPct || 0))); en.debuffs.atk = { pct: pc, left: coopRounds(A.atkDebuff.dur) + 1 }; coopEv({ k: "txt", to: "enemy", v: "ATQ −" + Math.round(pc * 100) + "%", c: "#a3e635" }); }
         if (A.defDebuff && en.pv > 0) { const dpc = Math.min(0.8, A.defDebuff * (1 + (sp.debuffPct || 0))); en.debuffs.def = { pct: dpc, left: coopRounds(15) + 1 }; coopRecalcEnemy(en); coopEv({ k: "txt", to: "enemy", v: "DEF −" + Math.round(dpc * 100) + "%", c: "#a3e635" }); }
@@ -16329,6 +17299,7 @@ function wmDraw(ctx, t, opt) {
       else if (m.t === "st") { coopClientState(m); }
       else if (m.t === "end") { coopClientEnd(m); }
       else if (m.t === "chat") { coopChatShow(m); }
+      else if (m.t === "gift") { coopReceiveGift(m.item, m.from); }
       else if (m.t === "closed") { showToast("🔌 L'hôte a fermé le salon."); coopLeave(true); }
     }
 
@@ -16418,6 +17389,7 @@ function wmDraw(ctx, t, opt) {
         gold = Math.round(gold * cb * half * rb); xp = Math.round(xp * cb * half * rb);
         ex.unsecuredLoot.gold += gold;
         Object.entries(ex.unsecuredLoot.ressources).forEach(([id, q]) => { const r = UNIVERS_CONFIG.ressources[id]; if (q > 0 && r) lines.push(`${q}× ${r.icone} ${r.nom}`); });
+        if (state.hero.classe === "runelame") { try { runeCoopSort(ex.unsecuredLoot.equips, lines); } catch (e) { console.error(e); } }
         ex.unsecuredLoot.equips.forEach(it => lines.push(`⚔️ ${it.nom} (${UNIVERS_CONFIG.raretes[it.rarete].nom})`));
         secureUnsecuredLoot();
         xpGot = grantHeroXp(xp);
@@ -16959,6 +17931,9 @@ function wmDraw(ctx, t, opt) {
       } else if (viewId === "garderobe") {
         document.getElementById("view-garderobe").classList.remove("hidden");
         renderWardrobeView();
+      } else if (viewId === "autel") {
+        document.getElementById("view-autel").classList.remove("hidden");
+        renderAutelView();
       } else if (viewId === "succes") {
         document.getElementById("view-succes").classList.remove("hidden");
         renderAchievementsView();
@@ -16995,6 +17970,8 @@ function wmDraw(ctx, t, opt) {
       if (h.pm > stats.pmMax) h.pm = stats.pmMax;
 
       updateSkillNavBadge();
+      { const na = document.querySelector('[data-nav="autel"]'), isRl = h.classe === "runelame"; if (na) na.style.display = isRl ? "" : "none";
+        const sp = document.getElementById("sb-rune-pts"); if (sp) { const fr = isRl ? runePointsTotal(h) - runePointsUsed(h) : 0; sp.textContent = fr > 0 ? "+" + fr : ""; sp.style.color = fr > 0 ? "#c4b5fd" : ""; } }
       { const _m = getActiveMount(), _sb = document.getElementById("sb-mount"); if (_sb) _sb.textContent = _m ? _m.icon + " ×" + getMountSpeed().toFixed(2) : ""; }
       document.getElementById("tb-hero-name").textContent = h.nom;
       try { const tt = document.getElementById("tb-hero-title"), ti = titreActif(); if (tt) { tt.classList.toggle("hidden", !ti); tt.textContent = ti ? `« ${ti.nom} »` : ""; } } catch (e) {}
@@ -17268,6 +18245,7 @@ function wmDraw(ctx, t, opt) {
     }
     A("Légendes", "leg_aube", "🌅", "Héraut de l'Aube", "Vaincre 2 500 monstres. Débloque la lignée de skins de l'Aube pour ta classe.", kills, 2500, { or: 100000, skins: "aube" });
     A("Légendes", "leg_dunes", "🏜️", "Vagabond des Dunes", "Révéler 50 % du Codex des Monstres. Débloque la lignée de skins des Dunes.", () => codexPct(), 50, { or: 250000, skins: "dunes" });
+    A("Légendes", "leg_runique", "🔯", "Ascète Runique", "Absorber 100 armes avec les lames d'un Runelame. Débloque la lignée de skins Runique (Runelame).", () => (state.hero.rune && state.hero.rune.absorbW) || 0, 100, { or: 150000, skins: "runique" });
     A("Légendes", "leg_celeste", "🌟", "Paladin Céleste", "Vaincre Séraphine, l'Étoile Noire. Débloque la lignée de skins Céleste.", () => killed("boss_seraphine"), 1, { or: 1000000, coupons: 3, skins: "celeste" });
     function achState() { if (!state.succes) state.succes = {}; return state.succes; }
     function checkAchievements() {
@@ -17406,6 +18384,7 @@ function wmDraw(ctx, t, opt) {
       });
 
       if (state.activeView === "garderobe") drawWardrobeCanvases(tSec);
+      if (state.activeView === "autel" || state.activeView === "heros") { try { drawAutelCanvases(tSec); } catch (e) {} }
       if (state.activeView === "expedition" && expTab === "dest") { try { wmTick(tSec); } catch (e) {} }
       if (state.activeView === "expedition" && (window._bsT || 0) + 0.08 < tSec) { window._bsT = tSec; try { drawBiomeSplashes(tSec); } catch (e) {} }
 
@@ -17769,7 +18748,7 @@ function wmDraw(ctx, t, opt) {
       // équipements aléatoires, plafonnés au niveau du héros
       for (let i = 0; i < 2; i++) {
         const maitre = Math.random() < 0.3, key = maitre ? "maitre" : "rare", lv = Math.max(1, L - R(4));
-        const it = generateEquipment({ level: lv, fixedQuality: { rarete: key, nom: C.raretes[key].nom, mult: C.raretes[key].mult }, provenance: "Marchand ambulant" });
+        const it = generateEquipment({ slot: state.hero.classe === "runelame" ? ["armure", "casque", "anneau"][R(3)] : undefined, level: lv, fixedQuality: { rarete: key, nom: C.raretes[key].nom, mult: C.raretes[key].mult }, provenance: "Marchand ambulant" });
         stock.push({ k: "equip", item: it, p: maitre ? 7 : 4, left: 1 });
       }
       if (C.ressources.potion_soin) stock.push({ k: "res", id: "potion_soin", q: 5, p: 1, left: 2 });
@@ -17779,6 +18758,7 @@ function wmDraw(ctx, t, opt) {
       const M = marchandState(), e = M.stock[i]; if (!e || e.left <= 0) return;
       if ((state.couponsOr || 0) < e.p) { showToast("🎫 Pas assez de Coupons Dorés."); return; }
       if (e.k === "equip") {
+        if (state.hero.classe === "runelame" && e.item && e.item.slot === "arme") { showToast("🔮 Le marchand ne vend pas d'armes à un Runelame."); return; }
         if (getUsedBagSlots() >= getMaxBagSlots()) { showToast("🎒 Sac plein : fais de la place avant d'acheter."); return; }
         state.inventaireEquip.push(JSON.parse(JSON.stringify(e.item)));
       } else {
@@ -18078,8 +19058,28 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.35";
+    const GAME_VERSION = "1.38";
     const PATCH_NOTES = [
+      { v: "1.38", date: "21/11/2026", titre: "Difficulté des classes et équilibrage", items: [
+        "🎓 Création du héros : chaque classe affiche sa difficulté de prise en main (1 à 5) avec une explication. Chevalier = Débutant, Rôdeur = Accessible, Occultiste = Intermédiaire, Alchimiste = Avancé, Runelame = Expert. Les classes sont triées de la plus simple à la plus exigeante.",
+        "⚖️ Équilibrage vérifié par simulation de combat (niveaux 20, 45 et 80, équipement forgé équivalent) : le Runelame se place au milieu du classement, entre les classes robustes et les « canons de verre ».",
+        "🧪 Alchimiste renforcé : il était nettement derrière les autres classes. Corrosion Persistante (+10 % ATQ), Virulence (+12 % ATQ) et Sage Alchimiste (+12 % ATQ) gagnent de la puissance.",
+        "☠️ Les altérations des compétences (poisons, saignements, brûlures) suivent maintenant la puissance du héros et restent utiles à haut niveau."
+      ] },
+      { v: "1.37", date: "21/11/2026", titre: "Des lames, pas des dagues", items: [
+        "⚔️ Runelame : les lames runiques sont nettement plus longues (environ +60 % de lame, la poignée garde sa taille) — de vraies épées qui flottent autour du héros, en combat, sur la fiche, à l'Autel et en groupe."
+      ] },
+      { v: "1.36", date: "21/11/2026", titre: "Nouvelle classe : le Runelame", items: [
+        "🔮 Nouvelle classe jouable : le RUNELAME. Un mage qui ne manie aucune arme : il commande des lames runiques qui gravitent autour de lui (1 lame au départ, 2 au niveau 20, 3 au niveau 45) et frappent l'une après l'autre.",
+        "⚔️ Sept éléments, sept apparences de lames : Arcane, Sang (faux et épées ruisselantes de sang), Givre (lames de cristal et brume glaciale), Flamme (flamberges en fusion), Foudre (lames-éclairs crépitantes), Poison (kriss serpentins et venin) et Néant (obsidienne qui aspire la lumière).",
+        "🌀 Résonance : 2 lames du même élément = +15 % d'effet, les 3 = +35 %.",
+        "🔮 Nouveau menu « Autel Runique » : accorde chaque lame à un élément et dépense tes points d'enchantement en Tranchant (dégâts) et en Essence (effet élémentaire).",
+        "💜 Absorption d'âmes : chaque arme trouvée fait battre les lames comme un cœur et leur donne 1 point de statistique au hasard (2 si Maître, 3 si Légendaire), dans la limite de 2 × ton niveau.",
+        "🤝 En groupe : une arme ramassée par un Runelame est offerte à l'allié qu'elle améliore vraiment. Sinon : « Le Runelame a déterminé que cette arme est trop faible » et il l'absorbe.",
+        "🚫 Contreparties : pas d'arme équipable, pas de skin d'arme ni d'objet en main, pas d'arme à la Forge ni chez le marchand.",
+        "🔯 Deux panoplies de 3 pièces (Tête, Torse, Anneau) : le Sceau de l'Éveil (Éveil élémentaire : toutes les lames prennent la voie choisie, effets +25 %) et l'Ordre des Lames Fantômes (les critiques invoquent une lame fantôme).",
+        "🌟 Ultime « Tempête de Lames », 19 compétences en 3 voies (Lames, Runes, Égide) et une lignée de skins « Ascète Runique » à débloquer en absorbant 100 armes. Les lignées Aube, Dunes et Céleste ont aussi leurs pièces Runelame."
+      ] },
       { v: "1.35", date: "21/11/2026", titre: "Forge plus lisible", items: [
         "🔨 Forge : chaque recette affiche une icône et son emplacement (Tête, Torse, Anneau, Arme, Bouclier, Cape, Aura, Consommable…).",
         "🔎 Forge : nouveaux filtres par emplacement en haut de la liste pour n'afficher, par exemple, que les casques.",
