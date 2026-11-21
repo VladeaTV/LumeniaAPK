@@ -543,6 +543,8 @@
     .forge-ic { flex-shrink: 0; width: 38px; height: 38px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
       background: linear-gradient(180deg, #1f2937, #0b1120); border: 2px solid #9a3412; box-shadow: inset 0 0 10px rgba(0,0,0,.8); }
     .forge-ic canvas { width: 30px; height: 30px; image-rendering: pixelated; }
+    .title-rainbow{background:linear-gradient(90deg,#f87171,#fbbf24,#a3e635,#22d3ee,#818cf8,#e879f9,#f87171);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent;animation:titleRainbow 2.6s linear infinite;filter:drop-shadow(0 0 5px rgba(255,255,255,.3));font-weight:800}
+    @keyframes titleRainbow{to{background-position:200% 0}}
 </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -1507,6 +1509,17 @@
       ["Botaniste Averti", "Vitalité Sylvestre", "Main Délicate", "Économie d'Atelier", "Sève Régénératrice"],
       [{ dropRate: 0.5 }, { pvFlat: 5 }, { doubleChance: 0.4 }, { forgeDiscount: 0.005 }, { postBattleMpPct: 0.003 }],
       { potionBonus: 0.02 });
+
+    const PALIERS_BUCHERON = buildPaliers(
+      ["Coup Assuré", "Écorce de Chêne", "Bras du Forestier", "Racines Profondes", "Cœur de l'Ancien"],
+      [{ doubleChance: 0.4 }, { pvFlat: 5 }, { speedMult: 0.01 }, { defFlat: 1 }, { physDmgMult: 0.003 }],
+      { pvFlat: 12 });
+    function buchPalierBonus() {
+      const b = state.metiers && state.metiers.bucheron, out = { doubleChance: 0, pvFlat: 0, speedMult: 0, defFlat: 0, physDmgMult: 0 };
+      if (!b) return out;
+      PALIERS_BUCHERON.forEach(pal => { if (b.niveau >= pal.niveau) Object.entries(pal.bonus).forEach(([k, v]) => { out[k] = (out[k] || 0) + v; }); });
+      return out;
+    }
 
     /* ---------- Fabrique de monstres (bestiaire) ---------- */
     const _m = (id, nom, niveau, pvMax, atk, def, xp, or, lootComp, spriteType, extra = {}) =>
@@ -3016,6 +3029,7 @@
       const bPeche = getProfessionMasteryBonuses("peche");
       const bMinage = getProfessionMasteryBonuses("minage");
       const bRecolte = getProfessionMasteryBonuses("recolte");
+      const bBuch = buchPalierBonus();
 
       let force = h.baseStats.force + (lin.bonuses.force || 0);
       let agilite = h.baseStats.agilite + (lin.bonuses.agilite || 0);
@@ -3057,15 +3071,15 @@
       const injuryMult = h.injuryTimer > 0 ? 0.80 : 1.0;
       const _bb = bestiaryBonus();
 
-      const rawPvMax = 100 + (h.niveau - 1) * 18 + force * 3 + (lin.bonuses.pvFlat || 0) + (cls.bonuses.pvFlat || 0) + bMinage.pvFlat + bRecolte.pvFlat + eqPv + _bb.pv;
+      const rawPvMax = 100 + (h.niveau - 1) * 18 + force * 3 + (lin.bonuses.pvFlat || 0) + (cls.bonuses.pvFlat || 0) + bMinage.pvFlat + bRecolte.pvFlat + bBuch.pvFlat + eqPv + _bb.pv;
       const pvMax = Math.max(20, Math.round(rawPvMax * injuryMult));
       const pmMax = 25 + (h.niveau - 1) * 5 + Math.floor(esprit * 2.5) + (lin.bonuses.pmFlat || 0) + (cls.bonuses.pmFlat || 0) + bPeche.pmFlat + eqPm;
       const rawAtk = _rl ? 8 + (h.niveau - 1) * 2 + Math.floor(esprit * 1.3) + Math.floor(agilite * 0.4) + (cls.bonuses.atkFlat || 0) + eqAtk + _rl.swordAtk + _bb.atk
         : 8 + (h.niveau - 1) * 2 + Math.floor(force * 1.3) + Math.floor(agilite * 0.4) + (cls.bonuses.atkFlat || 0) + eqAtk + _bb.atk;
-      const atk = Math.max(1, Math.round(rawAtk * (1 + bMinage.physDmgMult) * injuryMult));
+      const atk = Math.max(1, Math.round(rawAtk * (1 + bMinage.physDmgMult + bBuch.physDmgMult) * injuryMult));
       const rawMagic = 8 + (h.niveau - 1) * 2 + Math.floor(esprit * 1.5) + (cls.bonuses.atkFlat || 0) + eqAtk + (_rl ? Math.round(_rl.swordAtk * 0.9) : 0) + _bb.atk;
       const magicAtk = Math.max(1, Math.round(rawMagic * injuryMult));
-      const rawDef = 2 + Math.floor((h.niveau - 1) * 1.2) + Math.floor(force * 0.3 + agilite * 0.25) + (cls.bonuses.defFlat || 0) + bMinage.defFlat + eqDef + _bb.def;
+      const rawDef = 2 + Math.floor((h.niveau - 1) * 1.2) + Math.floor(force * 0.3 + agilite * 0.25) + (cls.bonuses.defFlat || 0) + bMinage.defFlat + bBuch.defFlat + eqDef + _bb.def;
       const def = Math.max(0, Math.round(rawDef * injuryMult));
       const critChance = Math.min(0.60, 0.05 + agilite * 0.004 + chance * 0.005 + (lin.bonuses.critFlat || 0) + (cls.bonuses.critFlat || 0) + bPeche.critFlat + eqCrit);
       const critMult = +(1.6 + chance * 0.01).toFixed(2);
@@ -6200,7 +6214,7 @@
       const c = String(raw || "").toUpperCase().replace(/\s+/g, "");
       if (GIFT_CODES[giftHash(c)] !== "pionnier") return false;
       try { localStorage.setItem("lumenia_pionnier", "1"); } catch (e) {}
-      grantBetaSkins(true); return true;
+      grantBetaSkins(true); try { checkTitres(); } catch (e) {} return true;
     }
     let _betaFlag = null;
     function betaAutoGrant() {   // le code vaut pour toutes les sauvegardes de cet appareil
@@ -7116,10 +7130,10 @@
     // un arbre abattu (par le héros ou par les bûcherons engagés)
     function buchFell(tr, byWorkers, tSec, silent) {
       const b = buchState();
-      const q = 1 + (Math.random() < Math.min(0.35, b.niveau / 200) ? 1 : 0);
+      const q = 1 + (Math.random() < Math.min(0.6, Math.min(0.35, b.niveau / 200) + buchPalierBonus().doubleChance / 100) ? 1 : 0);
       state.ressources[tr.res] = (state.ressources[tr.res] || 0) + q;
       let extra = ""; if (Math.random() < 0.12) { state.ressources.resine = (state.ressources.resine || 0) + 1; extra = " +1 🍯"; }
-      const xp = byWorkers ? WORKER_XP_PER * b.assistants : tr.xp;
+      const xp = Math.round((byWorkers ? WORKER_XP_PER * b.assistants : tr.xp) * getGatherLevelXpBoost(b.niveau));
       if (!silent) {
         if (!byWorkers) buchFx = { t0: tSec, gain: `+${q} 🪵${extra}` };
         buchLog(`${byWorkers ? "👷 Vos bûcherons" : tr.icone} ${byWorkers ? "abattent" : tr.nom + " abattu :"} ${byWorkers ? "un " + tr.nom + " :" : ""} +${q} ${UNIVERS_CONFIG.ressources[tr.res].nom}${extra ? " + 1 Résine d'ambre" : ""} (+${xp} XP)`, q > 1 || !!extra);
@@ -7128,7 +7142,7 @@
     }
     function buchGainXp(x) {
       const b = buchState(); b.xp += x; let up = false;
-      while (b.niveau < MAX_PROF_LEVEL && b.xp >= getProfXpReq(b.niveau)) { b.xp -= getProfXpReq(b.niveau); b.niveau++; up = true; }
+      while (b.niveau < MAX_GATHER_LEVEL && b.xp >= getGatherXpReq(b.niveau)) { b.xp -= getGatherXpReq(b.niveau); b.niveau++; up = true; }
       if (up) { RetroAudio.levelUp(); showToast(`🪓 Bûcheron niveau ${b.niveau} !`); const nt = BUCH_TREES.find(t => t.lvl === b.niveau); if (nt) setTimeout(() => showToast(`${nt.icone} Nouvel arbre : ${nt.nom}`), 900); if (state.activeView === "bucheron") renderBucheronView(); }
     }
     let buchFx = { t0: -9, gain: null };
@@ -7137,7 +7151,7 @@
       if (b.niveau < tr.lvl) { b.actif = false; b.treeId = "chene"; return; }
       let changed = false;
       if (b.actif) {
-        const speed = 1 + Math.min(0.5, (b.niveau - tr.lvl) * 0.01);
+        const speed = (1 + Math.min(0.5, (b.niveau - tr.lvl) * 0.01)) * (1 + buchPalierBonus().speedMult);
         b.prog += dt * speed / tr.duree;
         if (b.prog >= 1) { b.prog = 0; buchFell(tr, false, tSec); changed = true; }
       }
@@ -7172,9 +7186,10 @@
     }
     function renderBucheronView() {
       const el = document.getElementById("view-bucheron"); if (!el) return;
-      const b = buchState(), req = getProfXpReq(b.niveau), cs = getCampState(); if (!b.logs) b.logs = [];
-      const tr = BUCH_TREES.find(t => t.id === b.treeId) || BUCH_TREES[0];
-      const speed = 1 + Math.min(0.5, (b.niveau - tr.lvl) * 0.01), dblPct = Math.min(35, b.niveau / 2);
+      const b = buchState(), req = getGatherXpReq(b.niveau), cs = getCampState(); if (!b.logs) b.logs = [];
+      const tr = BUCH_TREES.find(t => t.id === b.treeId) || BUCH_TREES[0], bp = buchPalierBonus();
+      const speed = (1 + Math.min(0.5, (b.niveau - tr.lvl) * 0.01)) * (1 + bp.speedMult), dblPct = Math.min(60, Math.min(35, b.niveau / 2) + bp.doubleChance);
+      const palOk = PALIERS_BUCHERON.filter(pl => b.niveau >= pl.niveau).length;
       const made = CAMP_DECOS.filter(d => cs.owned[d.id]).length;
       const drop = (resId, pct, note) => { const r = UNIVERS_CONFIG.ressources[resId];
         return `<div class="bg-slate-900/90 border border-slate-700 rounded-lg p-3 flex items-center justify-between text-xs">
@@ -7187,7 +7202,7 @@
               <div class="flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl">🪓</div>
                 <div>
-                  <h2 class="text-base font-bold text-white">Bûcheron — Niveau ${b.niveau}${b.niveau >= MAX_PROF_LEVEL ? " (MAX)" : ""}</h2>
+                  <h2 class="text-base font-bold text-white">Bûcheron — Niveau ${b.niveau}${b.niveau >= MAX_GATHER_LEVEL ? " (MAX)" : ""}</h2>
                   <p class="text-xs text-slate-400">Bonus actuel : <b class="text-emerald-400">+${dblPct.toFixed(1)}% Chance de double • +${((speed - 1) * 100).toFixed(0)}% Vitesse sur cet arbre</b></p>
                 </div>
               </div>
@@ -7244,6 +7259,12 @@
           </div>
 
           <div class="lg:col-span-5 melvor-panel p-5 space-y-4 lg:sticky lg:top-24">
+            <details class="melvor-card p-3 group">
+              <summary class="cursor-pointer list-none flex items-center justify-between"><span class="text-sm font-bold text-white">🏅 Paliers de Maîtrise (${palOk}/${PALIERS_BUCHERON.length})</span><span class="text-[10px] text-slate-400 group-open:hidden">Afficher ▾</span><span class="text-[10px] text-slate-400 hidden group-open:inline">Masquer ▴</span></summary>
+              <p class="text-[11px] text-slate-400 mt-2">Un palier tous les 5 niveaux jusqu'au niveau 200 : de petits bonus permanents (réduits de 40 % après le niveau 100). Les paliers ★ (25, 50 … 200) ajoutent des PV en plus.</p>
+              <div class="space-y-1.5 mt-2 max-h-72 overflow-y-auto pr-1">${PALIERS_BUCHERON.map(pal => { const ok = b.niveau >= pal.niveau;
+                return `<div class="p-2 rounded-lg border-l-4 ${ok ? "border-l-emerald-400 bg-emerald-950/20" : "border-l-slate-600 bg-slate-900/60 opacity-70"}"><div class="flex items-center justify-between text-[11px]"><b class="${ok ? "text-amber-300" : "text-slate-300"}">${ok ? "✓" : "🔒"} Niv. ${pal.niveau} — ${pal.titre}</b></div><div class="text-[11px] text-slate-300">${pal.desc}</div></div>`; }).join("")}</div>
+            </details>
             <div class="border-b border-slate-800 pb-3.5">
               <h2 class="text-base font-bold text-white">🪚 Menuiserie (${made}/${CAMP_DECOS.length})</h2>
               <p class="text-xs text-slate-400 mt-0.5">Fabrique les meubles et décorations du campement avec ton bois, des matériaux et de l'or. Chaque meuble donne un bonus au camp et compte pour l'amélioration du foyer.</p>
@@ -7281,7 +7302,7 @@
       const pr = document.getElementById("buch-prog"); if (pr) pr.style.width = (b.prog * 100) + "%";
       const ab = document.getElementById("buch-auto-bar"); if (ab) ab.style.width = (b.progAuto * 100) + "%";
       const hb = document.getElementById("btn-buch-hire"); if (hb) hb.disabled = state.or < buchWorkerCost();
-      if (full) { const req = getProfXpReq(b.niveau), xb = document.getElementById("buch-xp-bar"), xt = document.getElementById("buch-xp-txt");
+      if (full) { const req = getGatherXpReq(b.niveau), xb = document.getElementById("buch-xp-bar"), xt = document.getElementById("buch-xp-txt");
         if (xb) xb.style.width = Math.min(100, b.xp / req * 100) + "%"; if (xt) xt.textContent = `${Math.floor(b.xp)} / ${req} XP`;
         [tr.res, "resine"].forEach(rid => { const e = document.getElementById("buch-stock-" + rid); if (e) e.textContent = state.ressources[rid] || 0; });
         document.querySelectorAll("#view-bucheron [data-need-res]").forEach(e => { const have = state.ressources[e.dataset.needRes] || 0, q = +e.dataset.needQ; e.textContent = `${have} / ${q}`; e.className = "tabular-nums " + (have >= q ? "text-emerald-300" : "text-rose-400"); });
@@ -7432,9 +7453,7 @@
       // vignette + nom du biome
       const vg = ctx.createRadialGradient(160, 72, 60, 160, 72, 190); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.45)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, 320, 144);
       ctx.restore();
-      ctx.font = "bold 8px sans-serif"; ctx.textAlign = "right"; ctx.fillStyle = "rgba(0,0,0,.5)"; ctx.fillText(B.nom, 315, 139); ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fillText(B.nom, 314, 138); ctx.textAlign = "left";
       if (!b.actif && b.assistants > 0) { ctx.font = "bold 9px sans-serif"; ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(4, 124, 132, 14); ctx.fillStyle = "#bbf7d0"; ctx.fillText(`👷 ${b.assistants} bûcheron(s) au travail`, 8, 134); }
-      if (!b.actif && !b.assistants) { ctx.fillStyle = "rgba(2,6,23,.45)"; ctx.fillRect(0, 0, 320, 144); ctx.fillStyle = "#e2e8f0"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center"; ctx.fillText("En pause — clique sur « Lancer l'abattage »", 160, 76); ctx.textAlign = "left"; }
     }
     function R2(ctx, x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
     function getCampState() {
@@ -18092,7 +18111,7 @@ function wmDraw(ctx, t, opt) {
         const sp = document.getElementById("sb-rune-pts"); if (sp) { const fr = isRl ? runePointsTotal(h) - runePointsUsed(h) : 0; sp.textContent = fr > 0 ? "+" + fr : ""; sp.style.color = fr > 0 ? "#c4b5fd" : ""; } }
       { const _m = getActiveMount(), _sb = document.getElementById("sb-mount"); if (_sb) _sb.textContent = _m ? _m.icon + " ×" + getMountSpeed().toFixed(2) : ""; }
       document.getElementById("tb-hero-name").textContent = h.nom;
-      try { const tt = document.getElementById("tb-hero-title"), ti = titreActif(); if (tt) { tt.classList.toggle("hidden", !ti); tt.textContent = ti ? `« ${ti.nom} »` : ""; } } catch (e) {}
+      try { const tt = document.getElementById("tb-hero-title"), ti = titreActif(); if (tt) { tt.classList.toggle("hidden", !ti); tt.classList.toggle("title-rainbow", !!(ti && ti.rainbow)); tt.textContent = ti ? `« ${ti.nom} »` : ""; } } catch (e) {}
       try { const sc = document.getElementById("sb-codex"); if (sc) sc.textContent = codexPct() + "%"; } catch (e) {}
       document.getElementById("tb-hero-lvl").textContent = `Combat Niv. ${h.niveau}`;
 
@@ -18335,7 +18354,8 @@ function wmDraw(ctx, t, opt) {
       { id: "polyvalent",icon: "🧰", nom: "Touche-à-tout",        desc: "Pêche, Minage, Récolte et Bûcheron au niveau 30.",          cur: () => Math.min(state.metiers.peche.niveau, state.metiers.minage.niveau, state.metiers.recolte.niveau, buchState().niveau), target: 30 },
       { id: "panoplie",  icon: "🛡️", nom: "Paré pour la Guerre",  desc: "Porter les 4 pièces d'une panoplie.",                       cur: () => { const i = getActiveSetInfo(); return i ? i.count : 0; }, target: 4 },
       { id: "fortune",   icon: "🪙", nom: "le Fortuné",           desc: "Posséder 10 millions d'Or en même temps.",                  cur: () => state.or, target: 10000000 },
-      { id: "legende",   icon: "👑", nom: "Légende de Lumenia",   desc: "Débloquer 10 autres titres.",                               cur: () => Object.keys(titresState().unlocked).filter(k => k !== "legende").length, target: 10 }
+      { id: "pionnier",  icon: "🌈", nom: "Pionnier de l'Aurore",  desc: "Exclusif bêta : entrer le code Pionnier (Discord). Titre arc-en-ciel animé !", cur: () => state.skinsPossedes && state.skinsPossedes.armure_pionnier ? 1 : 0, target: 1, rainbow: true },
+      { id: "legende",   icon: "👑", nom: "Légende de Lumenia",   desc: "Débloquer 10 autres titres.",                               cur: () => Object.keys(titresState().unlocked).filter(k => k !== "legende" && k !== "pionnier").length, target: 10 }
     ];
     function titresState() { if (!state.titres) state.titres = { unlocked: {}, actif: null }; if (!state.titres.unlocked) state.titres.unlocked = {}; return state.titres; }
     const titreTarget = t => typeof t.target === "function" ? t.target() : t.target;
@@ -18354,7 +18374,7 @@ function wmDraw(ctx, t, opt) {
           ${TITRES.map(t => { const ok = !!ts.unlocked[t.id], on = ts.actif === t.id, tg = titreTarget(t); let v = 0; try { v = Math.min(tg, t.cur()); } catch (e) {}
             return `<div class="melvor-card p-3 space-y-1.5 ${on ? "ring-2 ring-amber-400" : ok ? "ring-1 ring-emerald-500/50" : ""}">
               <div class="flex items-center gap-2"><span class="text-xl ${ok ? "" : "grayscale opacity-50"}">${t.icon}</span>
-                <div class="min-w-0 flex-1"><div class="text-xs font-bold italic ${ok ? "text-amber-200" : "text-slate-400"}">« ${t.nom} »</div><div class="text-[10px] text-slate-400">${t.desc}</div></div></div>
+                <div class="min-w-0 flex-1"><div class="text-xs font-bold italic ${ok ? "text-amber-200" : "text-slate-400"}"><span class="${t.rainbow ? "title-rainbow" : ""}">« ${t.nom} »</span></div><div class="text-[10px] text-slate-400">${t.desc}</div></div></div>
               <div class="h-1.5 bg-slate-900 rounded-full overflow-hidden"><div class="h-full ${ok ? "bg-emerald-400" : "bg-amber-500"}" style="width:${tg ? v / tg * 100 : 0}%"></div></div>
               <div class="flex items-center justify-between text-[10px]"><span class="text-slate-500 tabular-nums">${Math.floor(v).toLocaleString("fr-FR")} / ${tg.toLocaleString("fr-FR")}</span>
                 ${ok ? (on ? `<span class="text-amber-300 font-bold">✓ Porté</span>` : `<button type="button" data-titre="${t.id}" class="ui-btn px-2.5 py-1 rounded-md bg-amber-600 hover:bg-amber-500 text-white font-semibold">Porter</button>`) : `<span class="text-slate-600">🔒 Verrouillé</span>`}</div>
@@ -19176,8 +19196,14 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.40";
+    const GAME_VERSION = "1.41";
     const PATCH_NOTES = [
+      { v: "1.41", date: "21/11/2026", titre: "Titre arc-en-ciel et Bûcheron niveau 200", items: [
+        "🌈 Nouveau titre exclusif bêta « Pionnier de l'Aurore » avec un effet arc-en-ciel animé : il se débloque automatiquement avec le code Pionnier.",
+        "🪓 Bûcheron : niveau maximum porté à 200, comme la Pêche, le Minage et la Récolte, avec la même courbe de progression (plus lente, mais plus d'XP par arbre à haut niveau).",
+        "🏅 Bûcheron : 40 paliers de maîtrise (un tous les 5 niveaux) : chance de double bûche, PV, vitesse d'abattage, DEF et dégâts physiques. Les paliers ★ donnent des PV en plus.",
+        "🎨 Scène du Bûcheron épurée : plus de message de pause ni de nom de zone sur l'animation, comme pour les autres métiers."
+      ] },
       { v: "1.40", date: "21/11/2026", titre: "Bienvenue dans la bêta !", items: [
         "🌟 Nouvelle panoplie cosmétique exclusive « Pionnier de l'Aurore » pour remercier les joueurs de la bêta : cuirasse et heaume ailé nuit-et-or parcourus d'aurores boréales, lame / arc / sceptre, égide ou codex, ailes ou étendard, et l'aura « Aurore Boréale » (rideaux de lumière, couronne d'étoiles et sceau doré).",
         "🎁 Nouveau champ « Code cadeau » dans l'onglet Apparence. Le code des pionniers est partagé sur le Discord de LUMENIA. Une fois saisi, il est valable pour toutes les sauvegardes de l'appareil."
