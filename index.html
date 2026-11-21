@@ -3357,7 +3357,7 @@
       return o;
     }
     function runeSwordCount(h) { const L = (h || state.hero).niveau || 1; return RUNE_SWORD_LVLS.filter(l => L >= l).length; }
-    function runePointsTotal(h) { return Math.min(RUNE_RANK_MAX * 6, 1 + Math.floor(((h || state.hero).niveau || 1) * 0.6)); }
+    function runePointsTotal(h) { return Math.min(RUNE_RANK_MAX * 6, Math.max(1, ((h || state.hero).niveau || 1) | 0)); }  /* 1 point par niveau (max 90) */
     function runePointsUsed(h) { return runeState(h).swords.reduce((a, s) => a + (s.tr | 0) + (s.ess | 0), 0); }
     function runeAbsorbCap(h) { return 2 * ((h || state.hero).niveau || 1); }
     function runeElCost(h, s) { return s && s.chg > 0 ? 25 * ((h || state.hero).niveau || 1) : 0; }
@@ -19678,8 +19678,13 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.53";
+    const GAME_VERSION = "1.54";
     const PATCH_NOTES = [
+      { v: "1.54", date: "21/11/2026", titre: "Runelame : 1 point d'Autel par niveau", items: [
+        "🔮 Le Runelame gagne maintenant 1 point d'enchantement à l'Autel Runique à chaque niveau (avant : environ 0,6 par niveau).",
+        "Les Runelames existants récupèrent automatiquement tous les points correspondant à leur niveau : rendez-vous à l'Autel pour les dépenser !",
+        "Le maximum de 90 points (3 lames à 15 Tranchant + 15 Essence) est atteint au niveau 90."
+      ] },
       { v: "1.53", date: "21/11/2026", titre: "Barre de niveau de lieu en direct", items: [
         "📈 La barre d'XP du niveau de lieu (métiers et bûcheron) se met à jour à chaque récolte, même en récoltant très vite, sans avoir à rafraîchir la page.",
         "Le badge 📈 sur les cartes des lieux et des arbres suit aussi le niveau en direct."
