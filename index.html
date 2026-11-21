@@ -12448,6 +12448,32 @@
       showToast(`🔮 ${list.length} arme${list.length > 1 ? "s" : ""} absorbée${list.length > 1 ? "s" : ""} par vos lames.`);
       saveGame(); updateGlobalHUD(); renderAutelView();
     }
+    /* v1.60 : aperçu des éléments sans payer (survol / sélection + confirmation) et guide des éléments */
+    const RUNE_EL_ROLE = { arcane: "Ultime & PM", sang: "Dégâts sur la durée", givre: "Contrôle", flamme: "Brise-armure", foudre: "Vitesse", poison: "Défense", neant: "Survie & boucliers" };
+    let runeElPreview = null;   // { i, k } : élément sélectionné en aperçu sur la lame i
+    function runePreviewF(h, i, k) {
+      const R = runeState(h), n = runeSwordCount(h), ev = runeEveilActive(h);
+      const els = R.swords.slice(0, n).map((s, j) => j === i ? k : s.el), c = els.filter(e => e === k).length;
+      const rz = c >= 3 ? 1.35 : c === 2 ? 1.15 : 1;
+      return (1 + 0.06 * ((R.swords[i] && R.swords[i].ess) | 0)) * rz * (ev ? 1.25 : 1);
+    }
+    function openRuneElGuide() {
+      const h = state.hero, st = getHeroTotalStats(), R = runeState(h);
+      let m = document.getElementById("rl-guide-modal"); if (!m) { m = document.createElement("div"); m.id = "rl-guide-modal"; document.body.appendChild(m); }
+      m.className = "fixed inset-0 z-[80] flex items-center justify-center p-3 bg-black/70";
+      const ess = Math.max(0, ...R.swords.slice(0, runeSwordCount(h)).map(s => s.ess | 0));
+      const f = 1 + 0.06 * ess;
+      m.innerHTML = `<div class="melvor-panel w-full max-w-lg max-h-[90vh] overflow-y-auto p-4 space-y-2 text-xs" style="background:#0f172a">
+        <div class="flex items-start justify-between gap-3"><div><div class="text-base font-bold text-violet-200">📖 Guide des éléments</div>
+          <div class="text-[11px] text-slate-400">Valeurs calculées pour une lame à Essence ${ess} (sans Résonance). 2 lames du même élément : +15 % d'effet, 3 lames : +35 %.</div></div>
+          <button type="button" data-rlg-close class="ui-btn px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600">✕</button></div>
+        ${Object.entries(RUNE_EL).map(([k, E]) => `<div class="melvor-card p-2.5 flex gap-2.5 items-start" style="border-color:${E.col}55">
+          <div class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-lg" style="background:${E.dark};box-shadow:0 0 10px ${E.glow}55">${E.ic}</div>
+          <div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><b style="color:${E.col}">${E.nom}</b><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300">${RUNE_EL_ROLE[k]}</span></div>
+            <div class="text-[11px] text-slate-300 leading-snug mt-0.5">${E.desc(f, st.atk)}</div></div></div>`).join("")}
+      </div>`;
+      m.onclick = e => { if (e.target === m || e.target.closest("[data-rlg-close]")) m.remove(); };
+    }
     function renderAutelView() {
       const box = document.getElementById("view-autel"); if (!box) return;
       const h = state.hero;
@@ -12462,7 +12488,14 @@
         if (i >= n) return `<div class="melvor-card p-4 flex items-center gap-4 opacity-60"><div class="w-[72px] h-[190px] shrink-0 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-2xl">🔒</div>
           <div><div class="text-sm font-bold text-slate-300">Lame ${ROM[i]}</div><div class="text-xs text-slate-500">Se matérialise au niveau ${RUNE_SWORD_LVLS[i]}.</div></div></div>`;
         const s = R.swords[i], a = sw[i], E = RUNE_EL[a.el], cost = runeElCost(h, s);
-        const chips = Object.entries(RUNE_EL).map(([k, e]) => `<button type="button" data-rl-el="${i}:${k}" title="${e.nom}" class="ui-btn w-8 h-8 rounded-lg border text-sm transition ${a.el === k ? "border-amber-300 bg-slate-700 ring-1 ring-amber-300/60" : "border-slate-700 bg-slate-900 hover:border-slate-500"} ${ev ? "opacity-40 pointer-events-none" : ""}">${e.ic}</button>`).join("");
+        const pv = runeElPreview && runeElPreview.i === i && runeElPreview.k !== a.el ? runeElPreview.k : null;
+        const chips = Object.entries(RUNE_EL).map(([k, e]) => `<button type="button" data-rl-el="${i}:${k}" title="${e.nom} — ${RUNE_EL_ROLE[k]}" class="ui-btn w-8 h-8 rounded-lg border text-sm transition ${a.el === k ? "border-amber-300 bg-slate-700 ring-1 ring-amber-300/60" : pv === k ? "border-sky-300 bg-sky-900/60 ring-2 ring-sky-300/70" : "border-slate-700 bg-slate-900 hover:border-slate-500"} ${ev ? "opacity-40 pointer-events-none" : ""}">${e.ic}</button>`).join("");
+        const PE = pv ? RUNE_EL[pv] : null;
+        const descHtml = PE
+          ? `<div class="rounded-lg border border-sky-400/50 bg-sky-950/40 p-2 space-y-1.5"><div class="text-[11px] text-slate-200 leading-snug"><span class="text-[9px] font-bold uppercase tracking-wider text-sky-300 mr-1">Aperçu</span>${PE.ic} <b style="color:${PE.col}">${PE.nom}</b> <span class="text-slate-400">(${RUNE_EL_ROLE[pv]})</span> : ${PE.desc(runePreviewF(h, i, pv), st.atk)}</div>
+              <div class="flex flex-wrap gap-1.5"><button type="button" data-rl-confirm="${i}:${pv}" class="ui-btn px-2.5 py-1 rounded-md bg-emerald-700 hover:bg-emerald-600 text-white text-[11px] font-semibold disabled:opacity-40" ${cost > state.or ? "disabled" : ""}>✓ Réaccorder en ${PE.nom}${cost > 0 ? ` — ${cost.toLocaleString("fr-FR")} 🪙` : " (gratuit)"}</button>
+              <button type="button" data-rl-cancel class="ui-btn px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[11px]">Annuler</button></div></div>`
+          : `<div class="text-[11px] text-slate-200 leading-snug" data-rl-desc="${i}">${E.ic} <b style="color:${E.col}">${E.nom}</b> <span class="text-slate-400">(${RUNE_EL_ROLE[a.el]})</span> : ${E.desc(a.f, st.atk)}</div>`;
         const up = (key, lab, val, txt) => `<div class="space-y-1"><div class="flex items-center justify-between gap-2 text-[11px]"><span class="text-slate-300">${lab} <b class="text-white">${val}/${RUNE_RANK_MAX}</b> <span class="text-slate-500">• ${txt}</span></span>
           <button type="button" data-rl-up="${i}:${key}" class="ui-btn w-7 h-6 rounded bg-violet-700 hover:bg-violet-600 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed" ${free <= 0 || val >= RUNE_RANK_MAX ? "disabled" : ""}>+</button></div>${seg(val)}</div>`;
         return `<div class="melvor-card p-3 sm:p-4 flex gap-3 sm:gap-4" style="border-color:${E.col}66;box-shadow:inset 0 0 24px ${E.glow}22">
@@ -12473,8 +12506,8 @@
               ${ev ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950 text-amber-200 border border-amber-500/40">✸ Éveillée</span>` : ""}
               <span class="text-[10px] text-slate-500 ml-auto">Part de l'attaque : ${Math.round(a.share * 100)} %</span></div>
             <div class="flex flex-wrap gap-1">${chips}</div>
-            <div class="text-[10px] text-slate-500">${ev ? "L'Éveil impose son élément à toutes les lames." : cost > 0 ? `Réaccorder cette lame : ${cost.toLocaleString("fr-FR")} 🪙` : "Premier changement d'élément gratuit."}</div>
-            <div class="text-[11px] text-slate-200 leading-snug">${E.ic} <b style="color:${E.col}">${E.nom}</b> : ${E.desc(a.f, st.atk)}</div>
+            <div class="text-[10px] text-slate-500">${ev ? "L'Éveil impose son élément à toutes les lames." : `Survole ou touche un élément pour voir son effet — rien n'est payé avant confirmation${cost > 0 ? ` (réaccorder : ${cost.toLocaleString("fr-FR")} 🪙)` : " (premier changement gratuit)"}.`}</div>
+            ${descHtml}
             ${up("tr", "⚔️ Tranchant", s.tr | 0, `+${(s.tr | 0) * 2} % de dégâts`)}
             ${up("ess", "✨ Essence", s.ess | 0, `+${(s.ess | 0) * 6} % d'effet élémentaire`)}
           </div></div>`;
@@ -12488,7 +12521,8 @@
         <div class="melvor-panel p-4 sm:p-5 flex flex-wrap items-center gap-3 justify-between" style="background:radial-gradient(120% 140% at 0% 0%,rgba(109,40,217,0.25),transparent 60%),#0f172a">
           <div><h2 class="text-base sm:text-lg font-bold text-violet-200">🔮 Autel Runique</h2>
             <div class="text-[11px] text-slate-400">Le Runelame ne manie aucune arme : il enchante les lames qui gravitent autour de lui. ${nextLvl ? `Prochaine lame au niveau ${nextLvl}.` : "Les trois lames sont éveillées."}</div></div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" id="rl-guide" class="ui-btn px-3 py-1.5 rounded-lg bg-sky-900/70 hover:bg-sky-800 border border-sky-500/60 text-sky-100 text-xs font-semibold">📖 Guide des éléments</button>
             <div class="px-3 py-1.5 rounded-lg bg-slate-950 border ${free > 0 ? "border-violet-400 text-violet-200" : "border-slate-700 text-slate-400"} text-xs font-bold tabular-nums">✨ ${free} point${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""} <span class="text-slate-500 font-normal">/ ${tot}</span></div>
             <button type="button" id="rl-reset" class="ui-btn px-3 py-1.5 rounded-lg ${rlResetArmed ? "bg-rose-700 hover:bg-rose-600 text-white" : "bg-slate-800 hover:bg-slate-700 text-slate-300"} border border-slate-600 text-xs" ${tot - free <= 0 ? "disabled" : ""}>${rlResetArmed ? `Confirmer (${(30 * h.niveau).toLocaleString("fr-FR")} 🪙)` : "↺ Réinitialiser"}</button>
           </div>
@@ -12529,7 +12563,16 @@
           </div>
         </div>`;
       box.querySelectorAll("[data-rl-up]").forEach(b => b.addEventListener("click", () => { const [i, k] = b.dataset.rlUp.split(":"); runeUpgrade(+i, k); }));
-      box.querySelectorAll("[data-rl-el]").forEach(b => b.addEventListener("click", () => { const [i, k] = b.dataset.rlEl.split(":"); runeSetEl(+i, k); }));
+      box.querySelectorAll("[data-rl-el]").forEach(b => {
+        const [i, k] = b.dataset.rlEl.split(":");
+        b.addEventListener("click", () => { const cur = sw[+i] && sw[+i].el; RetroAudio.cursor(); runeElPreview = k === cur ? null : { i: +i, k }; renderAutelView(); });
+        b.addEventListener("mouseenter", () => { const d = box.querySelector(`[data-rl-desc="${i}"]`); if (!d) return; if (!d.dataset.orig) d.dataset.orig = d.innerHTML;
+          const E = RUNE_EL[k]; d.innerHTML = `<span class="text-[9px] font-bold uppercase tracking-wider text-sky-300 mr-1">Aperçu</span>${E.ic} <b style="color:${E.col}">${E.nom}</b> <span class="text-slate-400">(${RUNE_EL_ROLE[k]})</span> : ${E.desc(runePreviewF(h, +i, k), st.atk)}`; });
+        b.addEventListener("mouseleave", () => { const d = box.querySelector(`[data-rl-desc="${i}"]`); if (d && d.dataset.orig) d.innerHTML = d.dataset.orig; });
+      });
+      box.querySelectorAll("[data-rl-confirm]").forEach(b => b.addEventListener("click", () => { const [i, k] = b.dataset.rlConfirm.split(":"); runeElPreview = null; runeSetEl(+i, k); renderAutelView(); }));
+      box.querySelectorAll("[data-rl-cancel]").forEach(b => b.addEventListener("click", () => { runeElPreview = null; RetroAudio.cursor(); renderAutelView(); }));
+      { const g = document.getElementById("rl-guide"); if (g) g.addEventListener("click", () => { RetroAudio.cursor(); openRuneElGuide(); }); }
       box.querySelectorAll("[data-rl-eveil]").forEach(b => b.addEventListener("click", () => {
         R.eveil = b.dataset.rlEveil || null; runePulseT = performance.now() / 1000; RetroAudio.levelUp();
         if (R.eveil) showToast(`✸ Éveil : vos lames embrassent la voie ${RUNE_EL[R.eveil].nom === "Arcane" ? "arcanique" : "du " + RUNE_EL[R.eveil].nom}.`);
@@ -19904,8 +19947,13 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.59";
+    const GAME_VERSION = "1.60";
     const PATCH_NOTES = [
+      { v: "1.60", date: "21/11/2026", titre: "Autel Runique : voir avant de payer", items: [
+        "🔮 Survole (PC) ou touche (mobile) un élément sur une lame : son effet s'affiche en aperçu avec tes vraies valeurs. Rien n'est payé tant que tu n'as pas appuyé sur « ✓ Réaccorder ».",
+        "📖 Nouveau bouton « Guide des éléments » : les 7 éléments, leur rôle (Contrôle, Vitesse, Survie…) et leurs effets, sur une seule page.",
+        "Chaque élément affiche maintenant son rôle à côté de son nom."
+      ] },
       { v: "1.59", date: "21/11/2026", titre: "Les travailleurs ramassent plus", items: [
         "👷 Les travailleurs des métiers (Pêche, Minage, Récolte, Mine d'Éclats, Bûcheron) ne vont plus seulement plus vite : ils ramassent aussi PLUS par récolte.",
         "Chaque travailleur ajoute +0,5 ressource par drop : 2 travailleurs = ×1, 4 = ×2, 10 = ×5, 20 = ×10.",
