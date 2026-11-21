@@ -4121,8 +4121,9 @@
     // Cavalier de profil (tourné vers la droite comme la monture) : même grille de blocs 4px et mêmes couleurs que le héros.
     // Tous les skins (armures, casques, armes, boucliers, capes, auras, visages, marques, panoplie stellaire) ont une version de profil.
     function drawRiderProfile(cv, hero, t, pose) {
-      _hdwReq = null;
+      _hdwReq = null; _hdoReq = null;
       drawRiderProfileBase(cv, hero, t, pose);
+      if (_hdoReq) { const r = _hdoReq; _hdoReq = null; try { drawHDOffhand(cv.getContext("2d"), r, t); } catch (e) { console.error(e); } }
       if (_hdwReq) { const r = _hdwReq; _hdwReq = null; try { drawHDWeapon(cv.getContext("2d"), r, t); } catch (e) { console.error(e); } }
       try { drawSkinFx(cv.getContext("2d"), getHeroLook(hero), t, true); } catch (e) {}
     }
@@ -4394,7 +4395,10 @@
         if (A && A.kind !== "cuir") P(15, 16, 3, 1, A.trim);
       }
       // torche / lanterne : tenue à l'avant, pendue au pommeau
-      if (S && (S.kind === "torch" || S.kind === "lantern" || S.kind === "stellarorb" || S.kind === "stellarvial" || S.kind === "frosttome" || S.kind === "bombbag" || S.kind === "lorb" || S.kind === "lvial")) drawOffhandSkin((x, yy, w, h, c) => px(x + 16, yy + 3, w, h, c), S, y, t);
+      if (S && (S.kind === "torch" || S.kind === "lantern" || S.kind === "stellarorb" || S.kind === "stellarvial" || S.kind === "frosttome" || S.kind === "bombbag" || S.kind === "lorb" || S.kind === "lvial")) {
+        if (!HDW_OFF && HDO_FAMILY[S.kind]) _hdoReq = { s: S, ox: 16, oy: 3 + y };   // v1.66 : objet HD tenu devant
+        else drawOffhandSkin((x, yy, w, h, c) => px(x + 16, yy + 3, w, h, c), S, y, t);
+      }
     }
     const riderBuf = document.createElement("canvas"); riderBuf.width = riderBuf.height = 128;
     function drawRider(ctx, mountId, hero, cx, ground, t, walking, scale, pose) {
@@ -5676,7 +5680,8 @@
        armes à lueur (glow). Le sprite 32×32 indique seulement la position de la main ; l'arme est dessinée par-dessus,
        en coordonnées « pixel du sprite » (1 unité = 4 px du canvas 128×128), origine = main, y négatif = vers le haut.
        ======================================================================= */
-    let HDW_OFF = false, _hdwReq = null;
+    // v1.69 : les armes et objets de main gauche reviennent au pixel art (version soignée, voir PXW_MAPS) — HDW_OFF = false pour réactiver le rendu HD
+    let HDW_OFF = true, _hdwReq = null;
     const HDW_FAMILY = {
       sword: "sword", stellarsword: "sword", lblade: "lblade", katana: "katana", dagger: "dagger",
       axe: "axe", bloodaxe: "axe", hammer: "hammer", mace: "mace",
@@ -6045,7 +6050,456 @@
       ctx.restore();
     }
 
+    /* =======================================================================
+       v1.66 — OBJETS DE MAIN GAUCHE HD (boucliers, grimoires, torches, lanternes, orbes, fioles, carquois, drone)
+       Même principe que les armes HD : le sprite indique où se trouve l'objet, il est dessiné par-dessus en haute définition.
+       Coordonnées : celles du cadre des objets pixel (x 3…10, y 13…25), recentrées sur l'objet (HDO_ANCHOR).
+       ======================================================================= */
+    let _hdoReq = null, _hdoLast = null;
+    const HDO_FAMILY = {
+      round: "round", bloodbuckler: "round", lshield: "lshield", kite: "kite", stellarshield: "kite",
+      tome: "tome", frosttome: "tome", torch: "torch", lantern: "lantern",
+      totem: "orb", stellarorb: "orb", lorb: "orb", stellarvial: "vial", lvial: "vial", bombbag: "drone",
+      stellarquiver: "quiver", lquiver: "quiver"
+    };
+    const HDO_ANCHOR = { round: [6.5, 20], lshield: [6.5, 19.8], kite: [6.5, 19.6], tome: [6.5, 20.4], torch: [7, 20.5], lantern: [6.5, 19.4],
+      orb: [6.5, 17.5], vial: [7, 20], drone: [6.5, 18.4], quiver: [6, 19.6] };
+    function hdoRoundShield(c, s, t, S, o = {}) {
+      const R = 3.75, main = o.face || s.main || "#78350f", trim = o.rim || s.trim || "#a8a29e", glow = s.glow || o.glow;
+      if (glow) hdwHalo(c, glow, 0, 0, 6.5, 0.2 + 0.07 * Math.sin(t * 3 + S));
+      c.fillStyle = hdwMetal(c, trim, -R, R, -R, R); c.beginPath(); c.arc(0, 0, R, 0, 7); c.fill(); hdwInk(c, 0.28);
+      const g = c.createRadialGradient(-1.2, -1.4, 0.3, 0, 0, R - 0.6); g.addColorStop(0, hdwShade(main, 0.35)); g.addColorStop(0.7, main); g.addColorStop(1, hdwShade(main, -0.45));
+      c.fillStyle = g; c.beginPath(); c.arc(0, 0, R - 0.62, 0, 7); c.fill(); hdwInk(c, 0.16);
+      if (o.planks) { c.save(); c.beginPath(); c.arc(0, 0, R - 0.62, 0, 7); c.clip(); c.strokeStyle = hdwA(hdwShade(main, -0.55), 0.75); c.lineWidth = 0.16; [-1.6, 0, 1.6].forEach(x => { c.beginPath(); c.moveTo(x, -R); c.lineTo(x, R); c.stroke(); }); c.restore(); }
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + 0.39; c.fillStyle = hdwShade(trim, 0.5); c.beginPath(); c.arc(Math.cos(a) * (R - 0.31), Math.sin(a) * (R - 0.31), 0.19, 0, 7); c.fill(); }
+      if (!o.noBoss) { c.fillStyle = hdwMetal(c, trim, -1, 1, -1, 1); c.beginPath(); c.arc(0, 0, 1.0, 0, 7); c.fill(); hdwInk(c, 0.18); c.fillStyle = "rgba(255,255,255,0.7)"; c.beginPath(); c.arc(-0.35, -0.35, 0.28, 0, 7); c.fill(); }
+      hdwShine(c, () => { c.beginPath(); c.arc(0, 0, R, 0, 7); }, -R, R, t, S, 0.35);
+      if (glow) { hdwTwinkles(c, [[-2, -1.6], [1.9, -1.1], [-1.1, 2.1], [2.0, 1.8]], t, S, glow); hdwMotes(c, glow, -R, R, -R - 1, R, t, S, 5); }
+    }
+    function hdoKitePath(c, sc = 1) { c.beginPath(); c.moveTo(-3.6 * sc, -4.0 * sc); c.quadraticCurveTo(0, -4.7 * sc, 3.6 * sc, -4.0 * sc); c.lineTo(3.5 * sc, 0.6 * sc); c.quadraticCurveTo(3.0 * sc, 3.6 * sc, 0, 5.6 * sc); c.quadraticCurveTo(-3.0 * sc, 3.6 * sc, -3.5 * sc, 0.6 * sc); c.closePath(); }
+    const HDO_DRAW = {
+      round(c, s, t, S) {
+        if (s.kind === "bloodbuckler") {
+          const pul = 0.5 + 0.5 * Math.sin(t * 4);
+          for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, x = Math.cos(a), y = Math.sin(a); hdwPath(c, [[x * 3.4 - y * 0.55, y * 3.4 + x * 0.55], [x * 5.0, y * 5.0], [x * 3.4 + y * 0.55, y * 3.4 - x * 0.55]]); c.fillStyle = "#e7e5e4"; c.fill(); hdwInk(c, 0.14); }
+          hdoRoundShield(c, s, t, S, { face: "#1c1414", rim: "#fbbf24", noBoss: true, glow: "#dc2626" });
+          c.fillStyle = "#e7e5e4"; c.beginPath(); c.arc(0, -0.3, 1.5, 0, 7); c.fill(); c.beginPath(); c.rect(-0.85, 0.6, 1.7, 1.1); c.fill(); hdwInk(c, 0.16);
+          [[-1.6, -1.6], [1.6, -1.6]].forEach(([x, y], i) => { hdwPath(c, [[x * 0.6, y + 0.6], [x * 1.25, y - 0.9], [x, y + 0.2]]); c.fillStyle = "#d6d3d1"; c.fill(); });
+          [-0.6, 0.6].forEach(x => { c.fillStyle = hdwA("#ef4444", 0.5 + 0.5 * pul); c.beginPath(); c.arc(x, -0.4, 0.38, 0, 7); c.fill(); hdwHalo(c, "#ef4444", x, -0.4, 1.2, 0.5 * pul); });
+          return;
+        }
+        hdoRoundShield(c, s, t, S, { planks: !s.glow && (s.rarete === "commun" || /bois/i.test(s.nom || "")) });
+      },
+      lshield(c, s, t, S) {
+        const E = s.emb, pul = 0.5 + 0.5 * Math.sin(t * 4);
+        if (E === "star") { HDO_DRAW.kite(c, { ...s, _emb: "star" }, t, S); return; }
+        hdoRoundShield(c, s, t, S, { noBoss: true });
+        if (E === "sun") {   // phénix : soleil ailé
+          c.save(); c.globalCompositeOperation = "lighter"; hdwGlow(c, 0, 0, 2.6, "#fde047", 0.45 + 0.2 * pul); c.restore();
+          c.fillStyle = "#fbbf24"; [-1, 1].forEach(sd => { c.beginPath(); c.moveTo(0.4 * sd, -0.2); c.quadraticCurveTo(2.2 * sd, -2.4, 2.9 * sd, -0.6); c.quadraticCurveTo(2.0 * sd, -0.6, 1.4 * sd, 0.4); c.closePath(); c.fill(); });
+          c.fillStyle = hdwMetal(c, "#fde047", -0.9, 0.9); c.beginPath(); c.arc(0, -0.2, 0.9, 0, 7); c.fill(); hdwInk(c, 0.14);
+          c.fillStyle = hdwA(pul > 0.5 ? "#fde047" : "#f97316", 0.95); c.beginPath(); c.moveTo(-0.5, 0.7); c.quadraticCurveTo(0, 2.8 + pul * 0.4, 0.5, 0.7); c.fill();
+        } else {             // spirale des vents
+          c.strokeStyle = "#fbbf24"; c.lineWidth = 0.38; c.lineCap = "round"; c.beginPath();
+          for (let a = 0; a < Math.PI * 3.2; a += 0.15) { const r = 0.25 + a * 0.26, x = Math.cos(a + t * 1.4) * r, y = Math.sin(a + t * 1.4) * r; a === 0 ? c.moveTo(x, y) : c.lineTo(x, y); } c.stroke();
+          hdwTwinkles(c, [[0, -4.6], [0, 4.6], [-4.6, 0], [4.6, 0]], t, S, "#fde68a");
+        }
+      },
+      kite(c, s, t, S) {
+        const stellar = s.kind === "stellarshield", star = s._emb === "star", main = stellar ? (s.main || "#0b1026") : (s.main || "#1e3a8a");
+        const trim = stellar ? "#fde68a" : (s.trim || "#cbd5e1"), glow = s.glow;
+        if (glow) hdwHalo(c, glow, 0, 0.4, 7, 0.2 + 0.07 * Math.sin(t * 3 + S));
+        hdoKitePath(c); c.fillStyle = hdwMetal(c, trim, -3.6, 3.6); c.fill(); hdwInk(c, 0.28);
+        hdoKitePath(c, 0.83); const g = c.createLinearGradient(-3, -4, 3, 4); g.addColorStop(0, hdwShade(main, 0.35)); g.addColorStop(0.55, main); g.addColorStop(1, hdwShade(main, -0.45)); c.fillStyle = g; c.fill(); hdwInk(c, 0.14);
+        c.save(); hdoKitePath(c, 0.83); c.clip();
+        if (stellar || star) {
+          c.fillStyle = hdwA(stellar ? "#fde68a" : "#f8fafc", 0.95); c.fillRect(-0.3, -3.6, 0.6, 8.4); c.fillRect(-2.9, -1.0, 5.8, 0.6);
+        } else {
+          c.fillStyle = hdwMetal(c, trim, -0.4, 0.4); c.fillRect(-0.4, -3.8, 0.8, 9); c.fillRect(-3.2, -1.2, 6.4, 0.8);
+        }
+        c.restore();
+        if (stellar || star) {
+          const gc = glow || "#67e8f9"; hdwHalo(c, gc, 0, -0.7, 2.4, 0.5 + 0.2 * Math.sin(t * 4));
+          c.save(); c.translate(0, -0.7); c.rotate(t * 0.6); hdwStar(c, 0, 0, 1.25, "#ffffff"); c.restore();
+          hdwTwinkles(c, [[-2.1, -2.6], [2.2, 1.4], [-1.4, 2.6], [2.0, -2.8]], t, S, gc);
+        } else { c.fillStyle = hdwMetal(c, trim, -0.8, 0.8, -1.6, 0); c.beginPath(); c.arc(0, -0.8, 0.85, 0, 7); c.fill(); hdwInk(c, 0.16); }
+        hdwShine(c, () => hdoKitePath(c), -4.6, 5.6, t, S, 0.35);
+        if (glow) hdwMotes(c, glow, -3.6, 3.6, -5, 5.6, t, S, 5);
+      },
+      tome(c, s, t, S) {
+        const frost = s.kind === "frosttome", main = frost ? "#0c2f4e" : (s.main || "#7f1d1d"), trim = frost ? "#bae6fd" : (s.trim || "#fbbf24");
+        const glow = frost ? "#7dd3fc" : (s.glow || null), b = frost ? Math.sin(t * 2.5) * 0.45 : 0;
+        c.translate(0, -b); c.rotate(-0.08);
+        if (glow) hdwHalo(c, glow, 0, 0, 6, 0.24 + 0.08 * Math.sin(t * 3 + S));
+        c.fillStyle = "#fef3c7"; c.beginPath(); c.rect(-2.2, -3.3, 4.9, 6.8); c.fill(); hdwInk(c, 0.14);
+        c.strokeStyle = "rgba(146,124,84,0.6)"; c.lineWidth = 0.1; for (let x = 2.65; x > 2.2; x -= 0.15) { c.beginPath(); c.moveTo(x, -3.2); c.lineTo(x, 3.4); c.stroke(); }
+        const cover = () => { c.beginPath(); c.roundRect ? c.roundRect(-2.6, -3.6, 4.9, 7.0, 0.35) : c.rect(-2.6, -3.6, 4.9, 7.0); };
+        cover(); const g = c.createLinearGradient(-2.6, -3.6, 2.3, 3.4); g.addColorStop(0, hdwShade(main, 0.3)); g.addColorStop(0.6, main); g.addColorStop(1, hdwShade(main, -0.45)); c.fillStyle = g; c.fill(); hdwInk(c, 0.24);
+        c.fillStyle = hdwMetal(c, trim, -2.6, -1.7); c.fillRect(-2.6, -3.6, 0.85, 7.0);
+        [[-2.6, -3.6], [2.3, -3.6], [-2.6, 3.4], [2.3, 3.4]].forEach(([x, y]) => { c.fillStyle = trim; c.beginPath(); c.moveTo(x, y); c.lineTo(x + (x < 0 ? 1.1 : -1.1), y); c.lineTo(x, y + (y < 0 ? 1.1 : -1.1)); c.closePath(); c.fill(); });
+        c.strokeStyle = hdwA(trim, 0.85); c.lineWidth = 0.16; c.beginPath(); c.rect(-1.3, -2.8, 3.0, 5.4); c.stroke();
+        const ec = glow || trim, pul = 0.5 + 0.5 * Math.sin(t * 3.5 + S);
+        if (glow) hdwHalo(c, ec, 0.2, -0.1, 1.9, 0.4 + 0.25 * pul);
+        if (frost) { c.strokeStyle = "#e0f2fe"; c.lineWidth = 0.22; for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; c.beginPath(); c.moveTo(0.2 + Math.cos(a) * 1.1, -0.1 + Math.sin(a) * 1.1); c.lineTo(0.2 - Math.cos(a) * 1.1, -0.1 - Math.sin(a) * 1.1); c.stroke(); } }
+        else { hdwPath(c, [[0.2, -1.4], [1.3, -0.1], [0.2, 1.2], [-0.9, -0.1]]); c.fillStyle = ec; c.fill(); hdwInk(c, 0.12); c.fillStyle = "rgba(255,255,255,0.8)"; c.fillRect(0.0, -0.7, 0.25, 0.25); }
+        hdwShine(c, cover, -3.6, 3.4, t, S, 0.3);
+        if (glow) {   // runes / flocons qui s'échappent du livre
+          c.save(); c.globalCompositeOperation = "lighter";
+          for (let i = 0; i < 4; i++) { const ph = (t * 0.45 + rlR(i, S)) % 1, x = -1.8 + rlR(i + 5, S) * 4 + Math.sin(t * 2 + i) * 0.5, y = -3.8 - ph * 3.2; c.fillStyle = hdwA(i % 2 ? ec : "#ffffff", 0.85 * Math.sin(ph * Math.PI)); c.fillRect(x - 0.22, y - 0.22, 0.44, 0.44); }
+          c.restore();
+          if (frost) for (let i = 0; i < 2; i++) { const a = t * 2 + i * Math.PI; c.fillStyle = i ? "#bae6fd" : "#ffffff"; c.fillRect(Math.cos(a) * 4.4 - 0.25, 0.4 + Math.sin(a) * 1.6 - 0.25, 0.5, 0.5); }
+        }
+      },
+      torch(c, s, t, S) {
+        // la couleur de flamme vient du skin (trim : orange pour la torche classique, bleu pour le Feu Bleu)
+        const flame = s.glow || s.trim || "#f97316", mid = hdwShade(flame, 0.5), trim = "#57534e", fl = Math.sin(t * 12) * 0.25 + Math.sin(t * 7.3) * 0.18;
+        hdwHalo(c, flame, 0, -4.4, 7.5 + fl * 2, 0.3 + 0.06 * Math.sin(t * 9));
+        hdwShaft(c, 0, 4.6, -2.2, 0.85, "#6b3f1d");
+        c.strokeStyle = "rgba(60,30,10,0.8)"; c.lineWidth = 0.14; for (let y = -1.8; y < 0.6; y += 0.5) { c.beginPath(); c.moveTo(-0.42, y + 0.3); c.lineTo(0.42, y); c.stroke(); }
+        c.beginPath(); c.moveTo(-1.5, -3.6); c.lineTo(1.5, -3.6); c.lineTo(0.9, -2.0); c.lineTo(-0.9, -2.0); c.closePath(); c.fillStyle = hdwMetal(c, trim, -1.5, 1.5); c.fill(); hdwInk(c, 0.2);
+        const tongue = (w, h, col, a) => { c.fillStyle = hdwA(col, a); c.beginPath(); c.moveTo(-w, -3.6); c.quadraticCurveTo(-w * 1.15, -3.6 - h * 0.55, fl * 0.6, -3.6 - h); c.quadraticCurveTo(w * 1.15, -3.6 - h * 0.55, w, -3.6); c.closePath(); c.fill(); };
+        c.save(); c.globalCompositeOperation = "lighter";
+        tongue(1.35, 4.4 + fl, flame, 0.75); tongue(0.95, 3.3 + fl * 0.7, mid, 0.8); tongue(0.45, 1.9 + fl * 0.4, "#ffffff", 0.85);
+        for (let i = 0; i < 4; i++) { const ph = (t * 0.9 + rlR(i, S)) % 1; c.fillStyle = hdwA(i % 2 ? mid : flame, 0.9 * (1 - ph)); c.fillRect(-0.8 + rlR(i + 2, S) * 1.6 + Math.sin(t * 5 + i) * 0.4, -5 - ph * 4, 0.3, 0.3); }
+        c.restore();
+      },
+      lantern(c, s, t, S) {
+        const glow = s.glow || "#fde047", trim = s.trim || "#cbd5e1", sw = Math.sin(t * 1.8) * 0.08;
+        c.translate(0, -4.2); c.rotate(sw); c.translate(0, 4.2);
+        hdwHalo(c, glow, 0, 0.4, 6.5, 0.32 + 0.08 * Math.sin(t * 9));
+        c.strokeStyle = hdwA(trim, 0.95); c.lineWidth = 0.3; c.beginPath(); c.arc(0, -4.3, 0.75, Math.PI, 0); c.stroke();
+        c.beginPath(); c.moveTo(-1.5, -3.0); c.lineTo(1.5, -3.0); c.lineTo(0.8, -4.0); c.lineTo(-0.8, -4.0); c.closePath(); c.fillStyle = hdwMetal(c, trim, -1.5, 1.5); c.fill(); hdwInk(c, 0.18);
+        c.fillStyle = "rgba(15,23,42,0.55)"; c.beginPath(); c.rect(-1.9, -3.0, 3.8, 5.6); c.fill();
+        const g = c.createRadialGradient(0, 0.2, 0.1, 0, 0.2, 2.4); g.addColorStop(0, "#ffffff"); g.addColorStop(0.35, hdwA(glow, 0.95)); g.addColorStop(1, hdwA(glow, 0.15));
+        c.fillStyle = g; c.beginPath(); c.rect(-1.6, -2.7, 3.2, 5.0); c.fill();
+        c.save(); c.globalCompositeOperation = "lighter"; const fl = Math.sin(t * 11) * 0.15; c.fillStyle = hdwA("#ffffff", 0.9); c.beginPath(); c.moveTo(-0.35, 1.0); c.quadraticCurveTo(0, -0.9 + fl, 0.35, 1.0); c.closePath(); c.fill(); c.restore();
+        c.strokeStyle = "#475569"; c.lineWidth = 0.32; c.beginPath(); c.rect(-1.9, -3.0, 3.8, 5.6); c.moveTo(0, -3.0); c.lineTo(0, 2.6); c.stroke(); hdwPath(c, [[-1.9, -3.0], [1.9, -3.0], [1.9, 2.6], [-1.9, 2.6]]); hdwInk(c, 0.14);
+        c.fillStyle = hdwMetal(c, trim, -2.1, 2.1); c.beginPath(); c.rect(-2.1, 2.6, 4.2, 0.75); c.fill(); hdwInk(c, 0.16);
+        hdwMotes(c, glow, -1.6, 1.6, -4, 2.6, t, S, 4);
+      },
+      orb(c, s, t, S) {
+        const K = s.kind, b = Math.sin(t * 2.5 + S) * 0.45, totem = K === "totem", stellar = K === "stellarorb";
+        const core = totem ? "#a3e635" : (s.glow || s.trim || "#a78bfa"), shell = totem ? "#365314" : stellar ? "#1e1b4b" : (s.main || "#4c1d95"), pul = 0.5 + 0.5 * Math.sin(t * 3.4 + S);
+        c.translate(0, -b);
+        hdwHalo(c, core, 0, 0, 6 + pul, 0.3 + 0.12 * pul);
+        if (totem) { c.strokeStyle = "#78350f"; c.lineWidth = 0.4; c.lineCap = "round"; [[-1, 1], [0, 1], [1, 1]].forEach(([x], i) => { c.beginPath(); c.moveTo(x * 0.6, 2.2); c.quadraticCurveTo(x * 1.4, 3.4, x * 0.9 + Math.sin(t * 2 + i) * 0.2, 4.6); c.stroke(); }); }
+        const g = c.createRadialGradient(-0.8, -0.9, 0.2, 0, 0, 2.5); g.addColorStop(0, "#ffffff"); g.addColorStop(0.3, hdwShade(core, 0.3)); g.addColorStop(0.75, hdwShade(shell, 0.15)); g.addColorStop(1, hdwShade(shell, -0.35));
+        c.fillStyle = g; c.beginPath(); c.arc(0, 0, 2.45, 0, 7); c.fill(); hdwInk(c, 0.22);
+        c.save(); c.beginPath(); c.arc(0, 0, 2.45, 0, 7); c.clip(); c.globalCompositeOperation = "lighter";
+        for (let i = 0; i < 3; i++) { const a = t * (0.8 + i * 0.3) + i * 2.1; hdwGlow(c, Math.cos(a) * 1.0, Math.sin(a * 1.3) * 0.9, 1.3, core, 0.35); }
+        c.restore();
+        if (totem) { c.fillStyle = "#78350f"; c.beginPath(); c.rect(-1.5, -2.9, 3.0, 0.6); c.fill(); hdwInk(c, 0.14); }
+        if (K === "lorb" && s.emb === "sun") hdwTwinkles(c, [[0, -4.2], [0, 4.2], [-4.2, 0], [4.2, 0]], t, S, "#fde047");
+        if (stellar) hdwTwinkles(c, [[-1.0, -0.6], [0.9, 0.7], [0.2, -1.4]], t, S, "#ffffff");
+        c.save(); c.globalCompositeOperation = "lighter";
+        for (let i = 0; i < (totem ? 2 : 3); i++) { const a = t * 2.6 + i * 2.09, x = Math.cos(a) * 4.0, y = Math.sin(a) * 1.5;
+          if (totem) { c.fillStyle = i ? "#f9a8d4" : "#84cc16"; c.beginPath(); c.ellipse(x, y, 0.55, 0.28, a, 0, 7); c.fill(); }
+          else { c.fillStyle = hdwA(i ? core : "#ffffff", 0.95); c.fillRect(x - 0.22, y - 0.22, 0.44, 0.44); } }
+        c.restore();
+        hdwMotes(c, core, -2.4, 2.4, -4.5, 2, t, S, 4);
+      },
+      vial(c, s, t, S) {
+        const liq = s.glow || s.main || "#a3e635", trim = s.kind === "stellarvial" ? "#fde68a" : (s.trim || "#e2e8f0");
+        c.translate(0, 4.6); c.scale(1.25, 1.25); HDW_DRAW.flask(c, { main: liq, trim }, t, S);
+        if (s.kind === "stellarvial") hdwTwinkles(c, [[-1.4, -3.6], [1.3, -1.6], [0.2, -5.4]], t, S, "#a5f3fc");
+      },
+      drone(c, s, t, S) {
+        const b = Math.sin(t * 3) * 0.4, pul = 0.5 + 0.5 * Math.sin(t * 6);
+        c.translate(0, -b);
+        hdwHalo(c, "#f97316", 0, 0.4, 4.2, 0.18 + 0.1 * pul);
+        c.strokeStyle = "#a8a29e"; c.lineWidth = 0.3; c.beginPath(); c.moveTo(0, -1.9); c.lineTo(0, -3.2); c.stroke();
+        c.save(); c.globalCompositeOperation = "lighter"; const pr = (t * 30) % Math.PI; c.fillStyle = "rgba(203,213,225,0.35)"; c.beginPath(); c.ellipse(0, -3.3, 3.2 * Math.abs(Math.cos(pr)) + 0.6, 0.32, 0, 0, 7); c.fill(); c.restore();
+        c.fillStyle = "#cbd5e1"; c.beginPath(); c.rect(-3.0 * Math.cos(t * 30), -3.45, 6.0 * Math.cos(t * 30), 0.3); c.fill();
+        const g = c.createRadialGradient(-0.8, -0.6, 0.2, 0, 0.3, 2.4); g.addColorStop(0, "#fde68a"); g.addColorStop(0.45, "#d97706"); g.addColorStop(1, "#78350f");
+        c.fillStyle = g; c.beginPath(); c.ellipse(0, 0.3, 2.4, 2.1, 0, 0, 7); c.fill(); hdwInk(c, 0.24);
+        c.fillStyle = "#1c1917"; c.beginPath(); c.rect(-2.35, 0.0, 4.7, 0.6); c.fill();
+        c.fillStyle = "#0c0a09"; c.beginPath(); c.arc(0, 0.25, 0.85, 0, 7); c.fill(); hdwInk(c, 0.14);
+        hdwHalo(c, "#f97316", 0, 0.25, 1.5, 0.5 + 0.4 * pul); c.fillStyle = pul > 0.5 ? "#fde047" : "#f97316"; c.beginPath(); c.arc(0, 0.25, 0.42, 0, 7); c.fill();
+        c.strokeStyle = "#a8a29e"; c.lineWidth = 0.22; c.beginPath(); c.moveTo(0, 2.4); c.quadraticCurveTo(0.6, 3.1, 0.2, 3.8); c.stroke();
+        const sp = Math.sin(t * 14) > 0; hdwHalo(c, sp ? "#fde047" : "#ef4444", 0.2, 3.9, 1.0, 0.8); c.fillStyle = sp ? "#ffffff" : "#fde047"; c.fillRect(0.05, 3.75, 0.3, 0.3);
+        [[-1.9, 2.2], [1.9, 2.2]].forEach(([x, y]) => { c.strokeStyle = "#78350f"; c.lineWidth = 0.28; c.beginPath(); c.moveTo(x * 0.7, y - 0.4); c.lineTo(x, y + 0.4); c.stroke(); });
+      },
+      quiver(c, s, t, S) {
+        const stellar = s.kind === "stellarquiver", main = s.main || "#5b3a1a", trim = stellar ? "#fde68a" : (s.trim || "#fbbf24"), glow = s.glow || (stellar ? "#67e8f9" : null);
+        c.rotate(-0.22);
+        if (glow) hdwHalo(c, glow, 0, -1, 6, 0.2 + 0.07 * Math.sin(t * 3 + S));
+        const fl = [glow || "#e2e8f0", "#ffffff", trim, stellar ? "#c4b5fd" : (glow || "#f8fafc")];
+        [-1.0, -0.3, 0.4, 1.1].forEach((x, i) => {
+          c.strokeStyle = "#d6d3d1"; c.lineWidth = 0.2; c.beginPath(); c.moveTo(x, -3.0); c.lineTo(x + 0.1, -6.2 - (i % 2) * 0.5); c.stroke();
+          const ty = -6.2 - (i % 2) * 0.5; c.fillStyle = fl[i]; hdwPath(c, [[x + 0.1, ty - 0.9], [x + 0.55, ty + 0.4], [x + 0.1, ty], [x - 0.35, ty + 0.4]]); c.fill();
+        });
+        const body = () => { c.beginPath(); c.roundRect ? c.roundRect(-1.7, -3.4, 3.4, 9.0, 0.7) : c.rect(-1.7, -3.4, 3.4, 9.0); };
+        body(); c.fillStyle = hdwMetal(c, main, -1.7, 1.7); c.fill(); hdwInk(c, 0.26);
+        [-3.0, 1.0, 4.8].forEach(y => { c.fillStyle = hdwMetal(c, trim, 0, 0, y - 0.3, y + 0.3); c.fillRect(-1.75, y - 0.3, 3.5, 0.6); });
+        c.strokeStyle = hdwA(hdwShade(main, -0.5), 0.8); c.lineWidth = 0.12; c.setLineDash([0.4, 0.3]); c.beginPath(); c.moveTo(-1.3, -2.4); c.lineTo(-1.3, 4.4); c.moveTo(1.3, -2.4); c.lineTo(1.3, 4.4); c.stroke(); c.setLineDash([]);
+        c.strokeStyle = hdwA(trim, 0.95); c.lineWidth = 0.45; c.beginPath(); c.moveTo(1.6, -1.6); c.quadraticCurveTo(3.4, 0.4, 2.6, 3.0); c.stroke();
+        if (glow) { const gp = 0.5 + 0.5 * Math.sin(t * 4); hdwHalo(c, glow, 0, -1.0, 1.6, 0.5 + 0.3 * gp); c.save(); c.translate(0, -1.0); c.rotate(t * 0.8); hdwStar(c, 0, 0, 0.8, gp > 0.5 ? "#ffffff" : glow); c.restore(); }
+        hdwShine(c, body, -3.4, 5.6, t, S, 0.3);
+        if (glow) hdwMotes(c, glow, -1.6, 1.6, -7, 5, t, S, 4);
+      }
+    };
+    /* v1.68 (TEST) — tenue HD du Chevalier de base : cuirasse d'acier bombée, tabard aux couleurs du héros, ceinturon à boucle d'or.
+       Dessinée exactement sur la zone du torse pixel (x tx…tx+tw, y y0…y0+8), en unités sprite. ARMOR_HD_TEST = false pour revenir au pixel. */
+    let ARMOR_HD_TEST = false, _hdaReq = null, _hdaLast = null;   // v1.69 : test abandonné (l'armure reste en pixel art)
+    function drawHDArmorTest(ctx, req, t, place) {
+      const { tx, tw, y0, fem } = req, out = req.outfit || "#1d4ed8", c = ctx, x0 = tx, x1 = tx + tw, cx = tx + tw / 2, S = 0.37;
+      c.save(); c.imageSmoothingEnabled = true;
+      if (place) { c.translate(place.x, place.y); c.scale(place.s, place.s); }
+      c.scale(4, 4);
+      // tabard (tunique) aux couleurs du héros, qui dépasse sous la cuirasse
+      const tab = () => { c.beginPath(); c.moveTo(x0 + 0.1, y0 + 0.2); c.lineTo(x1 - 0.1, y0 + 0.2); c.lineTo(x1 - 0.1, y0 + 8); if (fem) { c.lineTo(x1 + 0.9, y0 + 9); c.lineTo(x0 - 0.9, y0 + 9); } c.lineTo(x0 + 0.1, y0 + 8); c.closePath(); };
+      tab(); const gt = c.createLinearGradient(x0, 0, x1, 0); gt.addColorStop(0, hdwShade(out, 0.25)); gt.addColorStop(0.5, out); gt.addColorStop(1, hdwShade(out, -0.4)); c.fillStyle = gt; c.fill(); hdwInk(c, 0.22);
+      c.strokeStyle = hdwA("#ffd54f", 0.9); c.lineWidth = 0.22; c.beginPath(); c.moveTo(x0 + 0.5, y0 + 7.7); c.lineTo(x1 - 0.5, y0 + 7.7); c.stroke();
+      // épaulières arrondies
+      [[x0 + 1.0, -1], [x1 - 1.0, 1]].forEach(([x, sd]) => { c.fillStyle = hdwMetal(c, "#94a3b8", x - 1.3, x + 1.3, y0 - 0.4, y0 + 1.6); c.beginPath(); c.ellipse(x, y0 + 0.75, 1.35, 1.0, 0, Math.PI, 0); c.lineTo(x + 1.35, y0 + 1.4); c.quadraticCurveTo(x, y0 + 2.0, x - 1.35, y0 + 1.4); c.closePath(); c.fill(); hdwInk(c, 0.2);
+        c.strokeStyle = "rgba(255,255,255,0.55)"; c.lineWidth = 0.14; c.beginPath(); c.ellipse(x, y0 + 0.8, 1.0, 0.7, 0, Math.PI * 1.1, Math.PI * 1.6); c.stroke(); });
+      // cuirasse bombée
+      const ph = () => { c.beginPath(); c.moveTo(x0 + 1.6, y0 + 0.9); c.quadraticCurveTo(cx, y0 + 0.2, x1 - 1.6, y0 + 0.9); c.lineTo(x1 - 1.5, y0 + 4.6); c.quadraticCurveTo(cx, y0 + 6.6, x0 + 1.5, y0 + 4.6); c.closePath(); };
+      ph(); const gp = c.createLinearGradient(x0 + 1.5, y0, x1 - 1.5, y0 + 6); gp.addColorStop(0, "#f8fafc"); gp.addColorStop(0.35, "#cbd5e1"); gp.addColorStop(0.75, "#94a3b8"); gp.addColorStop(1, "#64748b"); c.fillStyle = gp; c.fill(); hdwInk(c, 0.24);
+      c.strokeStyle = "rgba(71,85,105,0.85)"; c.lineWidth = 0.18; c.beginPath(); c.moveTo(cx, y0 + 0.7); c.lineTo(cx, y0 + 5.4); c.stroke();          // arête centrale
+      c.strokeStyle = "rgba(255,255,255,0.7)"; c.lineWidth = 0.14; c.beginPath(); c.moveTo(cx - 0.25, y0 + 0.8); c.lineTo(cx - 0.25, y0 + 5.2); c.stroke();
+      c.strokeStyle = "rgba(71,85,105,0.6)"; c.lineWidth = 0.14; c.beginPath(); c.moveTo(x0 + 1.7, y0 + 3.0); c.quadraticCurveTo(cx, y0 + 4.2, x1 - 1.7, y0 + 3.0); c.stroke();   // lame de plastron
+      [[x0 + 2.2, y0 + 1.5], [x1 - 2.2, y0 + 1.5], [x0 + 2.2, y0 + 4.1], [x1 - 2.2, y0 + 4.1]].forEach(([x, y]) => { c.fillStyle = "#e2e8f0"; c.beginPath(); c.arc(x, y, 0.2, 0, 7); c.fill(); c.fillStyle = "rgba(51,65,85,0.6)"; c.beginPath(); c.arc(x + 0.06, y + 0.06, 0.1, 0, 7); c.fill(); });
+      hdwShine(c, ph, y0, y0 + 6.4, t, S, 0.45);
+      // ceinturon de cuir et boucle d'or
+      c.fillStyle = hdwWood(c, 0, 0, "#78350f"); const gb = c.createLinearGradient(0, y0 + 6, 0, y0 + 8); gb.addColorStop(0, "#92400e"); gb.addColorStop(1, "#451a03"); c.fillStyle = gb;
+      c.beginPath(); c.rect(x0 + 0.1, y0 + 6.0, tw - 0.2, 1.7); c.fill(); hdwInk(c, 0.18);
+      c.strokeStyle = "rgba(251,191,36,0.55)"; c.lineWidth = 0.1; c.setLineDash([0.35, 0.3]); c.beginPath(); c.moveTo(x0 + 0.3, y0 + 6.3); c.lineTo(x1 - 0.3, y0 + 6.3); c.moveTo(x0 + 0.3, y0 + 7.4); c.lineTo(x1 - 0.3, y0 + 7.4); c.stroke(); c.setLineDash([]);
+      c.fillStyle = hdwMetal(c, "#ffd54f", cx - 1, cx + 1, y0 + 5.9, y0 + 7.8); c.beginPath(); c.roundRect ? c.roundRect(cx - 0.95, y0 + 5.85, 1.9, 2.0, 0.3) : c.rect(cx - 0.95, y0 + 5.85, 1.9, 2.0); c.fill(); hdwInk(c, 0.16);
+      c.fillStyle = "#78350f"; c.fillRect(cx - 0.45, y0 + 6.35, 0.9, 1.0); c.fillStyle = "#fde68a"; c.fillRect(cx - 0.12, y0 + 6.2, 0.24, 1.3);
+      c.restore();
+    }
+
+    // place : { x, y, s } comme pour les armes (dessin direct dans une scène)
+    function drawHDOffhand(ctx, req, t, place) {
+      const s = req.s, fam = HDO_FAMILY[s.kind], fn = fam && HDO_DRAW[fam]; if (!fn) return;
+      const [ax, ay] = HDO_ANCHOR[fam] || [6.5, 19.5], S = (((s.id || s.kind || "").length * 0.53) + 0.31) % 1;
+      ctx.save(); ctx.imageSmoothingEnabled = true;
+      if (place) { ctx.translate(place.x, place.y); ctx.scale(place.s, place.s); }
+      ctx.translate((req.ox + ax) * 4, (req.oy + ay) * 4); ctx.scale(4.1, 4.1);
+      try { fn(ctx, s, t, S); } catch (e) { console.error(e); }
+      ctx.restore();
+    }
+
+    /* =======================================================================
+       v1.69 — ARMES & OBJETS DE MAIN GAUCHE EN PIXEL ART SOIGNÉ
+       Même grille 4 px que le personnage (même DA), mais dessinés pixel par pixel : contour sombre, 3 tons d'ombrage,
+       reflets, et petites animations (reflet qui glisse, étincelles) pour les objets à lueur.
+       Chaque grille utilise une palette tirée des couleurs du skin :
+       o contour • L/M/D/E métal clair→sombre • W blanc • T/U/V garniture • H/h/k manche • G/g lueur • autres : couleurs fixes
+       ======================================================================= */
+    let PXW_ON = true;   // false = anciens dessins pixel d'origine
+    function pxwPal(w, extra) {
+      const M = w.main || "#cbd5e1", T = w.trim || "#a8a29e", G = w.glow || hdwShade(T, 0.35);
+      return { o: "#120e1c", L: hdwShade(M, 0.45), M, D: hdwShade(M, -0.32), E: hdwShade(M, -0.58), W: "#ffffff", T, U: hdwShade(T, 0.42), V: hdwShade(T, -0.42),
+        H: "#7c4a26", h: "#4a2a14", k: "#a8693a", G, g: hdwShade(G, -0.35), Y: "#fbbf24", y: "#b45309", S: "#1e293b", s: hdwShade(T, 0.2), B: hdwShade(T, 0.55), ...(extra || {}) };
+    }
+    function pxwMap(px, map, ox, oy, pal) {
+      for (let r = 0; r < map.length; r++) { const row = map[r]; for (let c = 0; c < row.length; c++) { const ch = row[c]; if (ch === "." || ch === " ") continue; const col = pal[ch]; if (col) px(ox + c, oy + r, 1, 1, col); } }
+    }
+    // reflet qui glisse le long d'une colonne de pixels (rows : [début, fin])
+    function pxwGlint(px, x, y0, y1, t, speed = 7) { const n = y1 - y0 + 1, k = Math.floor(t * speed) % (n + 6); if (k < n) { px(x, y0 + k, 1, 1, "#ffffff"); if (k > 0) px(x, y0 + k - 1, 1, 1, "rgba(255,255,255,0.45)"); } }
+    // étincelles autour de l'objet (objets à lueur)
+    function pxwSparks(px, x0, y0, w, h, col, t, n = 2) { for (let i = 0; i < n; i++) { const f = Math.floor(t * 5 + i * 3.7); px(x0 + ((f * 7 + i * 3) % w), y0 + ((f * 5 + i * 11) % h), 1, 1, (f + i) % 3 ? col : "#ffffff"); } }
+    const PXW_MAPS = {
+      sword: { dx: -1, dy: -2, m: ["..oo..", ".oWLo.", ".oWMo.", ".oLMo.", ".oLMo.", ".oLMo.", ".oLMo.", ".oLDo.", ".oLDo.", "ooLDoo", "oUTTVo", "ooHhoo", ".oHho.", ".okho.", ".oTVo.", ".oooo."], glint: [2, 2, 9] },
+      dagger: { dx: -1, dy: 3, m: ["..oo..", ".oWLo.", ".oLMo.", ".oLMo.", ".oLDo.", "ooLDoo", "oUTTVo", ".oHho.", ".okho.", ".oTVo.", ".oooo."], glint: [2, 1, 4] },
+      katana: { dx: -1, dy: -2, m: ["....o.", "...oWo", "...oLo", "..oWMo", "..oLMo", "..oLMo", ".oWMo.", ".oLMo.", ".oLMo.", ".oLDo.", ".oLDo.", "oyYYyo", ".oSso.", ".osSo.", ".oSso.", ".osSo.", ".oYYo.", ".oooo."], glint: [2, 6, 10] },
+      scimitar: { dx: -1, dy: -1, m: [".....oo", "....oWo", "...oWLo", "..oWLMo", "..oLMo.", ".oLMDo.", ".oLMo..", ".oLDo..", ".oLDo..", "oUTTVo.", ".oHho..", ".okho..", ".oTVo..", ".oooo.."], glint: [2, 6, 8] },
+      axe: { dx: -2, dy: -1, m: [".....ooo.", "..oooDLWo", "oooHkDMLo", "oVVHkDMLo", "oooHkDMLo", "..oHkDLWo", "..oHkooo.", "..oHko...", "..oHko...", "..oHko...", "..oHko...", "..oHko...", "..oHko...", "..oHko...", "..oHko...", "..oVVo...", "..oooo..."] },
+      bloodaxe: { dx: -4, dy: -5, m: [".oo.oYo.oo.", "oRDooYooDRo", "oRDDoHoDDRo", "oRDDSSSDDRo", "oRDDSXSDDRo", "oRDDoHoDDRo", ".oo.oHo.oo.", "....oHo....", "....oHo....", "....oYo....", "....oHo....", "....oHo....", "....oYo....", "....oHo....", "....oHo....", "....oTo....", "....ooo...."] },
+      hammer: { dx: -2, dy: -1, m: ["oooooooo", "oLTLLTLo", "oMTMMTMo", "oMTMMTMo", "oDVDDVDo", "oooHkooo", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oVVo..", "..oooo.."] },
+      mace: { dx: -2, dy: -2, m: ["...oo...", "..oUUo..", ".oLLMMo.", "TLLMMMDT", "TLMMMDDT", ".oMMDDo.", "..oooo..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oVVo..", "..oooo.."] },
+      spear: { dx: -1, dy: -3, m: ["..o..", ".oWo.", ".oLo.", "oWLMo", "oLMDo", ".oDo.", "oTTTo", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".ooo."], glint: [2, 1, 5] },
+      trident: { dx: -3, dy: -3, m: ["....o....", ".o.oWo.o.", "oWooLooWo", "oLooLooLo", "oMooMooMo", "oMooMooMo", "oDMMMMMDo", "...oTo...", "...oHo...", "...oHo...", "...oHo...", "...oHo...", "...oHo...", "...oHo...", "...oHo...", "...oHo...", "...ooo..."] },
+      scythe: { dx: -6, dy: -1, m: ["..ooooooo.", ".oWLLLLMMo", "oLoooooHko", "oo....oHko", "......oHko", "......oHko", "......oHko", "......oHko", "......oHko", "......oHko", "......oHko", "......oHko", "......oHko", "......oHko", "......oVVo", "......oooo"] },
+      glaive: { dx: -2, dy: -1, m: [".....oo.", "....oWLo", "...oWLMo", "..oLMMDo", ".oLMMDo.", "..oTTo..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oVVo..", "..oooo.."] },
+      bow: { dx: 0, dy: -1, m: [".oo....", ".oLoo..", ".S.oLo.", ".S..oLo", ".S..oMo", ".S..oTo", ".S..oTo", ".S..oMo", ".S..oDo", ".S.oDo.", ".oDoo..", ".oo...."] },
+      crossbow: { dx: -1, dy: 0, m: ["......oo.", ".....oLo.", ".....oMo.", "ooooooMo.", "oWWWWGMo.", "oHHHHkDo.", "oohhooDo.", "..oho.oDo", "..ooo..oo"] },
+      staff: { dx: -2, dy: -1, m: ["..oooo..", ".oWGGgo.", "ToGGggoT", "ToGgggoT", ".TooooT.", "..TUVT..", "..oUVo..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oVVo..", "..oooo.."] },
+      wand: { dx: -1, dy: 0, m: ["..o..", ".oGo.", "oGWGo", ".oGo.", ".oTo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".oHo.", ".ooo."] },
+      icestaff_head: { dx: -2, dy: -7, m: ["...oo...", "..oWCo..", ".oWCCco.", ".oWCcco.", ".oCCcco.", "..oCco..", "...oo..."] },
+      icestaff_shaft: { dx: -2, dy: 0, m: ["oUUUUUUo", "..oSso..", "..oSso..", "..oCco..", "..oSso..", "..oSso..", "..oCco..", "..oSso..", "..oSso..", "..oCco..", "..oSso..", "..oSso..", "..oooo.."] },
+      flask: { dx: -1, dy: 2, m: ["..oo..", ".oKKo.", ".oqWo.", "oWqqqo", "oAABBo", "oABBCo", "oBBCCo", ".oCCo.", "..oo.."] },
+      flaskstaff_shaft: { dx: -2, dy: 4, m: ["..oUVo..", "..oHko..", "..oHko..", "..oHko..", "..oYyo..", "..oHko..", "..oHko..", "..oHko..", "..oHko..", "..oVVo..", "..oooo.."] },
+      cannon: { dx: -2, dy: -2, m: ["...ooo.....", "..oWCco....", "..oCcco....", "oooooooooo.", "oUUUUUUUUo.", "oYYyYYYYYFo", "oyyyyyyyyo.", "oooHhoooo..", "..oHho.....", "..oHho.....", "..oooo....."] }
+    };
+    function drawWeaponPx2(px, w, ix, iy, t) {
+      const K = w.kind, pul = Math.sin(t * 4) > 0, glow = w.glow;
+      if (K === "stellarbow" || K === "thornbow") return false;   // déjà finement dessinés à l'origine (plus grands) : on garde leur version
+      let key = K, pal = pxwPal(w);
+      if (K === "sword" || K === "stellarsword" || K === "lblade") {
+        key = K === "lblade" && w.emb === "spiral" ? "scimitar" : "sword";
+        if (K === "stellarsword") pal = pxwPal(w, { L: "#312e81", M: "#1e1b4b", D: "#0b1026", W: w.glow || "#67e8f9", T: "#fde68a", U: "#fef3c7", V: "#b45309" });
+        if (K === "lblade" && w.emb === "sun") pal = pxwPal(w, { W: "#fffbeb", T: "#f59e0b", U: "#fde68a", V: "#92400e" });
+      } else if (K === "lbow" || K === "stellarbow" || K === "thornbow") key = "bow";
+      else if (K === "lstaff" || K === "stellarstaff") key = "staff";
+      else if (K === "lflask" || K === "stellarflask") key = "flaskstaff";
+      else if (K === "bomblauncher") key = "cannon";
+      if (key === "bow") {
+        const str = glow || (K === "stellarbow" ? "#67e8f9" : K === "thornbow" ? "#bef264" : w.trim || "#f8fafc");
+        pal = pxwPal(w, K === "stellarbow" ? { L: "#4338ca", M: "#312e81", D: "#1e1b4b", T: "#fde68a", S: str } : K === "thornbow" ? { L: "#a16207", M: "#78350f", D: "#451a03", T: "#84cc16", S: str } : { S: str });
+      }
+      if (key === "staff") {
+        const orb = glow || w.main || "#c084fc", stellar = K === "stellarstaff";
+        pal = pxwPal(w, { G: pul ? hdwShade(orb, 0.25) : orb, g: hdwShade(orb, -0.35), T: stellar ? "#fde68a" : (w.trim || "#a16207"), U: stellar ? "#fef3c7" : hdwShade(w.trim || "#a16207", 0.4), V: stellar ? "#b45309" : hdwShade(w.trim || "#a16207", -0.4), H: stellar ? "#1e1b4b" : "#7c4a26", k: stellar ? "#312e81" : "#a8693a" });
+      }
+      if (key === "flask" || key === "flaskstaff") {
+        const liq = key === "flask" ? (w.main || "#22c55e") : (glow || "#a3e635");
+        pal = pxwPal(w, { A: hdwShade(liq, 0.35), B: liq, C: hdwShade(liq, -0.35), q: "rgba(226,232,240,0.55)", K: "#92400e", H: K === "stellarflask" ? "#1e1b4b" : "#7c4a26", k: K === "stellarflask" ? "#312e81" : "#a8693a", U: "#fde68a", V: "#b45309" });
+      }
+      if (key === "cannon") pal = pxwPal(w, { C: "#38bdf8", c: "#0c4a6e", W: "#e0f2fe", U: "#fde68a", Y: "#d97706", y: "#78350f", F: pul ? "#fde047" : "#f97316", H: "#4a2408", h: "#2a1205" });
+      if (key === "bloodaxe") pal = pxwPal(w, { R: pul ? "#ef4444" : "#b91c1c", D: "#27272a", S: "#e7e5e4", X: pul ? "#ef4444" : "#7f1d1d", H: "#2a1d1d", T: "#e7e5e4" });
+      if (key === "katana") pal = pxwPal(w, { s: w.trim || "#e2e8f0" });
+      if (key === "icestaff") {
+        const ip = pxwPal(w, { C: "#bae6fd", c: "#38bdf8", W: "#ffffff", S: "#e2e8f0", s: "#94a3b8", U: "#e0f2fe" }), b = Math.sin(t * 2.5) > 0 ? 0 : 1;
+        const H0 = PXW_MAPS.icestaff_head, S0 = PXW_MAPS.icestaff_shaft;
+        pxwMap(px, S0.m, ix + S0.dx, iy + S0.dy, ip); pxwMap(px, H0.m, ix + H0.dx, iy + H0.dy - b, ip);
+        for (let i = 0; i < 3; i++) { const a = t * 3 + i * 2.09; px(ix + 1.5 + Math.cos(a) * 4.5, iy - 4 - b + Math.sin(a) * 2, 1, 1, i ? "#bae6fd" : "#ffffff"); }
+        pxwGlint(px, ix, iy - 6 - b, iy - 3 - b, t, 5);
+        return true;
+      }
+      if (key === "flaskstaff") {
+        const F = PXW_MAPS.flask, Sh = PXW_MAPS.flaskstaff_shaft;
+        pxwMap(px, Sh.m, ix + Sh.dx, iy + Sh.dy, pal); pxwMap(px, F.m, ix + F.dx, iy - 6, pal);
+        const bb = Math.floor(t * 3) % 3; px(ix + bb, iy - 2 + (bb % 2), 1, 1, "#ffffff");
+        pxwSparks(px, ix - 2, iy - 8, 7, 8, glow || "#a3e635", t, 2);
+        return true;
+      }
+      const P = PXW_MAPS[key]; if (!P) return false;
+      const ox = ix + P.dx, oy = iy + P.dy;
+      pxwMap(px, P.m, ox, oy, pal);
+      // détails animés
+      if (P.glint && (glow || K === "lblade" || K === "stellarsword" || w.rarete === "maitre" || w.rarete === "legendaire")) pxwGlint(px, ox + P.glint[0], oy + P.glint[1], oy + P.glint[2], t);
+      if (key === "sword" && (K === "lblade" || K === "stellarsword")) px(ox + 2, oy + 10, 2, 1, pul ? (glow || "#fde047") : "#ffffff");   // gemme de garde
+      if (key === "bow") {
+        if (glow || K === "lbow" || K === "stellarbow") {   // flèche encochée
+          for (let x = 1; x <= 6; x++) px(ox + x, oy + 5, 1, 1, x === 1 ? (glow || "#fde68a") : "#e2e8f0");
+          px(ox + 7, oy + 5, 1, 1, pul ? "#ffffff" : (glow || "#fde68a")); px(ox + 6, oy + 4, 1, 1, glow || "#fde68a"); px(ox + 6, oy + 6, 1, 1, glow || "#fde68a");
+        }
+        if (K === "thornbow") { [[5, 2, "#84cc16"], [6, 4, "#65a30d"], [6, 7, "#84cc16"], [5, 9, "#65a30d"]].forEach(([x, y, c]) => px(ox + x, oy + y, 1, 1, c)); px(ox + 6, oy + 6, 1, 1, "#f9a8d4"); }
+        if (K === "stellarbow") { px(ox + 1, oy, 1, 1, pul ? "#ffffff" : "#67e8f9"); px(ox + 1, oy + 11, 1, 1, pul ? "#67e8f9" : "#ffffff"); }
+      }
+      if (key === "staff") { for (let i = 0; i < 2; i++) { const a = t * 3 + i * Math.PI; px(ox + 3.5 + Math.cos(a) * 4.5, oy + 2.5 + Math.sin(a) * 1.6, 1, 1, i ? pal.G : "#ffffff"); } }
+      if (key === "wand") { const tw = Math.floor(t * 4) % 4; if (tw === 0) { px(ox + 2, oy - 1, 1, 1, "#ffffff"); px(ox - 1, oy + 2, 1, 1, pal.G); px(ox + 5, oy + 2, 1, 1, pal.G); } }
+      if (key === "flask") { const bb = Math.floor(t * 3) % 3; px(ox + 2 + (bb % 2), oy + 6 - bb, 1, 1, "#ffffff"); }
+      if (key === "cannon") { const sm = Math.floor(t * 2) % 3; px(ox + 11 + sm, oy + 4 - sm, 2, 2, "rgba(226,232,240,0.5)"); px(ox + 4 + (Math.floor(t * 8) % 2), oy + 5, 1, 1, "#fbbf24"); }
+      if (key === "bloodaxe") { const dr = Math.floor(t * 3) % 5; px(ox + 1, oy + 6 + dr, 1, 1, "#dc2626"); px(ox + 9, oy + 6 + ((dr + 2) % 5), 1, 1, "#dc2626"); }
+      if (glow && key !== "staff") pxwSparks(px, ox, oy, P.m[0].length, P.m.length, glow, t, K === "lblade" ? 3 : 2);
+      return true;
+    }
+
+    /* ---- objets de main gauche (coordonnées du cadre des objets : x 3…10, y 13…25) ---- */
+    const PXO_MAPS = {
+      round: { dx: 2, dy: 15, m: ["..ooooo..", ".oTTUTTo.", "oTLLMMMTo", "oTLMMMDTo", "oUMMBMDUo", "oTMMMDDTo", "oTMDDDETo", ".oTTUTTo.", "..ooooo.."] },
+      kite: { dx: 2, dy: 14, m: ["ooooooooo", "oTUTTTUTo", "oTLLCLMTo", "oTLMCMMTo", "oTCCCCCTo", "oTMMCMDTo", ".oTMCDTo.", ".oTMCDTo.", "..oTCTo..", "...oTo...", "....o...."] },
+      tome: { dx: 3, dy: 16, m: ["oooooooo", "oTLLMMoP", "oTLMMDoP", "oTMGMDoP", "oTGWGDoP", "oTMGMDoP", "oTMMDDoP", "oTDDDEoP", "oooooooo"] },
+      torch_a: { dx: 4, dy: 10, m: ["..F...", "..FF..", ".FYF..", ".FYYF.", ".FWYF."] },
+      torch_b: { dx: 4, dy: 10, m: ["...F..", "..FF..", "..FYF.", ".FYYF.", ".FYWF."] },
+      torch_h: { dx: 4, dy: 15, m: ["oVVVVo", ".oVVo.", ".oHho.", ".oHho.", ".okho.", ".oHho.", ".oHho.", ".oHho.", ".oooo."] },
+      lantern: { dx: 3, dy: 14, m: ["..ooo..", "..o.o..", ".ooooo.", ".oVUVo.", "oSGGGSo", "oSGWGSo", "oSGGGSo", ".oVUVo.", ".ooooo."] },
+      orb: { dx: 3, dy: 14, m: ["..ooo..", ".oWGgo.", "oWGGGgo", "oGGGggo", "ogGgggo", ".ogggo.", "..ooo.."] },
+      vial: { dx: 4, dy: 15, m: ["..oo..", ".oKKo.", ".oqWo.", "oWqqqo", "oAABBo", "oABBCo", "oBBCCo", ".oCCo.", "..oo.."] },
+      drone: { dx: 3, dy: 14, m: ["PPPPPPP", "...o...", ".ooooo.", "oUUUUUo", "oYkEkYo", "oyYYYyo", ".ooooo.", "...o...", "...F..."] },
+      quiver: { dx: 3, dy: 12, m: [".W.G..", ".W.G..", "oooooo", "oTUTTo", "oLMMDo", "oLMMDo", "oLGMDo", "oLMMDo", "oTUTTo", "oLMMDo", "oLMMDo", "oTUTTo", "oooooo"] }
+    };
+    function drawOffhandPx2(px, s, y, t) {
+      const K = s.kind, pul = Math.sin(t * 4) > 0, glow = s.glow, tw = Math.floor(t * 3) % 4;
+      let pal = pxwPal(s), key = null;
+      if (K === "round" || K === "bloodbuckler" || (K === "lshield" && s.emb !== "star")) key = "round";
+      else if (K === "kite" || K === "stellarshield" || (K === "lshield" && s.emb === "star")) key = "kite";
+      else if (K === "tome" || K === "frosttome") key = "tome";
+      else if (K === "torch") key = "torch";
+      else if (K === "lantern") key = "lantern";
+      else if (K === "totem" || K === "stellarorb" || K === "lorb") key = "orb";
+      else if (K === "stellarvial" || K === "lvial") key = "vial";
+      else if (K === "bombbag") key = "drone";
+      else if (K === "stellarquiver" || K === "lquiver") key = "quiver";
+      if (!key) return false;
+      if (key === "round") {
+        const P = PXO_MAPS.round, ox = P.dx, oy = P.dy + y;
+        if (K === "bloodbuckler") {
+          pal = pxwPal(s, { L: "#3f3434", M: "#292020", D: "#1c1414", E: "#0f0a0a", T: "#b8860b", U: "#fbbf24", V: "#7a5806", B: "#e7e5e4" });
+          [[-1, 4], [9, 4], [4, -1], [4, 9], [0, 0], [8, 0], [0, 8], [8, 8]].forEach(([a, b]) => px(ox + a, oy + b, 1, 1, "#e7e5e4"));
+          pxwMap(px, P.m, ox, oy, pal);
+          px(ox + 3, oy + 3, 3, 3, "#e7e5e4"); px(ox + 3, oy + 4, 1, 1, pul ? "#ef4444" : "#7f1d1d"); px(ox + 5, oy + 4, 1, 1, pul ? "#ef4444" : "#7f1d1d"); px(ox + 4, oy + 6, 1, 1, "#d6d3d1");
+          return true;
+        }
+        const wood = !glow && (s.rarete === "commun" || /bois/i.test(s.nom || ""));
+        pxwMap(px, P.m, ox, oy, pal);
+        if (wood) { [2, 3, 4, 5, 6].forEach(r => { px(ox + 3, oy + r, 1, 1, pal.D); px(ox + 5, oy + r, 1, 1, pal.D); }); px(ox + 4, oy + 4, 1, 1, pal.U); }
+        if (K === "lshield" && s.emb === "sun") { px(ox + 3, oy + 3, 3, 3, "#fbbf24"); px(ox + 4, oy + 4, 1, 1, "#fde047"); [[4, 2], [4, 6], [2, 4], [6, 4]].forEach(([a, b]) => px(ox + a, oy + b, 1, 1, pul ? "#fde047" : "#f97316")); }
+        else if (K === "lshield") { [[3, 2], [4, 2], [5, 2], [6, 3], [6, 4], [5, 5], [4, 5], [3, 4], [4, 4]].forEach(([a, b]) => px(ox + a, oy + b, 1, 1, "#fbbf24")); [[4, -1], [4, 9], [-1, 4], [9, 4]].forEach(([a, b], i) => px(ox + a, oy + b, 1, 1, (tw + i) % 2 ? "#fde68a" : "#ffffff")); }
+        else if (glow) { px(ox + 4, oy + 4, 1, 1, pul ? glow : "#ffffff"); }
+        if (glow) { pxwGlint(px, ox + 2, oy + 2, oy + 6, t, 5); pxwSparks(px, ox - 1, oy - 1, 11, 11, glow, t, 2); }
+        return true;
+      }
+      if (key === "kite") {
+        const P = PXO_MAPS.kite, ox = P.dx, oy = P.dy + y, stellar = K === "stellarshield", star = K === "lshield";
+        if (stellar) pal = pxwPal(s, { L: "#1e1b4b", M: "#0b1026", D: "#05081a", T: "#fde68a", U: "#fef3c7", V: "#b45309", C: "#fde68a" });
+        else if (star) pal = pxwPal(s, { C: "#f8fafc" });
+        else pal = pxwPal(s, { C: hdwShade(s.trim || "#cbd5e1", 0.2) });
+        pxwMap(px, P.m, ox, oy, pal);
+        if (stellar || star) { px(ox + 4, oy + 4, 1, 1, tw % 2 ? (glow || "#67e8f9") : "#ffffff"); px(ox + 2, oy + 2, 1, 1, (tw + 1) % 4 === 0 ? "#ffffff" : pal.L); px(ox + 6, oy + 6, 1, 1, (tw + 2) % 4 === 0 ? "#ffffff" : pal.M); }
+        if (glow) { pxwGlint(px, ox + 2, oy + 2, oy + 6, t, 5); pxwSparks(px, ox - 1, oy - 1, 11, 12, glow, t, 2); }
+        return true;
+      }
+      if (key === "tome") {
+        const P = PXO_MAPS.tome, frost = K === "frosttome", b = frost ? (Math.sin(t * 2.5) > 0 ? 0 : 1) : 0, ox = P.dx, oy = P.dy + y - b;
+        pal = frost ? pxwPal(s, { L: "#1e4d75", M: "#0c2f4e", D: "#082036", E: "#04121f", T: "#bae6fd", G: pul ? "#38bdf8" : "#e0f2fe", W: "#ffffff", P: "#e0f2fe" })
+                    : pxwPal(s, { G: glow ? (pul ? glow : "#ffffff") : hdwShade(s.trim || "#fbbf24", 0.1), P: "#fef3c7" });
+        pxwMap(px, P.m, ox, oy, pal);
+        if (frost) { const a = t * 2; px(ox + 4 + Math.cos(a) * 6, oy + 3 + Math.sin(a) * 2, 1, 1, "#ffffff"); px(ox + 4 - Math.cos(a) * 6, oy + 5 - Math.sin(a) * 2, 1, 1, "#bae6fd"); }
+        if (glow || frost) { const ph = Math.floor(t * 4) % 6; px(ox + 2 + (ph % 3) * 2, oy - 1 - Math.floor(ph / 2), 1, 1, frost ? "#e0f2fe" : glow); }
+        return true;
+      }
+      if (key === "torch") {
+        const fl = s.trim || "#f97316", F = Math.sin(t * 12) > 0 ? PXO_MAPS.torch_a : PXO_MAPS.torch_b, Hd = PXO_MAPS.torch_h;
+        const fp = { F: fl, Y: hdwShade(fl, 0.5), W: "#ffffff", o: "#120e1c", V: "#57534e", H: "#7c4a26", h: "#4a2a14", k: "#a8693a" };
+        px(F.dx - 1, F.dy + y - 1, 8, 7, hdwA(fl, 0.14));
+        pxwMap(px, Hd.m, Hd.dx, Hd.dy + y, fp); pxwMap(px, F.m, F.dx, F.dy + y, fp);
+        const sp = Math.floor(t * 6) % 4; px(F.dx + 1 + sp, F.dy + y - 2 - (sp % 2), 1, 1, hdwShade(fl, 0.5));
+        return true;
+      }
+      if (key === "lantern") {
+        const P = PXO_MAPS.lantern, gl = s.glow || "#fde047", fl = Math.sin(t * 9) > 0;
+        px(P.dx - 1, P.dy + y + 3, 9, 6, hdwA(gl, 0.16));
+        pxwMap(px, P.m, P.dx, P.dy + y, pxwPal(s, { S: "#475569", G: fl ? gl : hdwShade(gl, 0.35), W: "#ffffff" }));
+        return true;
+      }
+      if (key === "orb") {
+        const P = PXO_MAPS.orb, b = Math.sin(t * 2.5) > 0 ? 0 : 1, ox = P.dx, oy = P.dy + y - b, totem = K === "totem";
+        const core = totem ? "#a3e635" : (s.glow || s.trim || "#a78bfa");
+        pxwMap(px, P.m, ox, oy, pxwPal(s, { G: pul ? hdwShade(core, 0.25) : core, g: hdwShade(totem ? "#365314" : (K === "stellarorb" ? "#312e81" : (s.main || "#4c1d95")), 0.1), W: "#ffffff" }));
+        if (totem) { px(ox + 2, oy - 1, 3, 1, "#78350f"); px(ox + 3, oy + 7, 1, 2, "#78350f"); px(ox + 2, oy + 8, 1, 1, "#78350f"); px(ox + 4, oy + 8, 1, 1, "#78350f"); }
+        const a = t * 3; px(ox + 3 + Math.cos(a) * 5, oy + 3 + Math.sin(a) * 2, 1, 1, totem ? "#84cc16" : core); px(ox + 3 - Math.cos(a) * 5, oy + 3 - Math.sin(a) * 2, 1, 1, totem ? "#f9a8d4" : "#ffffff");
+        if (K === "lorb" && s.emb === "sun") [[3, -2], [3, 8], [-2, 3], [8, 3]].forEach(([x, yy], i) => px(ox + x, oy + yy, 1, 1, (tw + i) % 2 ? "#fde047" : "#fff7d6"));
+        return true;
+      }
+      if (key === "vial") {
+        const P = PXO_MAPS.vial, liq = s.glow || s.main || "#a3e635";
+        pxwMap(px, P.m, P.dx, P.dy + y, pxwPal(s, { A: hdwShade(liq, 0.35), B: liq, C: hdwShade(liq, -0.35), q: "rgba(226,232,240,0.55)", K: K === "stellarvial" ? "#fde68a" : (s.trim || "#92400e") }));
+        const bb = Math.floor(t * 3) % 3; px(P.dx + 2 + (bb % 2), P.dy + y + 6 - bb, 1, 1, "#ffffff");
+        return true;
+      }
+      if (key === "drone") {
+        const P = PXO_MAPS.drone, b = Math.sin(t * 3) > 0 ? 0 : 1, pr = Math.floor(t * 16) % 2;
+        pxwMap(px, pr ? P.m : ["." + "PPPPP" + "."].concat(P.m.slice(1)), P.dx, P.dy + y - b, pxwPal(s, { P: "#cbd5e1", U: "#fde68a", Y: "#d97706", y: "#78350f", k: "#1c1917", E: pul ? "#f97316" : "#fde047", F: Math.sin(t * 14) > 0 ? "#fde047" : "#ef4444" }));
+        return true;
+      }
+      if (key === "quiver") {
+        const P = PXO_MAPS.quiver, stellar = K === "stellarquiver";
+        const g = s.glow || (stellar ? "#67e8f9" : "#fde68a");
+        pxwMap(px, P.m, P.dx, P.dy + y, pxwPal(s, stellar ? { T: "#fde68a", U: "#fef3c7", G: tw % 2 ? "#ffffff" : g, W: "#ffffff" } : { G: tw % 2 ? "#ffffff" : g, W: "#ffffff" }));
+        px(P.dx + 6, P.dy + y + 8, 3, 1, stellar ? "#fde68a" : (s.trim || "#fbbf24")); px(P.dx + 8, P.dy + y + 7, 1, 3, stellar ? "#fde68a" : (s.trim || "#fbbf24"));
+        px(P.dx + 5, P.dy + y, 1, 2, stellar ? "#c4b5fd" : (s.trim || "#fbbf24"));
+        return true;
+      }
+      return false;
+    }
+
     function drawWeaponSkin(px, w, ix, iy, t) {
+      if (PXW_ON && w && drawWeaponPx2(px, w, ix, iy, t)) return;
       if (w.kind && w.kind[0] === "l" && drawLegendWeapon(px, w, ix, iy, t)) return;
       if (w.kind === "stellarbow") {
         const gw = "#fde68a", tw = Math.floor(t * 4) % 4;
@@ -6300,7 +6754,205 @@
       ctx.restore();
     }
 
+    /* =======================================================================
+       v1.67 (TEST) — AURAS HD : même DA que les armes HD (lumière douce, particules lissées, halos).
+       Dessinées derrière le héros sur le canvas 128×128 (centre du corps ≈ 64,74 • pieds ≈ 64,116).
+       AURA_HD = false pour revenir aux auras pixel.
+       ======================================================================= */
+    let AURA_HD = true;
+    const AURA_HD_KINDS = new Set(["embers", "leaves", "frost", "lightning", "shadow", "sun", "runes", "astral", "stellar",
+      "bloodaura", "sylvanaura", "frostaura", "gearaura", "vortex", "phoenix", "blackhole", "sakura", "prism", "aurore"]);
+    function auraLight(c, fn) { c.save(); c.globalCompositeOperation = "lighter"; try { fn(); } finally { c.restore(); } }
+    function auraFloor(c, col, a, rx = 42, ry = 10, w = 2.2, t = 0) {   // cercle lumineux au sol
+      auraLight(c, () => {
+        const g = c.createRadialGradient(64, 116, 2, 64, 116, rx); g.addColorStop(0, hdwA(col, a * 0.45)); g.addColorStop(1, hdwA(col, 0));
+        c.fillStyle = g; c.save(); c.translate(64, 116); c.scale(1, ry / rx); c.beginPath(); c.arc(0, 0, rx, 0, 7); c.restore(); c.fill();
+        c.strokeStyle = hdwA(col, a); c.lineWidth = w; c.beginPath(); c.ellipse(64, 116, rx, ry, 0, 0, 7); c.stroke();
+        c.strokeStyle = hdwA("#ffffff", a * 0.35); c.lineWidth = w * 0.4; c.beginPath(); c.ellipse(64, 116, rx, ry, 0, 0, 7); c.stroke();
+      });
+    }
+    function auraMist(c, col, a, y = 112) {   // nappe de brume ovale au sol (bords fondus)
+      c.save(); c.translate(64, y); c.scale(1, 0.22); const g = c.createRadialGradient(0, 0, 4, 0, 0, 60); g.addColorStop(0, hdwA(col, a)); g.addColorStop(0.6, hdwA(col, a * 0.55)); g.addColorStop(1, hdwA(col, 0));
+      c.fillStyle = g; c.beginPath(); c.arc(0, 0, 60, 0, 7); c.fill(); c.restore();
+    }
+    function auraDot(c, x, y, r, col, a) { if (a <= 0) return; hdwGlow(c, x, y, r * 3.2, col, a * 0.45); c.fillStyle = hdwA(col, a); c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.fillStyle = hdwA("#ffffff", a * 0.8); c.beginPath(); c.arc(x, y, r * 0.42, 0, 7); c.fill(); }
+    function auraFlake(c, x, y, r, rot, col, a) { c.save(); c.translate(x, y); c.rotate(rot); c.strokeStyle = hdwA(col, a); c.lineWidth = Math.max(0.7, r * 0.22); c.lineCap = "round"; c.beginPath();
+      for (let i = 0; i < 3; i++) { const an = i * Math.PI / 3; c.moveTo(Math.cos(an) * r, Math.sin(an) * r); c.lineTo(-Math.cos(an) * r, -Math.sin(an) * r); } c.stroke(); c.restore(); hdwGlow(c, x, y, r * 2, col, a * 0.25); }
+    function auraLeaf(c, x, y, s, rot, col, a) { c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = hdwA(col, a); c.beginPath(); c.moveTo(-s, 0); c.quadraticCurveTo(0, -s * 0.75, s, 0); c.quadraticCurveTo(0, s * 0.75, -s, 0); c.fill();
+      c.strokeStyle = hdwA(hdwShade(col, -0.4), a * 0.8); c.lineWidth = 0.6; c.beginPath(); c.moveTo(-s * 0.8, 0); c.lineTo(s * 0.8, 0); c.stroke(); c.restore(); }
+    function auraPetal(c, x, y, s, rot, col, a) { c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = hdwA(col, a); c.beginPath(); c.moveTo(0, -s); c.bezierCurveTo(s * 0.9, -s * 0.6, s * 0.6, s * 0.7, 0, s * 0.45); c.bezierCurveTo(-s * 0.6, s * 0.7, -s * 0.9, -s * 0.6, 0, -s); c.fill();
+      c.fillStyle = hdwA("#ffffff", a * 0.45); c.beginPath(); c.ellipse(-s * 0.15, -s * 0.3, s * 0.2, s * 0.4, 0, 0, 7); c.fill(); c.restore(); }
+    function auraStar(c, x, y, r, col, a, rot = 0) { if (a <= 0) return; hdwGlow(c, x, y, r * 3, col, a * 0.5); c.save(); c.globalAlpha = a; hdwStar(c, x, y, r, col, rot); hdwStar(c, x, y, r * 0.45, "#ffffff", rot); c.restore(); }
+    function auraBolt(c, x0, y0, len, seed, col, w) {
+      const pts = [[x0, y0]]; let x = x0, y = y0; for (let n = 1; n <= 6; n++) { x += (rlR(n, seed) - 0.5) * 16; y += len / 6; pts.push([x, y]); }
+      auraLight(c, () => { [[w * 3.2, 0.22], [w * 1.6, 0.55], [w * 0.6, 1]].forEach(([lw, al], k) => { c.strokeStyle = k === 2 ? "rgba(255,255,255,0.95)" : hdwA(col, al); c.lineWidth = lw; c.lineJoin = "round"; c.beginPath(); pts.forEach(([px_, py], i) => i ? c.lineTo(px_, py) : c.moveTo(px_, py)); c.stroke(); });
+        const b = pts[3]; c.strokeStyle = hdwA(col, 0.7); c.lineWidth = w * 0.7; c.beginPath(); c.moveTo(b[0], b[1]); c.lineTo(b[0] + (rlR(9, seed) - 0.5) * 22, b[1] + 12); c.stroke(); });
+    }
+    function auraGear(c, x, y, r, rot, col) { c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = hdwMetal(c, col, -r, r, -r, r); c.beginPath();
+      for (let i = 0; i < 16; i++) { const an = i * Math.PI / 8, rr = i % 2 ? r : r * 1.28; c.lineTo(Math.cos(an - 0.12) * rr, Math.sin(an - 0.12) * rr); c.lineTo(Math.cos(an + 0.12) * rr, Math.sin(an + 0.12) * rr); } c.closePath(); c.fill();
+      c.strokeStyle = HDW_INK; c.lineWidth = 0.8; c.stroke(); c.fillStyle = "#3b1a05"; c.beginPath(); c.arc(0, 0, r * 0.38, 0, 7); c.fill(); c.restore(); }
+    function drawAuraHD(ctx, a, t) {
+      const k = a.kind, M = a.main || "#a78bfa", Tr = a.trim || "#ffffff", nom = a.nom || "", c = ctx, R = rlR;
+      c.save();
+      // halo doux commun
+      const g0 = c.createRadialGradient(64, 76, 6, 64, 76, 60); g0.addColorStop(0, hdwA(M, 0.3)); g0.addColorStop(0.6, hdwA(M, 0.12)); g0.addColorStop(1, hdwA(M, 0));
+      c.fillStyle = g0; c.fillRect(0, 0, 128, 128);
+      if (k === "embers") {
+        const bubbles = /bulle/i.test(nom), dust = /poussi|dor/i.test(nom);
+        auraFloor(c, M, 0.35, 38, 9, 1.6);
+        for (let i = 0; i < 16; i++) {
+          const ph = (t * (bubbles ? 0.28 : 0.4) + R(i, 3)) % 1, x = 24 + R(i + 1, 3) * 80 + Math.sin(t * 2 + i) * (bubbles ? 5 : 3), y = 122 - ph * 118, al = Math.sin(ph * Math.PI);
+          if (bubbles) { c.strokeStyle = hdwA(i % 2 ? M : Tr, 0.85 * al); c.lineWidth = 1; const r = 2 + R(i + 4, 3) * 3; c.beginPath(); c.arc(x, y, r, 0, 7); c.stroke(); c.fillStyle = hdwA("#ffffff", 0.7 * al); c.beginPath(); c.arc(x - r * 0.35, y - r * 0.35, r * 0.25, 0, 7); c.fill(); }
+          else auraLight(c, () => { auraDot(c, x, y, dust ? 0.9 : 1.3, i % 2 ? M : Tr, al); if (!dust) { c.strokeStyle = hdwA(i % 2 ? M : Tr, 0.35 * al); c.lineWidth = 1.2; c.beginPath(); c.moveTo(x, y); c.lineTo(x - Math.sin(t * 2 + i) * 2, y + 7); c.stroke(); } else if (Math.sin(t * 6 + i * 2) > 0.7) auraStar(c, x, y, 2.4, Tr, al); });
+        }
+      } else if (k === "leaves") {
+        const flies = /luciole/i.test(nom), petals = /p[ée]tale/i.test(nom);
+        if (flies) {
+          for (let i = 0; i < 14; i++) { const x = 64 + Math.sin(t * 0.5 + i * 1.7) * 48 + Math.sin(t * 1.3 + i) * 6, y = 64 + Math.cos(t * 0.4 + i * 2.3) * 46, bl = Math.max(0, Math.sin(t * 2.2 + i * 1.9)); auraLight(c, () => auraDot(c, x, y, 1.2, i % 2 ? M : Tr, bl)); }
+        } else {
+          for (let i = 0; i < 12; i++) { const ph = (t * 0.22 + R(i, 5)) % 1, x = 16 + R(i + 2, 5) * 96 + Math.sin(t * 1.4 + i) * 10, y = -6 + ph * 136, al = Math.min(1, Math.sin(ph * Math.PI) * 1.6) * 0.9;
+            (petals ? auraPetal : auraLeaf)(c, x, y, petals ? 3.4 : 3.8, t * 1.6 + i, i % 2 ? M : Tr, al); }
+        }
+        auraFloor(c, M, 0.3, 38, 9, 1.4);
+      } else if (k === "frost") {
+        auraMist(c, Tr, 0.42 + 0.08 * Math.sin(t * 1.5));
+        auraFloor(c, M, 0.55, 42 + Math.sin(t * 2) * 2.5, 10, 1.8);
+        for (let i = 0; i < 13; i++) { const ph = (t * 0.16 + R(i, 7)) % 1, x = 14 + R(i + 3, 7) * 100 + Math.sin(t + i) * 6, y = -4 + ph * 130; auraLight(c, () => auraFlake(c, x, y, 2 + R(i + 5, 7) * 2.2, t * 0.8 + i, i % 3 ? Tr : "#ffffff", 0.9 * Math.sin(ph * Math.PI))); }
+      } else if (k === "lightning") {
+        auraFloor(c, M, 0.4 + 0.3 * (Math.floor(t * 9) % 3 === 0), 40, 9, 1.8);
+        const f = Math.floor(t * 9); if (f % 3 === 0) { auraBolt(c, 34 + R(f, 1) * 16, 6, 104, f, M, 1.6); auraBolt(c, 80 + R(f + 2, 1) * 16, 10, 96, f + 7, Tr, 1.3); auraLight(c, () => hdwGlow(c, 64, 64, 64, M, 0.22)); }
+        for (let i = 0; i < 6; i++) { const an = t * 3 + i * 1.05, x = 64 + Math.cos(an) * 44, y = 72 + Math.sin(an * 1.3) * 40; auraLight(c, () => auraDot(c, x, y, 0.9, i % 2 ? M : Tr, 0.5 + 0.5 * Math.sin(t * 9 + i))); }
+      } else if (k === "shadow") {
+        for (let i = 0; i < 12; i++) { const ph = (t * 0.25 + R(i, 9)) % 1, x = 26 + R(i + 1, 9) * 76 + Math.sin(t * 1.5 + i) * 6, y = 124 - ph * 118, r = 7 + (1 - ph) * 9, al = Math.sin(ph * Math.PI);
+          const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, hdwA(hdwShade(i % 2 ? M : Tr, 0.25), 0.75 * al)); g.addColorStop(1, hdwA(M, 0)); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); }
+        auraLight(c, () => { hdwGlow(c, 64, 80, 52, M, 0.18 + 0.06 * Math.sin(t * 2)); for (let i = 0; i < 8; i++) { const ph = (t * 0.5 + R(i + 20, 9)) % 1; auraDot(c, 30 + R(i + 30, 9) * 68, 118 - ph * 100, 0.9, Tr, 0.7 * Math.sin(ph * Math.PI)); } });
+        c.fillStyle = "rgba(2,0,8,0.35)"; c.beginPath(); c.ellipse(64, 117, 36, 7, 0, 0, 7); c.fill();
+      } else if (k === "sun") {
+        auraLight(c, () => {
+          c.save(); c.translate(64, 66); c.rotate(t * 0.25);
+          for (let i = 0; i < 14; i++) { c.rotate(Math.PI * 2 / 14); const l = 44 + Math.sin(t * 2 + i) * 6, g = c.createLinearGradient(0, -20, 0, -20 - l); g.addColorStop(0, hdwA(M, 0.55)); g.addColorStop(1, hdwA(M, 0));
+            c.fillStyle = g; c.beginPath(); c.moveTo(-3.2, -20); c.lineTo(0, -20 - l); c.lineTo(3.2, -20); c.closePath(); c.fill(); }
+          c.restore();
+          c.strokeStyle = hdwA(Tr, 0.75); c.lineWidth = 2; c.beginPath(); c.arc(64, 66, 30 + Math.sin(t * 2) * 1.5, 0, 7); c.stroke();
+          c.strokeStyle = hdwA("#ffffff", 0.4); c.lineWidth = 0.8; c.beginPath(); c.arc(64, 66, 30 + Math.sin(t * 2) * 1.5, 0, 7); c.stroke();
+          for (let i = 0; i < 6; i++) { const an = -t * 0.9 + i * 1.047; auraDot(c, 64 + Math.cos(an) * 30, 66 + Math.sin(an) * 30, 1.1, Tr, 0.9); }
+        });
+      } else if (k === "runes") {
+        auraLight(c, () => {
+          c.save(); c.translate(64, 116); c.scale(1, 0.26);
+          [[40, 1.8, M, 0.8], [31, 1.2, Tr, 0.65]].forEach(([r, w, col, al]) => { c.strokeStyle = hdwA(col, al); c.lineWidth = w / 0.26 * 0.5; c.beginPath(); c.arc(0, 0, r, 0, 7); c.stroke(); });
+          c.rotate(t * 0.7);
+          for (let i = 0; i < 8; i++) { c.save(); c.rotate(i * Math.PI / 4); c.translate(0, -35.5); c.strokeStyle = hdwA(i % 2 ? Tr : M, 0.95); c.lineWidth = 3.2; c.beginPath();
+            const v = i % 4; if (v === 0) { c.moveTo(-3, -4); c.lineTo(0, 4); c.lineTo(3, -4); } else if (v === 1) { c.moveTo(0, -5); c.lineTo(0, 5); c.moveTo(-3, -1); c.lineTo(3, 2); } else if (v === 2) { c.moveTo(-3, -4); c.lineTo(3, -4); c.lineTo(-3, 4); c.lineTo(3, 4); } else { c.arc(0, 0, 3.5, 0, 5); }
+            c.stroke(); c.restore(); }
+          c.restore();
+          for (let i = 0; i < 8; i++) { const ph = (t * 0.45 + R(i, 13)) % 1, an = R(i + 2, 13) * 6.28; auraDot(c, 64 + Math.cos(an) * 34, 116 + Math.sin(an) * 8 - ph * 60, 1, i % 2 ? M : Tr, 0.85 * Math.sin(ph * Math.PI)); }
+          hdwGlow(c, 64, 116, 40, M, 0.18 + 0.08 * Math.sin(t * 3));
+        });
+      } else if (k === "astral") {
+        auraLight(c, () => {
+          const hy = 12 + Math.sin(t * 2) * 1.2;
+          hdwGlow(c, 64, hy, 26, Tr, 0.35);
+          [[20, 2.6, Tr, 0.85], [20, 0.9, "#ffffff", 0.7]].forEach(([r, w, col, al]) => { c.strokeStyle = hdwA(col, al); c.lineWidth = w; c.beginPath(); c.ellipse(64, hy, r, 4.6, 0, 0, 7); c.stroke(); });
+          for (let i = 0; i < 9; i++) { const an = t * 1.1 + i * 0.698, x = 64 + Math.cos(an) * 52, y = 70 + Math.sin(an) * 40, front = Math.sin(an) > 0; auraStar(c, x, y, front ? 2.8 : 2, i % 2 ? M : Tr, front ? 0.95 : 0.55, t * 2 + i); }
+          if (/galax|spiral/i.test(nom)) for (let arm = 0; arm < 2; arm++) for (let i = 0; i < 16; i++) { const r = 8 + i * 3.2, an = t * 0.8 + arm * Math.PI + i * 0.36; auraDot(c, 64 + Math.cos(an) * r, 74 + Math.sin(an) * r * 0.5, 0.8, i % 2 ? M : Tr, 0.7 - i * 0.035); }
+        });
+      } else if (k === "stellar") {
+        const pul = 0.5 + 0.5 * Math.sin(t * 2.2);
+        const g2 = c.createRadialGradient(64, 70, 4, 64, 70, 62); g2.addColorStop(0, "rgba(2,3,20,0)"); g2.addColorStop(0.55, `rgba(76,29,149,${0.28 + 0.15 * pul})`); g2.addColorStop(1, "rgba(103,232,249,0)"); c.fillStyle = g2; c.fillRect(0, 0, 128, 128);
+        auraFloor(c, Tr, 0.5 + 0.25 * pul, 40, 10, 1.6); auraFloor(c, Tr, 0.35, 28, 7, 1);
+        const pts = []; for (let i = 0; i < 7; i++) { const an = t * 0.9 + i * Math.PI * 2 / 7; pts.push([64 + Math.cos(an) * (44 + (i % 2) * 6), 72 + Math.sin(an) * 39]); }
+        auraLight(c, () => { c.strokeStyle = "rgba(196,181,253,0.5)"; c.lineWidth = 0.9; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.stroke();
+          pts.forEach(([x, y], i) => auraStar(c, x, y, 2.4 + (Math.floor(t * 3 + i) % 3 === 0 ? 1.2 : 0), i % 2 ? "#ffffff" : Tr, 0.95, t + i));
+          const sh = (t * 0.7) % 1, sx = 112 - sh * 92, sy = 6 + sh * 36, gg = c.createLinearGradient(sx, sy, sx + 18, sy - 7); gg.addColorStop(0, `rgba(255,255,255,${1 - sh})`); gg.addColorStop(1, "rgba(255,255,255,0)");
+          c.strokeStyle = gg; c.lineWidth = 1.6; c.beginPath(); c.moveTo(sx, sy); c.lineTo(sx + 18, sy - 7); c.stroke(); auraDot(c, sx, sy, 1, "#ffffff", 1 - sh); });
+      } else if (k === "bloodaura") {
+        c.fillStyle = "rgba(20,0,0,0.3)"; c.beginPath(); c.ellipse(64, 117, 40, 8, 0, 0, 7); c.fill();
+        auraLight(c, () => {
+          for (let i = 0; i < 11; i++) { const x = 26 + i * 7.6 + Math.sin(t * 3 + i) * 2, h = 18 + Math.abs(Math.sin(t * 5 + i * 1.7)) * 22, g = c.createLinearGradient(x, 118, x, 118 - h); g.addColorStop(0, hdwA(Tr, 0.7)); g.addColorStop(0.5, hdwA(M, 0.45)); g.addColorStop(1, hdwA(M, 0));
+            c.fillStyle = g; c.beginPath(); c.moveTo(x - 4, 118); c.quadraticCurveTo(x - 4, 118 - h * 0.5, x + Math.sin(t * 4 + i) * 3, 118 - h); c.quadraticCurveTo(x + 4, 118 - h * 0.5, x + 4, 118); c.fill(); }
+          for (let i = 0; i < 7; i++) { const ph = (t * 0.35 + R(i, 17)) % 1; auraDot(c, 28 + R(i + 1, 17) * 72 + Math.sin(t * 2 + i) * 4, 112 - ph * 100, 1.3, "#ef4444", Math.sin(ph * Math.PI)); }
+        });
+        auraFloor(c, "#7f1d1d", 0.7, 40, 9, 2.4);
+      } else if (k === "sylvanaura") {
+        c.strokeStyle = "rgba(77,124,15,0.75)"; c.lineWidth = 2.2; c.lineCap = "round";
+        for (let i = 0; i < 7; i++) { const an = i * 0.9 + 0.3, x = 64 + Math.cos(an) * 38; c.beginPath(); c.moveTo(64 + Math.cos(an) * 20, 116 + Math.sin(an) * 3); c.quadraticCurveTo(x, 112 + Math.sin(an * 3) * 3, x + Math.cos(an) * 10, 118); c.stroke(); }
+        auraFloor(c, "#84cc16", 0.5, 38, 9, 1.6);
+        for (let i = 0; i < 10; i++) { const an = t * 1.0 + i * 0.628, x = 64 + Math.cos(an) * 48, y = 74 + Math.sin(an) * 36; auraLeaf(c, x, y, 3.4, an + Math.PI / 2, i % 2 ? "#84cc16" : "#65a30d", Math.sin(an) > 0 ? 0.95 : 0.55); }
+        for (let i = 0; i < 9; i++) { const x = 64 + Math.sin(t * 0.6 + i * 1.9) * 50, y = 60 + Math.cos(t * 0.5 + i * 2.4) * 48; auraLight(c, () => auraDot(c, x, y, 1.1, "#fef08a", Math.max(0, Math.sin(t * 2.5 + i * 2)))); }
+      } else if (k === "frostaura") {
+        auraMist(c, "#e0f2fe", 0.45 + 0.08 * Math.sin(t * 1.5));
+        auraFloor(c, "#e0f2fe", 0.75, 42 + Math.sin(t * 2) * 3, 10, 2);
+        for (let i = 0; i < 14; i++) { const an = -t * 1.4 + i * 0.449, r = 34 + (i % 3) * 10, x = 64 + Math.cos(an) * r, y = 70 + Math.sin(an) * r * 0.75; auraLight(c, () => auraFlake(c, x, y, 2.2 + (i % 3) * 0.7, t + i, i % 3 ? "#bae6fd" : "#ffffff", 0.9)); }
+        auraLight(c, () => { for (let i = 0; i < 6; i++) { const an = t * 0.6 + i * 1.047, x = 64 + Math.cos(an) * 42, y = 116 + Math.sin(an) * 10; c.fillStyle = "rgba(224,242,254,0.85)"; hdwPath(c, [[x, y - 7], [x + 2, y], [x, y + 2], [x - 2, y]]); c.fill(); } });
+      } else if (k === "gearaura") {
+        for (let i = 0; i < 3; i++) { const ph = (t * 0.3 + i / 3) % 1, x = 30 + i * 34 + Math.sin(t + i) * 4, y = 116 - ph * 34, r = 5 + ph * 7; c.fillStyle = `rgba(226,232,240,${0.35 * (1 - ph)})`; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }
+        for (let i = 0; i < 3; i++) { const an = t * 1.2 + i * 2.094; auraGear(c, 64 + Math.cos(an) * 48, 66 + Math.sin(an) * 36, i === 1 ? 5.5 : 4.5, t * (i % 2 ? -2 : 2), "#b45309"); }
+        auraLight(c, () => { for (let i = 0; i < 9; i++) { const ph = (t * 0.9 + R(i, 19)) % 1, x = 30 + R(i + 1, 19) * 68, y = 112 - ph * 80; auraDot(c, x, y, 0.8, i % 2 ? "#fde047" : "#f97316", 1 - ph); } });
+        auraFloor(c, "#f59e0b", 0.45, 38, 9, 1.6);
+      } else if (k === "vortex") {
+        auraLight(c, () => {
+          for (let arm = 0; arm < 3; arm++) { c.beginPath(); for (let i = 0; i <= 30; i++) { const r = 4 + i * 1.8, an = -t * 2.2 + arm * 2.094 + i * 0.16; const x = 64 + Math.cos(an) * r, y = 74 + Math.sin(an) * r * 0.55; i ? c.lineTo(x, y) : c.moveTo(x, y); }
+            c.strokeStyle = hdwA(arm % 2 ? Tr : M, 0.55); c.lineWidth = 2.4; c.stroke(); c.strokeStyle = hdwA("#ffffff", 0.35); c.lineWidth = 0.8; c.stroke(); }
+          for (let i = 0; i < 18; i++) { const r = 8 + (i * 3.1) % 52, an = -t * 2.2 + i * 1.7 + r * 0.09; auraDot(c, 64 + Math.cos(an) * r, 74 + Math.sin(an) * r * 0.55, 1, i % 2 ? M : Tr, 0.9 - r / 80); }
+          hdwGlow(c, 64, 74, 22, "#ffffff", 0.18 + 0.08 * Math.sin(t * 4));
+        });
+        auraFloor(c, Tr, 0.6, 40 + Math.sin(t * 3) * 3, 9, 1.8);
+      } else if (k === "phoenix") {
+        auraLight(c, () => {
+          hdwGlow(c, 64, 80, 64, "#f97316", 0.3 + 0.08 * Math.sin(t * 8));
+          for (const sd of [-1, 1]) for (let i = 0; i < 6; i++) {   // ailes de flammes : plumes en courbes
+            const fl = Math.sin(t * 4 + i) * 3, bx = 64 + sd * 10, by = 70, tx = 64 + sd * (26 + i * 7), ty = 30 + i * 9 + fl - Math.abs(Math.sin(t * 2)) * 5;
+            const g = c.createLinearGradient(bx, by, tx, ty); g.addColorStop(0, "rgba(220,38,38,0)"); g.addColorStop(0.3, "rgba(249,115,22,0.6)"); g.addColorStop(1, "rgba(254,240,138,0.9)");
+            c.fillStyle = g; c.beginPath(); c.moveTo(bx, by + 4); c.quadraticCurveTo((bx + tx) / 2 + sd * 2, ty + 18, tx, ty); c.quadraticCurveTo((bx + tx) / 2 - sd * 4, ty + 6, bx, by - 3); c.closePath(); c.fill();
+          }
+          for (let i = 0; i < 12; i++) { const ph = (t * 1.1 + fxR(i, 3)) % 1; auraDot(c, 30 + fxR(i + 1, 3) * 68 + Math.sin(t * 3 + i) * 3, 120 - ph * 116, 1.1, ph < 0.4 ? "#fef08a" : "#f97316", 1 - ph); }
+          const burst = (t * 0.5) % 1; c.strokeStyle = `rgba(253,186,116,${0.75 * (1 - burst)})`; c.lineWidth = 2; c.beginPath(); c.ellipse(64, 116, 10 + burst * 50, 3 + burst * 10, 0, 0, 7); c.stroke();
+        });
+      } else if (k === "blackhole") {
+        auraLight(c, () => hdwGlow(c, 64, 70, 60, "#7c3aed", 0.2 + 0.06 * Math.sin(t * 2)));
+        const disk = c.createRadialGradient(64, 116, 4, 64, 116, 46); disk.addColorStop(0, "rgba(2,0,10,0.95)"); disk.addColorStop(0.45, "rgba(2,0,10,0.85)"); disk.addColorStop(0.55, "rgba(251,191,36,0.55)"); disk.addColorStop(0.75, "rgba(168,85,247,0.35)"); disk.addColorStop(1, "rgba(168,85,247,0)");
+        c.save(); c.translate(64, 116); c.scale(1, 0.24); c.rotate(t * 0.4); c.translate(-64, -116); c.fillStyle = disk; c.beginPath(); c.arc(64, 116, 46, 0, 7); c.fill(); c.restore();
+        auraLight(c, () => {
+          for (let i = 0; i < 26; i++) { const ph = (t * 0.6 + fxR(i, 7)) % 1, an = fxR(i + 3, 7) * 6.28 + t * (1.5 + ph * 3), r = 58 * (1 - ph) + 10, x = 64 + Math.cos(an) * r, y = 116 + Math.sin(an) * r * 0.25 - (1 - ph) * 30 * fxR(i + 8, 7);
+            const col = i % 3 ? "#c4b5fd" : "#fbbf24"; c.strokeStyle = hdwA(col, ph * 0.7); c.lineWidth = 1; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.sin(an) * 4, y - Math.cos(an) * 1.2); c.stroke(); auraDot(c, x, y, 0.7, col, ph); }
+          c.strokeStyle = "rgba(251,191,36,0.8)"; c.lineWidth = 1.4; c.beginPath(); c.ellipse(64, 116, 22, 5, 0, 0, 7); c.stroke();
+        });
+        for (let k2 = 0; k2 < 3; k2++) { const an = t * 1.5 + k2 * 2.094, x = 64 + Math.cos(an) * 50, y = 60 + Math.sin(an) * 20;
+          c.fillStyle = "#020008"; c.beginPath(); c.arc(x, y, 4, 0, 7); c.fill(); auraLight(c, () => { c.strokeStyle = "rgba(251,191,36,0.9)"; c.lineWidth = 1; c.beginPath(); c.arc(x, y, 5, 0, 7); c.stroke(); hdwGlow(c, x, y, 10, "#e879f9", 0.3); }); }
+      } else if (k === "sakura") {
+        auraLight(c, () => hdwGlow(c, 64, 74, 58, "#f472b6", 0.2));
+        for (let i = 0; i < 18; i++) { const ph = (t * 0.32 + fxR(i, 11)) % 1, x = ((fxR(i + 1, 11) * 140 - ph * 50 + Math.sin(t * 2 + i) * 6) % 140 + 140) % 140 - 6, y = ph * 130; auraPetal(c, x, y, 3.2, t * 2.5 + i, i % 3 ? "#f9a8d4" : "#fce7f3", 0.95); }
+        auraFloor(c, "#f9a8d4", 0.45, 38, 9, 1.4);
+      } else if (k === "prism") {
+        auraLight(c, () => {
+          const cols = ["#ef4444", "#f97316", "#fde047", "#22c55e", "#38bdf8", "#6366f1", "#a855f7"];
+          c.save(); c.translate(64, 66); c.rotate(t * 0.3);
+          cols.forEach((col, i) => { c.save(); c.rotate(i * Math.PI * 2 / cols.length); const l = 54 + Math.sin(t * 2 + i) * 6, g = c.createLinearGradient(0, -10, 0, -10 - l); g.addColorStop(0, hdwA(col, 0.6)); g.addColorStop(1, hdwA(col, 0)); c.fillStyle = g; c.beginPath(); c.moveTo(-5, -10); c.lineTo(0, -10 - l); c.lineTo(5, -10); c.closePath(); c.fill(); c.restore(); });
+          c.restore();
+          for (let i = 0; i < 8; i++) { const an = t * 1.3 + i * 0.785; auraStar(c, 64 + Math.cos(an) * 46, 70 + Math.sin(an) * 38, 2.2, cols[i % cols.length], 0.9, t * 2); }
+          hdwGlow(c, 64, 66, 18, "#ffffff", 0.25);
+        });
+        auraFloor(c, "#e0e7ff", 0.55, 40, 9, 1.6);
+      } else if (k === "aurore") {
+        auraLight(c, () => {
+          // voiles d'aurore : rubans ondulants qui s'effilent aux extrémités (pas de bord coupé)
+          [["#5eead4", 22, 0], ["#a78bfa", 34, 1.7], ["#4ade80", 46, 3.1]].forEach(([col, y0, s]) => {
+            const x0 = 10, x1 = 118, top = x => y0 + Math.sin(x * 0.05 + t * 1.2 + s) * 7 + Math.sin(x * 0.11 - t * 0.8 + s) * 3, th = x => 24 * Math.pow(Math.sin(Math.PI * (x - x0) / (x1 - x0)), 0.8);
+            c.beginPath(); for (let x = x0; x <= x1; x += 3) { const y = top(x); x === x0 ? c.moveTo(x, y) : c.lineTo(x, y); }
+            for (let x = x1; x >= x0; x -= 3) c.lineTo(x, top(x) + th(x)); c.closePath();
+            const g = c.createLinearGradient(0, y0 - 8, 0, y0 + 30); g.addColorStop(0, hdwA(col, 0.42)); g.addColorStop(0.35, hdwA(col, 0.22)); g.addColorStop(1, hdwA(col, 0)); c.fillStyle = g; c.fill();
+            c.strokeStyle = hdwA(hdwShade(col, 0.4), 0.55); c.lineWidth = 0.9; c.beginPath(); for (let x = x0 + 6; x <= x1 - 6; x += 3) { const y = top(x); x === x0 + 6 ? c.moveTo(x, y) : c.lineTo(x, y); } c.stroke();
+          });
+          for (let i = 0; i < 8; i++) auraDot(c, 10 + (i * 37) % 108, 6 + (i * 13) % 30, 0.7, "#ffffff", 0.4 + 0.6 * Math.max(0, Math.sin(t * 3 + i * 2)));
+        });
+        auraFloor(c, "#5eead4", 0.5, 40, 9, 1.6);
+      }
+      c.restore();
+    }
+
     function drawAuraSkin(ctx, a, t) {
+      if (AURA_HD && a && AURA_HD_KINDS.has(a.kind)) { try { drawAuraHD(ctx, a, t); return; } catch (e) { console.error(e); } }
       const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x) * 4, Math.round(y) * 4, w * 4, h * 4); };
       const g = ctx.createRadialGradient(64, 78, 6, 64, 78, 58);
       g.addColorStop(0, a.main + "55"); g.addColorStop(1, a.main + "00");
@@ -6509,6 +7161,7 @@
       return false;
     }
     function drawOffhandSkin(px, s, y, t) {
+      if (PXW_ON && s && drawOffhandPx2(px, s, y, t)) return;
       if (s.kind && s.kind[0] === "l" && s.kind !== "lantern" && drawLegendOffhand(px, s, y, t)) return;
       if (s.kind === "stellarquiver") {
         const tw = Math.floor(t * 3) % 4;
@@ -6842,9 +7495,11 @@
      */
     function drawHero128(canvas, hero, timeSec, poseTimer = 0, isWalking = false, isCampfire = false, workMode = false, rider = null) {
       if (!canvas) return;
-      _hdwReq = null;
+      _hdwReq = null; _hdoReq = null; _hdaReq = null;
       drawHero128Base(canvas, hero, timeSec, poseTimer, isWalking, isCampfire, workMode, rider);
-      _hdwLast = null;
+      _hdwLast = null; _hdoLast = null; _hdaLast = null;
+      if (_hdaReq) { const r = _hdaReq; _hdaReq = null; if (HDW_DEFER) _hdaLast = r; else try { drawHDArmorTest(canvas.getContext("2d"), r, timeSec); } catch (e) { console.error(e); } }
+      if (_hdoReq) { const r = _hdoReq; _hdoReq = null; if (HDW_DEFER) _hdoLast = r; else try { drawHDOffhand(canvas.getContext("2d"), r, timeSec); } catch (e) { console.error(e); } }
       if (_hdwReq) { const r = _hdwReq; _hdwReq = null; if (HDW_DEFER) _hdwLast = r; else try { drawHDWeapon(canvas.getContext("2d"), r, timeSec); } catch (e) { console.error(e); } }
       try { drawSkinFx(canvas.getContext("2d"), getHeroLook(hero), timeSec, false); } catch (e) {}
       if (hero && hero.classe === "runelame" && !workMode && !rider && !RUNE_NO_ORBIT) { try { runeOrbitOverlay(canvas, hero, timeSec, isCampfire); } catch (e) { console.error(e); } }
@@ -6952,6 +7607,8 @@
       }
 
       if (look.armor) drawArmorSkin(px, look.armor, tx, tw, yOff);
+      // v1.68 (TEST) : tenue HD du Chevalier de base (sans skin d'armure ; pas pour le nain, dont la barbe recouvre le torse)
+      else if (ARMOR_HD_TEST && hero.classe === "chevalier" && !isNain && !isCampfire && !HDW_OFF) _hdaReq = { tx, tw, y0: 16 + yOff, fem: isFem, outfit };
 
       // Tête
       px(11, 6 + yOff, 10, 10, hero.couleurPeau);
@@ -7034,7 +7691,10 @@
       const lx = isFem && !isNain ? 10 : 9, rx = isFem && !isNain ? 20 : 21;
       px(lx, 17 + yOff + leftArmSwing, 2, 5, outfit);
       px(lx, 21 + yOff + leftArmSwing, 2, 2, hero.couleurPeau);
-      if (look.shield) drawOffhandSkin((x, y, w, h, c) => px(x + lx - 9, y + leftArmSwing, w, h, c), look.shield, yOff, timeSec);
+      if (look.shield) {
+        if (!HDW_OFF && HDO_FAMILY[look.shield.kind]) _hdoReq = { s: look.shield, ox: lx - 9, oy: yOff + leftArmSwing };   // v1.66 : objet HD
+        else drawOffhandSkin((x, y, w, h, c) => px(x + lx - 9, y + leftArmSwing, w, h, c), look.shield, yOff, timeSec);
+      }
 
       // Bras droit & Arme en main
       const rightArmSwing = isWalking ? Math.round(stepPhase) : 0;
@@ -7049,8 +7709,8 @@
       if (hdw && HDW_FAMILY[hdw.kind]) {
         // v1.65 : arme HD dessinée par drawHero128 — poignée calée dans la main (repos : main en iy+8..10 • pose : iy+6..8)
         _hdwReq = { w: hdw, gx: rider ? ix + 0.6 : ix + 0.4, gy: iy + (isPose ? 7.2 : 9.2), pose: isPose };
-      } else if (look.weapon) {
-        drawWeaponSkin(px, look.weapon, ix, iy, timeSec);
+      } else if (look.weapon || (PXW_ON && HDW_CLASS_DEFAULT[hero.classe])) {   // v1.69 : armes de base des classes en pixel art soigné aussi
+        drawWeaponSkin(px, look.weapon || HDW_CLASS_DEFAULT[hero.classe], ix, iy, timeSec);
       } else if (hero.classe === "chevalier") {
         px(ix + 1, iy, 2, 8, "#e2e8f0");
         px(ix, iy + 8, 4, 1, "#ffd54f");
@@ -9589,7 +10249,7 @@
       const _rlS = state.hero.classe === "runelame";
       RUNE_NO_ORBIT = _rlS; HDW_DEFER = true;   // v1.65 : l'arme HD est dessinée directement dans la scène (plus nette)
       try { drawHero128(heroBufferCanvas, state.hero, timeSec, heroPoseTimer, isWalking, false); } finally { RUNE_NO_ORBIT = false; HDW_DEFER = false; }
-      const _hdwScene = _hdwLast; _hdwLast = null;
+      const _hdwScene = _hdwLast, _hdoScene = _hdoLast, _hdaScene = _hdaLast; _hdwLast = null; _hdoLast = null; _hdaLast = null;
       const hk = timeSec - heroHitT, heroHurt = hk >= 0 && hk < 0.22;
       if (heroHurt) { const g = heroBufferCanvas.getContext("2d"); g.globalCompositeOperation = "source-atop"; g.fillStyle = `rgba(239,68,68,${0.6 * (1 - hk / 0.22)})`; g.fillRect(0, 0, 128, 128); g.globalCompositeOperation = "source-over"; }
       const heroX = (state.expedition.combat ? 145 : 165) - (heroHurt ? Math.round(6 * Math.sin(hk / 0.22 * Math.PI)) : 0);
@@ -9600,6 +10260,8 @@
       if (mnt) drawRider(ctx, mnt.id, state.hero, heroX + 52, 176, timeSec, isWalking, 1, heroPoseTimer);
       else {
         ctx.drawImage(heroBufferCanvas, heroX, 74, 104, 104);
+        if (_hdaScene) { try { drawHDArmorTest(ctx, _hdaScene, timeSec, { x: heroX, y: 74, s: 104 / 128 }); } catch (e) { console.error(e); } }
+        if (_hdoScene) { try { drawHDOffhand(ctx, _hdoScene, timeSec, { x: heroX, y: 74, s: 104 / 128 }); } catch (e) { console.error(e); } }
         if (_hdwScene) { try { drawHDWeapon(ctx, _hdwScene, timeSec, { x: heroX, y: 74, s: 104 / 128 }); } catch (e) { console.error(e); } }
       }
       if (_rlS) { try { drawRuneOrbit(ctx, state.hero, RUNE_SCENE.cx, RUNE_SCENE.cy, RUNE_SCENE.sc, timeSec, "front", true); } catch (e) {} }
@@ -20502,8 +21164,30 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.65";
+    const GAME_VERSION = "1.69";
     const PATCH_NOTES = [
+      { v: "1.69", date: "21/11/2026", titre: "Retour au pixel art, en mieux", items: [
+        "⚔️ Les armes et les objets de main gauche reviennent au pixel art, dans la même DA que le reste du jeu — mais redessinés pixel par pixel : contour sombre, ombrage en 3 tons, reflets, poignées et gardes détaillées.",
+        "Épées, dagues, katanas, haches, marteaux, masses, lances, tridents, faux, glaives, arcs (avec flèche encochée pour les arcs rares), arbalètes, bâtons à orbe serti, baguettes, fioles, canon, et les armes de base de chaque classe.",
+        "🛡️ Boucliers avec liseré, rivets et umbo (planches de bois pour les rondaches simples), écus à croix, grimoires reliés, torches à flamme animée (bleue pour le Feu Bleu), lanternes, orbes flottants, fioles à bulles, carquois et drone-bombe.",
+        "✨ Les objets rares gardent une touche de vie : reflet qui glisse sur la lame, étincelles, gemmes qui scintillent.",
+        "🌟 Les auras HD sont conservées. Le test de tenue HD est retiré : l'armure reste en pixel art."
+      ] },
+      { v: "1.68", date: "21/11/2026", titre: "Test : tenue du Chevalier en HD", items: [
+        "🛡️ Essai visuel : la tenue de base du Chevalier (sans skin d'armure) est dessinée en haute définition — cuirasse d'acier bombée avec arête et rivets, épaulières, tabard aux couleurs du héros et ceinturon à boucle d'or.",
+        "Le reste du personnage (tête, cheveux, bras, jambes) reste en pixel art : ce test sert à juger si le mélange fonctionne avant d'aller plus loin."
+      ] },
+      { v: "1.67", date: "21/11/2026", titre: "Auras en haute définition (test)", items: [
+        "✨ Toutes les auras passent en haute définition, dans la même direction artistique que les armes et boucliers HD : lumière douce, particules lissées, halos et cercles lumineux au sol.",
+        "Chaque aura a son motif : braises à traînée, bulles, lucioles qui clignotent, feuilles et pétales qui tombent en tournoyant, vrais flocons, éclairs ramifiés, volutes d'ombre, rayons solaires, cercle de runes gravées, halo astral et galaxie, constellation stellaire.",
+        "🌟 Les auras légendaires et de panoplie sont refaites : ailes de flammes du Phénix, disque d'accrétion du Trou Noir, spirales du Vortex, rayons arc-en-ciel du Prisme, voiles d'Aurore Boréale, flammes de sang, racines et feuilles sylvestres, tempête de givre, engrenages dentés."
+      ] },
+      { v: "1.66", date: "21/11/2026", titre: "Boucliers & objets de main gauche en HD", items: [
+        "🛡️ Tous les objets de main gauche passent en haute définition, comme les armes : rondaches, écus, boucliers de panoplie, grimoires, torches, lanternes, orbes, fioles, carquois et le drone-bombe.",
+        "Boucliers : bordure métallique, rivets, umbo bombé, reflet qui balaie la surface ; les rondaches communes gardent leurs planches de bois, le Bouclier Sanglant sa couronne d'os et son crâne aux yeux rubis, les boucliers légendaires leur emblème animé (soleil ailé, spirale des vents, étoile).",
+        "🔥 Les sources de lumière éclairent vraiment : flamme vivante des torches (bleue pour le Feu Bleu), lanterne qui se balance, orbes qui flottent avec leurs éclats en orbite, grimoires d'où s'échappent des runes, fioles aux bulles lumineuses.",
+        "Le rendu HD s'applique partout : combat (directement dans la scène), fiche du héros, garde-robe, campement, Groupe et à cheval (torches, lanternes, orbes et fioles tenues devant)."
+      ] },
       { v: "1.65", date: "21/11/2026", titre: "Armes en haute définition", items: [
         "⚔️ Toutes les armes tenues en main passent en haute définition, dans le même style que les lames du Runelame : formes lissées, métal dégradé, reflet qui balaie la lame, contour net.",
         "Les 22 types d'armes sont redessinés (épées, katanas, dagues, haches, marteaux, masses, lances, tridents, faux, glaives, arcs, arbalètes, bâtons, baguettes, fioles, canon…), ainsi que les armes de panoplie (stellaires, légendaires) et les armes de base de chaque classe.",
