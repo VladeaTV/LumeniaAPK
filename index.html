@@ -4499,6 +4499,9 @@
     // Travailleurs : vitesse de la barre auto et XP bonus par cycle
     const WORKER_SPEED_PER = 0.35;
     const WORKER_XP_PER = 8;
+    /* v1.59 : les travailleurs ramassent aussi en quantité — 2 travailleurs = ×1, 20 travailleurs = ×10 */
+    function workerYield(n) { return Math.max(1, (n | 0) * 0.5); }
+    function workerYieldTxt(n) { return "×" + (Math.round(workerYield(n) * 10) / 10).toString().replace(".", ","); }
     function getWorkerCycleSec(spot, n) { return Math.max(1.0, spot.duree / (1 + WORKER_SPEED_PER * n)); }
 
     function grantHeroXp(rawXp) {
@@ -7185,9 +7188,10 @@
     function buchFell(tr, byWorkers, tSec, silent) {
       const b = buchState();
       const sb = spotBonus("buch_" + tr.id);
-      const q = zoneQty(1 + (Math.random() < Math.min(0.6, Math.min(0.35, b.niveau / 200) + buchPalierBonus().doubleChance / 100) ? 1 : 0), sb.common);
+      const wy = byWorkers ? workerYield(b.assistants) - 1 : 0;
+      const q = zoneQty(zoneQty(1 + (Math.random() < Math.min(0.6, Math.min(0.35, b.niveau / 200) + buchPalierBonus().doubleChance / 100) ? 1 : 0), sb.common), wy);
       state.ressources[tr.res] = (state.ressources[tr.res] || 0) + q;
-      let extra = ""; if (Math.random() < 0.12) { const rq = zoneQty(1, sb.rare); state.ressources.resine = (state.ressources.resine || 0) + rq; extra = ` +${rq} 🍯`; }
+      let extra = ""; if (Math.random() < 0.12) { const rq = zoneQty(zoneQty(1, sb.rare), wy); state.ressources.resine = (state.ressources.resine || 0) + rq; extra = ` +${rq} 🍯`; }
       { const sg = silentGather; silentGather = !!silent; spotGainXp("buch_" + tr.id, tr.nom, 1); silentGather = sg; }
       const xp = Math.round((byWorkers ? WORKER_XP_PER * b.assistants : tr.xp) * getGatherLevelXpBoost(b.niveau));
       if (!silent) {
@@ -7287,11 +7291,11 @@
                 <button id="btn-buch-toggle" type="button" class="ui-btn flex-1 py-2.5 px-4 ${b.actif ? "bg-amber-600 hover:bg-amber-500" : "bg-emerald-600 hover:bg-emerald-500"} text-white font-semibold rounded-lg text-xs">${b.actif ? "⏸ Arrêter l'abattage" : "▶ 🪓 Lancer l'abattage"}</button>
                 <button id="btn-buch-hire" type="button" ${state.or < buchWorkerCost() ? "disabled" : ""} class="ui-btn px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-medium text-sky-300">
                   Recruter un Bûcheron (${b.assistants}) — 🪙 ${buchWorkerCost().toLocaleString("fr-FR")} Or
-                  <span class="block text-[10px] text-emerald-300 font-normal">Chaque travailleur : abattage +${Math.round(WORKER_SPEED_PER * 100)}% plus rapide et +${WORKER_XP_PER} XP métier / arbre</span>
+                  <span class="block text-[10px] text-emerald-300 font-normal">Chaque travailleur : abattage +${Math.round(WORKER_SPEED_PER * 100)}% plus rapide, +${WORKER_XP_PER} XP métier / arbre et +0,5 bûche par arbre (×1 à 2 travailleurs, ×10 à 20)</span>
                 </button>
               </div>
               ${b.assistants > 0 ? `<div class="space-y-1">
-                <div class="flex justify-between text-[11px] text-emerald-400"><span>👷 Automatisation (${b.assistants} bûcheron${b.assistants > 1 ? "s" : ""})</span><span class="tabular-nums">Cycle ${buchWorkerCycle(tr).toFixed(1)}s • +${WORKER_XP_PER * b.assistants} XP / arbre</span></div>
+                <div class="flex justify-between text-[11px] text-emerald-400"><span>👷 Automatisation (${b.assistants} bûcheron${b.assistants > 1 ? "s" : ""})</span><span class="tabular-nums">Cycle ${buchWorkerCycle(tr).toFixed(1)}s • Butin ${workerYieldTxt(b.assistants)} • +${WORKER_XP_PER * b.assistants} XP / arbre</span></div>
                 <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden"><div id="buch-auto-bar" class="h-full bg-emerald-400" style="width:${b.progAuto * 100}%"></div></div>
               </div>` : ""}
             </div>
@@ -9990,6 +9994,7 @@
           let qty = drop.eclat ? getEclatQty(spot) : drop.min;
           if (Math.random() * 100 < mastery.doubleChance) qty *= 2;
           { const sb = spotBonus(spot.id); qty = zoneQty(qty, getDropTier(drop) >= 2 ? sb.rare : sb.common); }
+          if (isAuto && p.assistants > 1) qty = zoneQty(qty, workerYield(p.assistants) - 1);
           state.ressources[drop.resId] = (state.ressources[drop.resId] || 0) + qty;
           const rInfo = UNIVERS_CONFIG.ressources[drop.resId];
           obtained.push(`${qty}x ${rInfo.icone} ${rInfo.nom}`);
@@ -11257,7 +11262,7 @@
                 <button id="btn-prof-hire" type="button" ${state.or < assistCost ? "disabled" : ""}
                   class="ui-btn px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-medium text-sky-300">
                   Recruter ${cfg.assistantNom} (${p.assistants}) — 🪙 ${assistCost} Or
-                  <span class="block text-[10px] text-emerald-300 font-normal">Chaque travailleur : barre +${Math.round(WORKER_SPEED_PER * 100)}% plus rapide et +${WORKER_XP_PER} XP métier / cycle</span>
+                  <span class="block text-[10px] text-emerald-300 font-normal">Chaque travailleur : barre +${Math.round(WORKER_SPEED_PER * 100)}% plus rapide, +${WORKER_XP_PER} XP métier / cycle et +0,5 ressource par drop (×1 à 2 travailleurs, ×10 à 20)</span>
                 </button>
               </div>
 
@@ -11265,7 +11270,7 @@
                 <div class="space-y-1">
                   <div class="flex justify-between text-[11px] text-emerald-400">
                     <span>Automatisation (${p.assistants} travailleur${p.assistants > 1 ? "s" : ""})</span>
-                    <span class="tabular-nums">Cycle ${getWorkerCycleSec(spot, p.assistants).toFixed(1)}s • +${WORKER_XP_PER * p.assistants} XP / cycle</span>
+                    <span class="tabular-nums">Cycle ${getWorkerCycleSec(spot, p.assistants).toFixed(1)}s • Butin ${workerYieldTxt(p.assistants)} • +${WORKER_XP_PER * p.assistants} XP / cycle</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
                     <div id="prof-auto-bar" class="h-full bg-emerald-400" style="width: ${p.progAuto * 100}%"></div>
@@ -19899,8 +19904,13 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.58";
+    const GAME_VERSION = "1.59";
     const PATCH_NOTES = [
+      { v: "1.59", date: "21/11/2026", titre: "Les travailleurs ramassent plus", items: [
+        "👷 Les travailleurs des métiers (Pêche, Minage, Récolte, Mine d'Éclats, Bûcheron) ne vont plus seulement plus vite : ils ramassent aussi PLUS par récolte.",
+        "Chaque travailleur ajoute +0,5 ressource par drop : 2 travailleurs = ×1, 4 = ×2, 10 = ×5, 20 = ×10.",
+        "Le multiplicateur actuel (« Butin ×… ») s'affiche à côté de la durée du cycle. Il se cumule avec la Chance de double et le niveau de lieu."
+      ] },
       { v: "1.58", date: "21/11/2026", titre: "Correctif du décor de la forêt", items: [
         "🌲 Le décor de la Forêt des Murmures et du Terrain d'entraînement n'est plus coupé : les montagnes du fond se raccordent sans cassure, et le ciel ne passe plus entre les sapins au ras de l'herbe (bien visible de jour)."
       ] },
