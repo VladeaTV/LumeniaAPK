@@ -4499,8 +4499,13 @@
     // Travailleurs : vitesse de la barre auto et XP bonus par cycle
     const WORKER_SPEED_PER = 0.35;
     const WORKER_XP_PER = 8;
-    /* v1.59 : les travailleurs ramassent aussi en quantité — 2 travailleurs = ×1, 20 travailleurs = ×10 */
-    function workerYield(n) { return Math.max(1, (n | 0) * 0.5); }
+    /* v1.61 (équilibrage) : rendement adouci — 2 travailleurs = ×1, +0,1 par travailleur ensuite (20 travailleurs = ×2,8).
+       La vitesse (+35 % / travailleur) reste le gros bonus ; avant, vitesse ×8 et quantité ×10 se cumulaient (≈ ×50). */
+    function workerYield(n) { return Math.max(1, 1 + ((n | 0) - 2) * 0.1); }
+    // XP des travailleurs : croissance en racine carrée (1 = 8, 4 = 16, 9 = 24, 20 ≈ 36 XP / cycle) au lieu de linéaire
+    function getWorkerXp(n) { return (n | 0) > 0 ? Math.round(WORKER_XP_PER * Math.sqrt(n | 0)) : 0; }
+    // Protection anti-malchance : après GATHER_PITY essais bredouilles d'affilée, la ressource la plus commune du lieu est garantie
+    const GATHER_PITY = 8;
     function workerYieldTxt(n) { return "×" + (Math.round(workerYield(n) * 10) / 10).toString().replace(".", ","); }
     function getWorkerCycleSec(spot, n) { return Math.max(1.0, spot.duree / (1 + WORKER_SPEED_PER * n)); }
 
@@ -5054,7 +5059,7 @@
     (() => {
       const ab = UNIVERS_CONFIG.biomes.find(b => b.id === "abysse_neant");
       if (ab) ab.monstres.concat([ab.elite, ab.boss]).forEach(id => { const m = UNIVERS_CONFIG.monstres[id]; if (m && !m._bal110) { m.xp = Math.round(m.xp * 0.6); m._bal110 = true; } });
-      ["peche", "recolte"].forEach(pk => UNIVERS_CONFIG.metiers[pk].spots.forEach(sp => sp.drops.forEach(d => { if (!d.rare && !d._bal110) { d.chance = Math.round(d.chance * 1.2 * 10) / 10; d._bal110 = true; } })));
+      ["peche", "recolte"].forEach(pk => UNIVERS_CONFIG.metiers[pk].spots.forEach(sp => sp.drops.forEach(d => { if (!d.rare && !d._bal110) { if (d.baseChance == null) d.baseChance = d.chance; d.chance =Math.round(d.chance * 1.2 * 10) / 10; d._bal110 = true; } })));
       const E = UNIVERS_CONFIG.metiers.eclats.spots; [2, 3, 3].forEach((q, i) => { E[i].qty = q; });
     })();
     // v1.8 : les ressources des dernières zones de métier servent aux séries de l'Abysse
@@ -7193,7 +7198,7 @@
       state.ressources[tr.res] = (state.ressources[tr.res] || 0) + q;
       let extra = ""; if (Math.random() < 0.12) { const rq = zoneQty(zoneQty(1, sb.rare), wy); state.ressources.resine = (state.ressources.resine || 0) + rq; extra = ` +${rq} 🍯`; }
       { const sg = silentGather; silentGather = !!silent; spotGainXp("buch_" + tr.id, tr.nom, 1); silentGather = sg; }
-      const xp = Math.round((byWorkers ? WORKER_XP_PER * b.assistants : tr.xp) * getGatherLevelXpBoost(b.niveau));
+      const xp = Math.round((byWorkers ? getWorkerXp(b.assistants) : tr.xp) * getGatherLevelXpBoost(b.niveau));
       if (!silent) {
         if (!byWorkers) buchFx = { t0: tSec, gain: `+${q} 🪵${extra}` };
         buchLog(`${byWorkers ? "👷 Vos bûcherons" : tr.icone} ${byWorkers ? "abattent" : tr.nom + " abattu :"} ${byWorkers ? "un " + tr.nom + " :" : ""} +${q} ${UNIVERS_CONFIG.ressources[tr.res].nom}${extra ? " + 1 Résine d'ambre" : ""} (+${xp} XP)`, q > 1 || !!extra);
@@ -7291,11 +7296,11 @@
                 <button id="btn-buch-toggle" type="button" class="ui-btn flex-1 py-2.5 px-4 ${b.actif ? "bg-amber-600 hover:bg-amber-500" : "bg-emerald-600 hover:bg-emerald-500"} text-white font-semibold rounded-lg text-xs">${b.actif ? "⏸ Arrêter l'abattage" : "▶ 🪓 Lancer l'abattage"}</button>
                 <button id="btn-buch-hire" type="button" ${state.or < buchWorkerCost() ? "disabled" : ""} class="ui-btn px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-medium text-sky-300">
                   Recruter un Bûcheron (${b.assistants}) — 🪙 ${buchWorkerCost().toLocaleString("fr-FR")} Or
-                  <span class="block text-[10px] text-emerald-300 font-normal">Chaque travailleur : abattage +${Math.round(WORKER_SPEED_PER * 100)}% plus rapide, +${WORKER_XP_PER} XP métier / arbre et +0,5 bûche par arbre (×1 à 2 travailleurs, ×10 à 20)</span>
+                  <span class="block text-[10px] text-emerald-300 font-normal">Chaque travailleur : abattage +${Math.round(WORKER_SPEED_PER * 100)}% plus rapide, plus d'XP métier / arbre et +0,1 bûche par arbre au-delà de 2 (×2,8 à 20)</span>
                 </button>
               </div>
               ${b.assistants > 0 ? `<div class="space-y-1">
-                <div class="flex justify-between text-[11px] text-emerald-400"><span>👷 Automatisation (${b.assistants} bûcheron${b.assistants > 1 ? "s" : ""})</span><span class="tabular-nums">Cycle ${buchWorkerCycle(tr).toFixed(1)}s • Butin ${workerYieldTxt(b.assistants)} • +${WORKER_XP_PER * b.assistants} XP / arbre</span></div>
+                <div class="flex justify-between text-[11px] text-emerald-400"><span>👷 Automatisation (${b.assistants} bûcheron${b.assistants > 1 ? "s" : ""})</span><span class="tabular-nums">Cycle ${buchWorkerCycle(tr).toFixed(1)}s • Butin ${workerYieldTxt(b.assistants)} • +${getWorkerXp(b.assistants)} XP / arbre</span></div>
                 <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden"><div id="buch-auto-bar" class="h-full bg-emerald-400" style="width:${b.progAuto * 100}%"></div></div>
               </div>` : ""}
             </div>
@@ -9592,8 +9597,11 @@
     function getDropRealPct(d, mastery, heroStats) {
       if (d.eclat) return getEclatDropPct();
       // Drops « ultra rares » : les bonus de chance les amplifient en proportion (au lieu d'un ajout fixe qui les rendrait communs)
-      if (d.rare) return Math.min(15, d.chance * (1 + (mastery.dropRate + heroStats.chance * 0.1) / 40));
-      return Math.min(85, d.chance + mastery.dropRate + heroStats.chance * 0.1);
+      const B = mastery.dropRate + heroStats.chance * 0.1;
+      if (d.rare) return Math.min(15, d.chance * (1 + B / 40));
+      // v1.61 : bonus mixte (proportionnel + petit fixe) — les drops rares du lieu restent plus rares que les communs à haut niveau
+      // ex. niv. 200 : 14 % → ~32 % et 4 % → ~14 % (avant : 35 % et 25 %, la rareté disparaissait)
+      return Math.min(85, d.chance * (1 + B / 25) + B * 0.3);
     }
     // Pendant que le héros mine des éclats, AUCUN autre métier ne peut être exercé
     function isEclatMiningLock(exceptKey) {
@@ -9988,25 +9996,34 @@
       const shortObt = [];
       const obtained = [];
       if (!silentGather) questEvent("g_" + profKey, 1);
+      const award = (drop, pity) => {
+        let qty = drop.eclat ? getEclatQty(spot) : drop.min;
+        if (Math.random() * 100 < mastery.doubleChance) qty *= 2;
+        { const sb = spotBonus(spot.id); qty = zoneQty(qty, getDropTier(drop) >= 2 ? sb.rare : sb.common); }
+        // v1.61 : le rendement des travailleurs ne multiplie plus les drops ultra-rares
+        if (isAuto && p.assistants > 1 && !drop.rare) qty = zoneQty(qty, workerYield(p.assistants) - 1);
+        state.ressources[drop.resId] = (state.ressources[drop.resId] || 0) + qty;
+        const rInfo = UNIVERS_CONFIG.ressources[drop.resId];
+        obtained.push(`${pity ? "🍀 " : ""}${qty}x ${rInfo.icone} ${rInfo.nom}`);
+        shortObt.push(`${pity ? "🍀" : ""}+${qty} ${rInfo.icone}`);
+        bestTier = Math.max(bestTier, getDropTier(drop));
+      };
       spot.drops.forEach(drop => {
-        const realChance = getDropRealPct(drop, mastery, heroStats);
-        if (Math.random() * 100 < realChance) {
-          let qty = drop.eclat ? getEclatQty(spot) : drop.min;
-          if (Math.random() * 100 < mastery.doubleChance) qty *= 2;
-          { const sb = spotBonus(spot.id); qty = zoneQty(qty, getDropTier(drop) >= 2 ? sb.rare : sb.common); }
-          if (isAuto && p.assistants > 1) qty = zoneQty(qty, workerYield(p.assistants) - 1);
-          state.ressources[drop.resId] = (state.ressources[drop.resId] || 0) + qty;
-          const rInfo = UNIVERS_CONFIG.ressources[drop.resId];
-          obtained.push(`${qty}x ${rInfo.icone} ${rInfo.nom}`);
-          shortObt.push(`+${qty} ${rInfo.icone}`);
-          bestTier = Math.max(bestTier, getDropTier(drop));
-        }
+        if (Math.random() * 100 < getDropRealPct(drop, mastery, heroStats)) award(drop, false);
       });
+      // v1.61 : anti-malchance — après GATHER_PITY essais bredouilles d'affilée, la ressource la plus commune est garantie
+      if (obtained.length) p.dry = 0;
+      else if ((p.dry = (p.dry || 0) + 1) >= GATHER_PITY) {
+        const pool = spot.drops.filter(d => !d.rare && !d.eclat);
+        const best = (pool.length ? pool : spot.drops).reduce((a, b) => (b.chance > a.chance ? b : a));
+        award(best, true);
+        p.dry = 0;
+      }
 
       spotGainXp(spot.id, spot.nom, 1 + (isAuto ? 0 : 0));
       // XP : ÷2 si bredouille, ×1 commun, ×1,5 peu commun, ×2,5 rare
       const xpFactor = bestTier < 0 ? 0.5 : DROP_TIERS[bestTier].mult;
-      const workerXp = isAuto ? WORKER_XP_PER * p.assistants : 0;
+      const workerXp = isAuto ? getWorkerXp(p.assistants) : 0;
       const xpGained = Math.max(1, Math.round(spot.xp * heroStats.xpMult * xpFactor * getGatherLevelXpBoost(p.niveau))) + workerXp;
       p.xp += xpGained;
       let leveled = false;
@@ -10081,7 +10098,8 @@
       { nom: "Rare", mult: 2.5, cls: "text-amber-300" }
     ];
     // Rareté d'un drop selon sa chance de base : >=10% commun, 7-9% peu commun, <=6% rare
-    function getDropTier(d) { return d.chance >= 10 ? 0 : (d.chance >= 7 ? 1 : 2); }
+    // v1.61 : basé sur le taux d'origine (avant le ×1,2 de la v1.10) pour ne pas changer la rareté / l'XP des prises
+    function getDropTier(d) { const c = d.baseChance != null ? d.baseChance : d.chance; return c >= 10 ? 0 : (c >= 7 ? 1 : 2); }
 
     const workFx = {};
     let forgeFx = null;
@@ -11226,6 +11244,7 @@
               </div>
               <p class="text-[11px] text-slate-400 text-center">
                 XP par essai : <b class="text-slate-300">×0,5</b> bredouille • <b class="text-slate-200">×1</b> commun • <b class="text-emerald-300">×1,5</b> peu commun • <b class="text-amber-300">×2,5</b> rare
+                <br><span class="text-emerald-300">🍀 Anti-malchance : après ${GATHER_PITY} essais bredouilles d'affilée, la ressource la plus commune est garantie${p.dry ? ` (${p.dry}/${GATHER_PITY})` : ""}.</span>
               </p>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -11262,7 +11281,7 @@
                 <button id="btn-prof-hire" type="button" ${state.or < assistCost ? "disabled" : ""}
                   class="ui-btn px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-medium text-sky-300">
                   Recruter ${cfg.assistantNom} (${p.assistants}) — 🪙 ${assistCost} Or
-                  <span class="block text-[10px] text-emerald-300 font-normal">Chaque travailleur : barre +${Math.round(WORKER_SPEED_PER * 100)}% plus rapide, +${WORKER_XP_PER} XP métier / cycle et +0,5 ressource par drop (×1 à 2 travailleurs, ×10 à 20)</span>
+                  <span class="block text-[10px] text-emerald-300 font-normal">Chaque travailleur : barre +${Math.round(WORKER_SPEED_PER * 100)}% plus rapide, plus d'XP métier / cycle et +0,1 ressource par drop au-delà de 2 (×2,8 à 20, hors drops ultra-rares)</span>
                 </button>
               </div>
 
@@ -11270,7 +11289,7 @@
                 <div class="space-y-1">
                   <div class="flex justify-between text-[11px] text-emerald-400">
                     <span>Automatisation (${p.assistants} travailleur${p.assistants > 1 ? "s" : ""})</span>
-                    <span class="tabular-nums">Cycle ${getWorkerCycleSec(spot, p.assistants).toFixed(1)}s • Butin ${workerYieldTxt(p.assistants)} • +${WORKER_XP_PER * p.assistants} XP / cycle</span>
+                    <span class="tabular-nums">Cycle ${getWorkerCycleSec(spot, p.assistants).toFixed(1)}s • Butin ${workerYieldTxt(p.assistants)} • +${getWorkerXp(p.assistants)} XP / cycle</span>
                   </div>
                   <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
                     <div id="prof-auto-bar" class="h-full bg-emerald-400" style="width: ${p.progAuto * 100}%"></div>
@@ -19947,8 +19966,15 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.60";
+    const GAME_VERSION = "1.61";
     const PATCH_NOTES = [
+      { v: "1.61", date: "21/11/2026", titre: "Rééquilibrage des métiers", items: [
+        "🍀 Anti-malchance (Pêche, Minage, Récolte, Mine d'Éclats) : après 8 essais bredouilles d'affilée, la ressource la plus commune du lieu est garantie. Le compteur s'affiche dans l'onglet du métier.",
+        "🎯 Taux de drop : le bonus de niveau de métier est maintenant en partie proportionnel au taux de base. Les ressources communes bougent peu, et les ressources rares d'un lieu restent rares à haut niveau (ex. niv. 200 : 4 % → ~14 % au lieu de 25 %).",
+        "👷 Travailleurs : la quantité par drop passe à +0,1 par travailleur au-delà de 2 (20 travailleurs = ×2,8 au lieu de ×10). La vitesse de la barre ne change pas. Le bonus de quantité ne s'applique plus aux drops ultra-rares.",
+        "📘 XP des travailleurs : elle grandit moins vite avec leur nombre (1 = 8 XP, 4 = 16, 20 ≈ 36 XP par cycle, au lieu de 160).",
+        "🐟 Correctif : la rareté affichée (et le multiplicateur d'XP) se base de nouveau sur le taux d'origine. Ex. l'Anguille d'Orage redevient « Peu commun » (XP ×1,5)."
+      ] },
       { v: "1.60", date: "21/11/2026", titre: "Autel Runique : voir avant de payer", items: [
         "🔮 Survole (PC) ou touche (mobile) un élément sur une lame : son effet s'affiche en aperçu avec tes vraies valeurs. Rien n'est payé tant que tu n'as pas appuyé sur « ✓ Réaccorder ».",
         "📖 Nouveau bouton « Guide des éléments » : les 7 éléments, leur rôle (Contrôle, Vitesse, Survie…) et leurs effets, sur une seule page.",
