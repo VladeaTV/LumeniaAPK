@@ -600,6 +600,75 @@
     @keyframes titleRainbow{to{background-position:200% 0}}
 
 
+    /* ---- v1.77 : Exploration infinie ---- */
+    .inf-card { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 10px; border-radius: 12px; border: 2px solid #155e75; background: linear-gradient(90deg, #082f49, #0b1430 60%, #1e0b3a); }
+    .inf-card.on { border-color: #22d3ee; box-shadow: 0 0 16px rgba(34,211,238,.3); } .inf-card.lock { opacity: .6; }
+    .inf-ic { font-size: 26px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: rgba(8,47,73,.8); border: 1px solid #0e7490; flex-shrink: 0; }
+    .inf-tx { flex: 1; min-width: 0; } .inf-tx b { color: #67e8f9; font-size: 13px; } .inf-tx small { display: block; font-size: 11px; color: #cbd5e1; line-height: 1.35; } .inf-tx small b { font-size: 11px; color: #fde68a; }
+    .inf-go { padding: 8px 14px; border-radius: 9px; background: #0891b2; color: #fff; font-weight: 700; font-size: 12px; } .inf-go:hover { background: #06b6d4; }
+    /* ---- v1.77 : dialogues de Malakor ---- */
+    #mal-dlg { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 16px; background: radial-gradient(ellipse at center, rgba(40,10,60,.82), rgba(3,1,10,.94)); }
+    #mal-dlg.hidden { display: none; }
+    .mal-card { width: min(760px, 100%); display: grid; grid-template-columns: 300px 1fr; gap: 0; border: 2px solid #a21caf; border-radius: 14px; overflow: hidden; background: #0b0616; box-shadow: 0 0 40px rgba(217,70,239,.35); animation: mobSheet .3s ease-out; }
+    .mal-art img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; display: block; }
+    .mal-body { padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 10px; min-height: 260px; }
+    .mal-who { font-family: 'Press Start 2P', monospace; font-size: 11px; color: #f0abfc; letter-spacing: .08em; }
+    .mal-txt { font-size: 15px; line-height: 1.55; color: #f5f3ff; flex: 1; } .mal-txt.mal-narr { font-style: italic; color: #c4b5fd; }
+    .mal-acts { display: flex; flex-wrap: wrap; gap: 8px; } .mal-btn { flex: 1 1 180px; padding: 10px 12px; border-radius: 9px; font-size: 13px; font-weight: 700; color: #fff; }
+    .mal-dots { display: flex; gap: 4px; justify-content: center; } .mal-dots i { width: 6px; height: 6px; border-radius: 50%; background: #3b2350; } .mal-dots i.on { background: #e879f9; }
+    .mal-panel { display: flex; gap: 10px; align-items: center; margin-top: 8px; padding: 8px; border-radius: 10px; border: 1px solid rgba(217,70,239,.45); background: linear-gradient(90deg, rgba(60,15,80,.55), rgba(10,6,22,.6)); }
+    .mal-panel img { width: 72px; height: 72px; border-radius: 8px; image-rendering: pixelated; flex-shrink: 0; border: 1px solid #a21caf; }
+    body.mal-flash::after { content: ""; position: fixed; inset: 0; z-index: 95; pointer-events: none; background: #f0abfc; animation: malFlash .9s ease-out forwards; }
+    @keyframes malFlash { 0% { opacity: .85; } 100% { opacity: 0; } }
+    @media (max-width: 700px) { .mal-card { grid-template-columns: 1fr; } .mal-art img { height: 34vh; object-fit: cover; } .mal-body { min-height: 0; } .mal-txt { font-size: 14px; } }
+    /* ---- v1.78 : aperçu de combat des classes (création) ---- */
+    .cr-arena { position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #2b3a6e; background: #070b1a; }
+    .cr-arena canvas { width: 100%; aspect-ratio: 640 / 210; display: block; image-rendering: pixelated; }
+    .cr-arena-cap { position: absolute; left: 8px; top: 8px; max-width: 70%; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 7px; background: rgba(2,6,23,.75); color: #fde68a; border: 1px solid rgba(251,191,36,.35); pointer-events: none; }
+    .cr-arena-cap small { display: block; font-weight: 400; color: #cbd5e1; font-size: 10px; }
+    .cr-more { position: absolute; right: 8px; bottom: 8px; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #fff; background: #15803d; border: 1px solid #4ade80; }
+    .cr-more:hover { background: #16a34a; }
+    @media (max-width: 640px) { .cr-arena-cap { font-size: 10px; padding: 2px 6px; } .cr-arena-cap small { display: none; } .cr-more { padding: 3px 7px; font-size: 10px; } }
+    .tp-br { border-radius: 10px; border: 1px solid #334155; background: rgba(15,23,42,.7); padding: 8px; }
+    .tp-node { display: flex; gap: 8px; padding: 5px 4px; border-top: 1px solid rgba(51,65,85,.6); font-size: 11px; color: #cbd5e1; } .tp-node:first-of-type { border-top: 0; }
+    .tp-node .ic { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; } .tp-node b { color: #f1f5f9; } .tp-node .lv { margin-left: auto; flex-shrink: 0; font-size: 10px; color: #94a3b8; }
+    /* ---- v1.78 : fenêtre « Mes meubles » ---- */
+    #camp-meubles { position: fixed; z-index: 58; right: 18px; top: 90px; width: 340px; max-height: calc(100vh - 120px); display: flex; }
+    #camp-meubles.hidden { display: none; }
+    .cm-panel { display: flex; flex-direction: column; width: 100%; background: linear-gradient(180deg,#1a1408,#0d0a05); border: 2px solid #b45309; border-radius: 14px; box-shadow: 0 16px 50px rgba(0,0,0,.6); overflow: hidden; }
+    .cm-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #4a3410; cursor: default; }
+    .cm-head h3 { font-family: 'Press Start 2P', monospace; font-size: 11px; color: #fcd34d; }
+    .cm-hint { font-size: 11px; color: #d6b98a; padding: 6px 12px 0; }
+    .cm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px 12px 14px; overflow-y: auto; }
+    .cm-tile { position: relative; border-radius: 10px; border: 1px solid #5b4320; background: radial-gradient(ellipse at 50% 70%, #3b2a12, #17110a); padding: 4px 4px 6px; text-align: center; touch-action: none; user-select: none; }
+    .cm-tile canvas { width: 100%; aspect-ratio: 4 / 3; image-rendering: pixelated; display: block; pointer-events: none; }
+    .cm-tile b { display: block; font-size: 11px; color: #fef3c7; line-height: 1.2; } .cm-tile small { display: block; font-size: 10px; color: #a8a29e; }
+    .cm-tile.on { border-color: #22c55e; } .cm-tile.on small { color: #4ade80; }
+    .cm-tile:hover { border-color: #fbbf24; cursor: grab; }
+    .cm-store { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 6px; font-size: 12px; background: rgba(15,23,42,.85); border: 1px solid #475569; }
+    .cm-ghost { position: fixed; z-index: 99; pointer-events: none; width: 96px; height: 72px; image-rendering: pixelated; opacity: .9; transform: translate(-50%, -70%); filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)); }
+    #camp-editor-canvas.cm-drop { outline: 3px dashed #fbbf24; outline-offset: -3px; }
+    @media (max-width: 1023px) {
+      #camp-meubles { inset: auto 0 calc(64px + env(safe-area-inset-bottom)) 0; top: auto; width: 100%; max-height: 70vh; z-index: 56; }
+      .cm-panel { border-radius: 16px 16px 0 0; border-width: 2px 0 0; } .cm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .cm-tile:hover { cursor: pointer; }
+    }
+    /* ---- v1.77 : onglets de Forge, mannequin, stats sur les cartes ---- */
+    .forge-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .fm-tab { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 2px solid #334155; background: linear-gradient(180deg,#141d3a,#0d1430); text-align: left; color: #cbd5e1; }
+    .fm-tab b { display: block; font-size: 13px; color: #f1f5f9; } .fm-tab small { display: block; font-size: 10.5px; color: #94a3b8; line-height: 1.25; }
+    .fm-tab .fm-ic { font-size: 22px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(15,23,42,.8); border: 1px solid #334155; flex-shrink: 0; }
+    .fm-tab:hover { border-color: #64748b; }
+    .fm-tab.on { border-color: #fb923c; background: linear-gradient(180deg,#3a1d0e,#24120a); box-shadow: 0 0 14px rgba(251,146,60,.25); } .fm-tab.on b { color: #fdba74; } .fm-tab.on .fm-ic { border-color: #fb923c; }
+    .fm-doll { padding: 12px 10px 10px; }
+    .fm-doll .pd-grid { gap: 8px; } .fm-doll .pd-portrait { max-width: 132px; }
+    .fm-doll .pd-box.sel { outline: 3px solid #fbbf24; outline-offset: 2px; }
+    .fm-doll .pd-box.nope { opacity: .45; }
+    .fc-stats { display: flex; flex-wrap: wrap; gap: 4px; font-size: 11px; }
+    .fc-stats span { padding: 1px 6px; border-radius: 5px; background: rgba(2,6,23,.55); border: 1px solid #334155; color: #e2e8f0; white-space: nowrap; }
+    .fc-stats .lv { border-color: rgba(56,189,248,.45); color: #7dd3fc; font-weight: 700; }
+    .fc-stats .up { color: #4ade80; font-weight: 700; } .fc-stats .dn { color: #f87171; font-weight: 700; }
+    @media (max-width: 640px) { .fm-tab { padding: 8px; gap: 6px; flex-direction: column; text-align: center; } .fm-tab small { display: none; } .fm-tab .fm-ic { width: 30px; height: 30px; font-size: 18px; } }
     /* ---- v1.75 : Hub en tuiles + illustrations du menu ---- */
     #nav-hub { position: fixed; inset: 0; z-index: 57; display: flex; align-items: flex-start; justify-content: center; padding: 28px 24px; background: rgba(3,6,18,.8); overflow-y: auto; overscroll-behavior: contain; }
     #nav-hub.hidden { display: none; }
@@ -809,6 +878,9 @@
             </div>
             <div data-crpane="classe" class="hidden space-y-2">
               <p class="cr-hint">Ta classe définit ton arme, ta compétence active et ton style de combat.</p>
+              <div class="cr-arena"><canvas id="cr-arena-canvas" width="640" height="210" class="pixelated"></canvas>
+                <div id="cr-arena-cap" class="cr-arena-cap"></div>
+                <button type="button" id="cr-arena-more" class="ui-btn cr-more">🌳 En savoir plus</button></div>
               <div id="creator-classes-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
             </div>
             <div data-crpane="attributs" class="hidden space-y-3">
@@ -1240,6 +1312,7 @@
                   <canvas id="camp-editor-canvas" width="960" height="210" class="pixelated w-full block" style="aspect-ratio: 960 / 210; touch-action: none;"></canvas>
                   <span class="absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/60 text-amber-200 border border-amber-700/60">🏕️ Votre campement — glissez les décorations pour les déplacer</span>
                   <span class="absolute bottom-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-black/50 text-slate-400">Zone claire = visible pendant le repos • zones sombres = abords du camp</span>
+                  <button type="button" id="btn-camp-meubles" class="ui-btn absolute top-2 right-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-lg">🪑 Mes meubles</button>
                 </div>
                 <div class="melvor-card px-3 py-2 flex flex-wrap items-center gap-3 text-xs">
                   <span class="text-slate-300 font-semibold">🔭 Champ de vision du camp</span>
@@ -1322,14 +1395,18 @@
 
               <div id="forge-mastery-box" class="w-full"></div>
 
+              <!-- v1.77 — trois grands onglets de Forge -->
+              <div id="forge-modes" class="forge-modes" role="tablist">
+                <button type="button" data-forge-mode="fab" class="fm-tab ui-btn" role="tab"><span class="fm-ic">🔨</span><span><b>Fabriquer</b><small>Armes, armures, skins…</small></span></button>
+                <button type="button" data-forge-mode="renf" class="fm-tab ui-btn" role="tab"><span class="fm-ic">⚒️</span><span><b>Renforcer</b><small>+1 à +10 sur ton équipement</small></span></button>
+                <button type="button" data-forge-mode="retr" class="fm-tab ui-btn" role="tab"><span class="fm-ic">✒️</span><span><b>Retravailler</b><small>Niveau, stats, gravures</small></span></button>
+              </div>
               <!-- Onglets catégories de recettes -->
-              <div class="flex flex-wrap gap-2">
+              <div id="forge-cat-row" class="flex flex-wrap gap-2">
                 <button type="button" data-forge-cat="Armes" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-orange-500/20 text-orange-300 border border-orange-500/50">⚔️ Armes</button>
                 <button type="button" data-forge-cat="Armures" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🛡️ Armures</button>
                 <button type="button" data-forge-cat="Accessoires" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">💍 Accessoires</button>
                 <button type="button" data-forge-cat="Composants" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🧱 Composants</button>
-                <button type="button" data-forge-cat="Retravail" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">✒️ Retravail</button>
-                <button type="button" data-forge-cat="Renforcement" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">⚒️ Renforcement</button>
 
                 <button type="button" data-forge-cat="Skins d'Armes" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">🗡️ Skins d'Armes</button>
                 <button type="button" data-forge-cat="Skins d'Armures" class="forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">👘 Skins d'Armures</button>
@@ -1594,6 +1671,11 @@
   </div>
   <!-- v1.28 : barre d'onglets mobile -->
   <div id="mob-backdrop"></div>
+  <!-- v1.78 — MES MEUBLES (campement) -->
+  <div id="camp-meubles" class="hidden" role="dialog" aria-labelledby="cm-title">
+    <div class="cm-panel"><div class="cm-head"><h3 id="cm-title">🪑 Mes meubles</h3><button type="button" class="ui-btn opt-x" data-cm-close aria-label="Fermer">✕</button></div>
+      <p class="cm-hint"></p><div id="cm-grid" class="cm-grid"></div></div>
+  </div>
   <!-- v1.75 — HUB EN TUILES (menu ☰ sur mobile, Tab ou « Vue d'ensemble » sur PC) -->
   <div id="nav-hub" class="hidden" role="dialog" aria-modal="true" aria-labelledby="hub-title">
     <div class="hub-panel">
@@ -2816,9 +2898,9 @@
               extra: [{ resId: "eclat_neant", pNormal: 0.4, pElite: 0.85, qBoss: [4, 6] }, { resId: "cristal_faille", pNormal: 0.3, pElite: 0.7, qBoss: [3, 4] }],
               desc: "Monstres ×11 PV / ×5 ATQ. Boss : Séraphine (charge une Éclipse : étourdissez-la ou protégez-vous). Équipement niv. +32." },
             { id: "neant_absolu", nom: "Néant Absolu — Domaine de Malakor", court: "Néant Absolu", icone: "👁️", heroReq: 120,
-              pv: 17, atk: 8, def: 7.5, xp: 22, or: 16, rewardMult: 16, lvlBonus: 50, bonusTier: 4, boss: "boss_malakor", noAuto: true,
+              pv: 17, atk: 8, def: 7.5, xp: 22, or: 16, rewardMult: 16, lvlBonus: 50, bonusTier: 4, boss: "boss_malakor",
               extra: [{ resId: "eclat_neant", pNormal: 0.6, pElite: 1, qBoss: [8, 10] }, { resId: "cristal_faille", pNormal: 0.45, pElite: 0.9, qBoss: [5, 7] }],
-              desc: "⚠️ COMBAT AUTOMATIQUE IMPOSSIBLE. Chaque coup peut prendre la moitié de vos PV : sans optimisation, deux coups suffisent. Boss : MALAKOR, le Mage Noir (boucliers, rituels, Météore Noir). Équipement niv. +50." }
+              desc: "Chaque coup peut prendre la moitié de vos PV : sans optimisation, deux coups suffisent. Boss : MALAKOR (boucliers, rituels, Météore Noir). Premier combat raconté, puis Reflet / Écho : 3 Sacs du Néant par jour. Équipement niv. +50." }
           ],
           monstres: ["ombre_neant", "rampant_vide", "sentinelle_astrale", "devoreur_etoiles"],
           elite: "archonte_vide", boss: "boss_neant",
@@ -5033,6 +5115,13 @@
       { id: "aura_trou_noir", slot: "aura", nom: "Trou Noir", rarete: "legendaire", kind: "blackhole", main: "#7c3aed", trim: "#fbbf24", desc: "La lumière elle-même est aspirée à vos pieds." },
       { id: "aura_sakura", slot: "aura", nom: "Tempête de Sakura", rarete: "legendaire", kind: "sakura", main: "#f472b6", trim: "#fce7f3", desc: "Une pluie de pétales de cerisier vous accompagne." },
       // ===== v1.40 — PANOPLIE COSMÉTIQUE « PIONNIER DE L'AURORE » (exclusif bêta, débloquée par code) =====
+      // v1.77 — Don de Malakor (l'épargner au premier combat)
+      { id: "casque_malakor", slot: "casque", nom: "Capuche du Fils de Limuse", rarete: "legendaire", kind: "hood", main: "#4a2a86", trim: "#14101c", desc: "👁️ Don de Malakor • la capuche qu'il portait en sortant de la faille.", ach: "malakor", malakor: true },
+      { id: "armure_malakor", slot: "armure", nom: "Robe de Malakor", rarete: "legendaire", kind: "robe", main: "#3b1d6e", trim: "#f4c247", glow: "#e879f9", desc: "👁️ Don de Malakor • chaîne d'or et gemme violette.", ach: "malakor", malakor: true },
+      { id: "cape_malakor", slot: "cape", nom: "Manteau du Néant", rarete: "legendaire", kind: "cape", main: "#1a0c2e", trim: "#d946ef", desc: "👁️ Don de Malakor • taillé dans le noir entre les étoiles.", ach: "malakor", malakor: true },
+      { id: "aura_malakor", slot: "aura", nom: "Brume de la Faille", rarete: "legendaire", kind: "shadow", main: "#4c1d95", trim: "#e879f9", desc: "👁️ Don de Malakor • le Néant te suit comme une ombre.", ach: "malakor", malakor: true },
+      { id: "arme_katana_neant", slot: "arme", nom: "Katana du Néant", rarete: "legendaire", kind: "katana", main: "#120a1e", trim: "#7c3aed", glow: "#e879f9", desc: "👁️ Don de Malakor • sa lame ne reflète rien.", ach: "malakor", malakor: true },
+      { id: "bouclier_lanterne_neant", slot: "bouclier", nom: "Lanterne au Trou Noir", rarete: "legendaire", kind: "lantern", main: "#3a2a40", trim: "#d946ef", glow: "#e879f9", desc: "👁️ Don de Malakor • une étoile morte y tourne encore.", ach: "malakor", malakor: true },
       { id: "armure_pionnier", slot: "armure", nom: "Cuirasse du Pionnier de l'Aurore", rarete: "legendaire", kind: "dragon", main: "#0c1230", trim: "#5eead4", glow: "#fcd34d", fx: "pionnier", emb: "star", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
       { id: "casque_pionnier", slot: "casque", nom: "Auréole de l'Aurore", rarete: "legendaire", kind: "halo", main: "#fcd34d", trim: "#5eead4", glow: "#ffffff", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
       { id: "arme_pionnier_lame", slot: "arme", nom: "Lame de l'Aurore Boréale", rarete: "legendaire", kind: "sword", main: "#e0f2fe", trim: "#fcd34d", glow: "#5eead4", fx: "pionnier", desc: "🌟 Exclusif Bêta • offert aux pionniers de LUMENIA.", beta: true, ach: "beta" },
@@ -7648,8 +7737,8 @@
           cards.push(`<button type="button" ${own ? `data-skin-pick="${slot}:${k.id}"` : "disabled"} class="ui-btn p-2.5 rounded-lg border text-left ${on ? "border-amber-400 bg-slate-800" : "border-slate-700 bg-slate-900/70"} ${own ? "hover:border-slate-500" : "opacity-70"}">
             <canvas data-skin-prev="${slot}:${k.id}" width="128" height="128" class="pixelated w-16 h-16 mx-auto" style="${own ? "" : "filter:brightness(0.15) contrast(1.2)"}"></canvas>
             <div class="text-xs font-bold mt-1" style="color:${col}">${own ? k.nom : "???"}</div>
-            <div class="text-[10px] text-slate-400">${UNIVERS_CONFIG.raretes[k.rarete].nom} • ${k.beta ? "🌟 Exclusif Bêta" : k.ach ? `${LEGEND_LINES[k.ligne].icon} Skin de classe` : getSkinDropPct(k).toFixed(1).replace(/\.0$/, "") + "% / trouvaille"}</div>
-            ${own ? `<div class="text-[10px] text-slate-500 mt-0.5">${k.desc}</div>` : k.beta ? `<div class="text-[10px] text-teal-300/90 mt-0.5">🔒 Code Pionnier (Discord)</div>` : k.ach ? `<div class="text-[10px] text-amber-300/80 mt-0.5">🔒 Succès « ${LEGEND_LINES[k.ligne].nom} »</div>` : '<div class="text-[10px] text-slate-500 mt-0.5">🔒 À trouver en expédition</div>'}
+            <div class="text-[10px] text-slate-400">${UNIVERS_CONFIG.raretes[k.rarete].nom} • ${k.malakor ? "👁️ Don de Malakor" : k.beta ? "🌟 Exclusif Bêta" : k.ach ? `${LEGEND_LINES[k.ligne].icon} Skin de classe` : getSkinDropPct(k).toFixed(1).replace(/\.0$/, "") + "% / trouvaille"}</div>
+            ${own ? `<div class="text-[10px] text-slate-500 mt-0.5">${k.desc}</div>` : k.malakor ? `<div class="text-[10px] text-fuchsia-300/90 mt-0.5">🔒 Épargner Malakor au premier combat</div>` : k.beta ? `<div class="text-[10px] text-teal-300/90 mt-0.5">🔒 Code Pionnier (Discord)</div>` : k.ach ? `<div class="text-[10px] text-amber-300/80 mt-0.5">🔒 Succès « ${LEGEND_LINES[k.ligne].nom} »</div>` : '<div class="text-[10px] text-slate-500 mt-0.5">🔒 À trouver en expédition</div>'}
             ${on ? '<div class="text-[10px] text-amber-300 mt-1">✓ Équipé</div>' : ""}</button>`);
         });
         content = `<div class="grid grid-cols-2 md:grid-cols-3 gap-3">${cards.join("")}</div>`;
@@ -8294,6 +8383,8 @@
         px(12, 23, 3, 6, "#44403c"); px(16, 23, 3, 6, "#44403c"); px(11, 28, 4, 1, "#1c1917"); px(16, 28, 4, 1, "#1c1917");
         px(20, 13 + b, 3, 3, "#e7e5e4"); px(22, 9 + b, 2, 4, "#65a30d");
         px(23, 4 + b, 5, 5, "#1c1917"); px(24, 5 + b, 1, 1, "#57534e"); px(25, 2 + b, 1, 2, "#a8a29e"); px(25, 1 + b, 1, 1, sp ? "#fde047" : "#f97316"); px(26, 0 + b, 1, 1, sp ? "#f97316" : "#fde047");
+      } else if (t === "malakor" && malDrawNew(ctx, monster, timeSec)) {
+        // v1.77 : nouvel art de Malakor (et du Gouffre Éveillé)
       } else if (t === "malakor") {
         // MALAKOR, le Mage Noir : aura, cape déchirée, robe runique, épaulières-crânes, couronne de cornes, sceptre à orbe, grimoire flottant
         const fl = Math.sin(timeSec * 2.2), b2 = fl > 0 ? 0 : 1, pul = Math.sin(timeSec * 5) > 0;
@@ -9025,7 +9116,7 @@
         // étincelles bleues et orange
         for (let k = 0; k < 6; k++) { const a = t * 1.1 + k * 1.05, r2 = 9 + (k % 2) * 2; if (Math.sin(t * 5 + k * 2) > 0) P(Math.cos(a) * r2, oy + Math.sin(a) * r2 * 0.7, 0.9, 0.9, k % 2 ? "#fdba74" : "#7dd3fc"); }
       } else if (id === "chaise") {
-        P(-10, -16, 2, 16, "#6b4423"); P(-10, -16, 9, 2, "#8b5a2b"); P(-10, -12, 9, 1, "#7c4a1d"); P(-10, -8, 11, 2, "#8b5a2b"); P(-10, -8, 11, 1, "#b07a45"); P(-1, -6, 2, 6, "#5b3a1a"); P(-9, -6, 1, 6, "#5b3a1a");
+        P(-10, -16, 2, 16, "#6b4423"); P(-3, -16, 2, 8, "#6b4423"); P(-10, -16, 9, 2, "#8b5a2b"); P(-10, -12, 9, 1, "#7c4a1d"); P(-10, -8, 11, 2, "#8b5a2b"); P(-10, -8, 11, 1, "#b07a45"); P(-1, -6, 2, 6, "#5b3a1a"); P(-9, -6, 1, 6, "#5b3a1a");
         P(4, -7, 9, 2, "#8b5a2b"); P(4, -7, 9, 1, "#b07a45"); P(5, -5, 1, 5, "#5b3a1a"); P(11, -5, 1, 5, "#5b3a1a"); P(6, -2, 5, 1, "#5b3a1a"); warm(-10, -16, 23, 16);
       } else if (id === "buches") {
         [[-12, -4], [-6, -4], [0, -4], [6, -4], [-9, -8], [-3, -8], [3, -8], [-6, -12], [0, -12]].forEach(([dx, dy]) => { P(dx, dy, 6, 4, "#7c4a1d"); P(dx + 1, dy + 0.5, 4, 3, "#e8c08a"); P(dx + 2, dy + 1.5, 2, 1, "#b45309"); P(dx, dy, 6, 1, "#5b3a1a"); });
@@ -9274,6 +9365,133 @@
       }));
     }
 
+    /* v1.78 — ⚔️ Aperçu de combat des classes dans la création du héros : attaque de base, compétence, puis ultime, en boucle */
+    const CR_ARENA = { t0: 0, cls: null, step: -1, pose: 0, floats: [], buf: null, dum: null, raf: 0 };
+    function crArenaSeq(cls) {
+      const c = UNIVERS_CONFIG.classes[cls], u = c.ultime || { dur: 1.6, impacts: [700] }, ultAt = 3.9;
+      return { u, c, end: ultAt + (u.dur || 1.6) + 0.9, ev: [[0.4, "atk"], [1.5, "atk"], [2.6, "skill"], [ultAt, "ult"]] };
+    }
+    function crArenaCap(kind, c) {
+      const el = document.getElementById("cr-arena-cap"); if (!el) return;
+      const sk = c.competence || {}, u = c.ultime || {};
+      el.innerHTML = kind === "atk" ? `⚔️ Attaque de base<small>${c.arme}</small>` : kind === "skill" ? `✨ Compétence : ${sk.nom || "—"}<small>${sk.desc || ""}</small>` : kind === "ult" ? `🌟 ULTIME : ${u.nom || "—"}<small>${u.desc || ""}</small>` : `${c.nom}<small>${c.bonusTexte}</small>`;
+    }
+    function crArenaFire(kind) {
+      const A = CR_ARENA, cls = state.hero.classe, c = UNIVERS_CONFIG.classes[cls];
+      crArenaCap(kind, c);
+      if (kind === "ult") { const u = c.ultime; ultFx = { classe: cls, t0: performance.now() / 1000, dur: u.dur, stellar: false, theme: null, seed: Math.random() * 1000 }; A.pose = 0.7;
+        (u.impacts || [700]).forEach(ms => setTimeout(() => { A.floats.push({ t: performance.now() / 1000, v: Math.round(380 + Math.random() * 90), big: 1 }); }, ms)); return; }
+      A.pose = 0.5; try { spawnAttackFx({ big: kind === "skill" }); } catch (e) {}
+      setTimeout(() => A.floats.push({ t: performance.now() / 1000, v: kind === "skill" ? Math.round(170 + Math.random() * 30) : Math.round(80 + Math.random() * 30), big: kind === "skill" ? 1 : 0 }), 300);
+    }
+    function crArenaDraw() {
+      const A = CR_ARENA; A.raf = requestAnimationFrame(crArenaDraw);
+      const cv = document.getElementById("cr-arena-canvas"), scr = document.getElementById("screen-creator");
+      if (!cv || !scr || scr.classList.contains("hidden") || !cv.offsetParent) { if (A.cls) { A.cls = null; ultFx = null; atkFx.length = 0; } return; }
+      const t = performance.now() / 1000, ctx = cv.getContext("2d"), cls = state.hero.classe;
+      if (A.cls !== cls) { A.cls = cls; A.t0 = t; A.step = -1; A.floats = []; ultFx = null; atkFx.length = 0; crArenaCap("", UNIVERS_CONFIG.classes[cls]); }
+      const S = crArenaSeq(cls); let e = t - A.t0;
+      if (e > S.end) { A.t0 = t; A.step = -1; e = 0; }
+      while (A.step + 1 < S.ev.length && e >= S.ev[A.step + 1][0]) { A.step++; crArenaFire(S.ev[A.step][1]); }
+      A.pose = Math.max(0, A.pose - 1 / 60);
+      // décor : arène crépusculaire
+      const g = ctx.createLinearGradient(0, 0, 0, 210); g.addColorStop(0, "#0b1030"); g.addColorStop(.62, "#3b2a5e"); g.addColorStop(.63, "#2a2140"); g.addColorStop(1, "#141024");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 640, 210);
+      for (let i = 0; i < 40; i++) { const x = (i * 97) % 640, y = (i * 53) % 110; ctx.fillStyle = `rgba(255,255,255,${0.25 + 0.25 * Math.sin(t * 2 + i)})`; ctx.fillRect(x, y, 1, 1); }
+      ctx.fillStyle = "#1c1630"; for (let x = 0; x < 640; x += 64) { ctx.fillRect(x + 6, 120, 4, 30); ctx.fillRect(x, 118, 16, 3); }
+      ctx.fillStyle = "#3a2f58"; ctx.fillRect(0, 176, 640, 2); ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(197, 178, 34, 5, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(443, 178, 34, 5, 0, 0, 7); ctx.fill();
+      // mannequin
+      if (!A.dum) { A.dum = document.createElement("canvas"); A.dum.width = A.dum.height = 128; A.buf = document.createElement("canvas"); A.buf.width = A.buf.height = 128; }
+      try { drawMonster128(A.dum, { id: "__cr_dummy", nom: "Mannequin", spriteType: "dummy", sprite: "", pv: 1, pvMax: 1 }, t); } catch (er) {}
+      const hitK = A.floats.length ? Math.max(0, 1 - (t - A.floats[A.floats.length - 1].t) / 0.25) : 0;
+      ctx.save(); ctx.translate(495 + Math.round(hitK * 6), 74); ctx.scale(-1, 1); ctx.drawImage(A.dum, 0, 0, 104, 104); ctx.restore();
+      // héros
+      const rl = cls === "runelame";
+      try {
+        RUNE_NO_ORBIT = rl; drawHero128(A.buf, state.hero, t, A.pose, false, false); RUNE_NO_ORBIT = false;
+        if (rl) { RUNE_SCENE.cx = 197; RUNE_SCENE.cy = 128; RUNE_SCENE.t = t; drawRuneOrbit(ctx, state.hero, 197, 128, RUNE_SCENE.sc, t, "back", true); }
+        ctx.drawImage(A.buf, 145, 74, 104, 104);
+        if (rl) drawRuneOrbit(ctx, state.hero, 197, 128, RUNE_SCENE.sc, t, "front", true);
+      } catch (er) { RUNE_NO_ORBIT = false; }
+      try { drawAttackFx(ctx); drawUltFx(ctx, t); } catch (er) {}
+      // dégâts
+      A.floats = A.floats.filter(f => t - f.t < 1.1);
+      A.floats.forEach(f => { const k = (t - f.t) / 1.1; ctx.globalAlpha = 1 - k; ctx.font = `bold ${f.big ? 16 : 12}px 'Press Start 2P', monospace`; ctx.textAlign = "center"; ctx.fillStyle = "#000"; ctx.fillText(`-${f.v}`, 445, 70 - k * 26); ctx.fillStyle = f.big ? "#fde047" : "#f87171"; ctx.fillText(`-${f.v}`, 443, 68 - k * 26); ctx.globalAlpha = 1; ctx.textAlign = "left"; });
+    }
+    // Aperçu de l'arbre de compétences d'une classe (bouton « En savoir plus »)
+    function openTreePreview(cls) {
+      const c = UNIVERS_CONFIG.classes[cls], list = getSkillList(cls), brs = SKILL_BRANCHES[cls] || [];
+      let m = document.getElementById("tree-preview-modal"); if (!m) { m = document.createElement("div"); m.id = "tree-preview-modal"; document.body.appendChild(m); }
+      m.className = "fixed inset-0 z-[80] flex items-center justify-center p-3 bg-black/75";
+      const col = { rose: "#fda4af", sky: "#7dd3fc", amber: "#fcd34d", emerald: "#6ee7b7", orange: "#fdba74", lime: "#bef264", cyan: "#67e8f9", violet: "#c4b5fd" };
+      const node = k => `<div class="tp-node"><span class="ic">${k.icon}</span><div><b>${k.nom}</b> <span class="text-[10px] ${k.type === "active" ? "text-sky-300" : "text-emerald-300"}">${k.type === "active" ? `Actif • ${k.pm} PM` : "Passif"}</span><div>${k.desc}</div></div><span class="lv">Niv. ${k.lvl}</span></div>`;
+      const cols = brs.length ? brs.map(b => `<div class="tp-br"><div class="text-xs font-bold mb-1" style="color:${col[b.col] || "#e2e8f0"}">${b.icon} ${b.nom}</div><div class="text-[10px] text-slate-400 mb-1">${b.desc}</div>${list.filter(k => k.br === b.id).map(node).join("")}</div>`).join("")
+        : `<div class="tp-br text-xs text-slate-300">${list.map(node).join("") || "L'arbre de cette classe arrive bientôt."}</div>`;
+      m.innerHTML = `<div class="melvor-panel w-full max-w-5xl max-h-[90vh] overflow-y-auto p-4 space-y-3" style="background:#0f172a">
+        <div class="flex items-start justify-between gap-3"><div><div class="text-base font-bold text-white">🌳 Arbre de compétences — ${c.nom}</div><div class="text-[11px] text-slate-400">${c.arme} • ${c.bonusTexte} • les compétences se débloquent en montant de niveau</div></div>
+          <button type="button" data-tp-close class="ui-btn px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs">✕</button></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div class="melvor-card p-3 text-[11px] text-slate-300"><b class="text-sky-300">✨ ${c.competence.nom}</b> (compétence de départ, ${c.competence.coutPm} PM)<br>${c.competence.desc}</div>
+          <div class="melvor-card p-3 text-[11px] text-slate-300"><b class="text-amber-300">🌟 Ultime : ${c.ultime.nom}</b><br>${c.ultime.desc}</div></div>
+        <div class="grid grid-cols-1 md:grid-cols-${Math.min(3, Math.max(1, brs.length))} gap-2">${cols}</div></div>`;
+      m.onclick = e => { if (e.target === m || e.target.closest("[data-tp-close]")) m.remove(); };
+    }
+    document.addEventListener("click", e => { if (e.target.closest && e.target.closest("#cr-arena-more")) { RetroAudio.cursor(); openTreePreview(state.hero.classe); } });
+    requestAnimationFrame(crArenaDraw);
+    /* v1.78 — 🪑 Fenêtre « Mes meubles » : tous les meubles possédés en vignettes.
+       Mobile : toucher un meuble le pose sur le camp et ferme la fenêtre. PC : glisser une vignette sur la scène du camp (ou cliquer pour la poser au centre). */
+    const CM_TOUCH = () => window.matchMedia("(max-width: 1023px)").matches || window.matchMedia("(pointer: coarse)").matches;
+    function cmThumb(cv, d) {
+      const x = cv.getContext("2d"), W = cv.width, H = cv.height; x.clearRect(0, 0, W, H); x.imageSmoothingEnabled = false;
+      const sc = Math.min((W - 10) / (d.hw * 2 + 6), (H - 10) / (d.hh + 10), 2.2);
+      x.save(); x.translate(W / 2, H - 8); x.scale(sc, sc); try { campDecoSprite(x, d.id, 0, 0, 0.5, 1); } catch (e) {} x.restore();
+    }
+    function cmPlace(id, wx, wy) {
+      const cs = getCampState(), dp = CAMP_DEFAULT_POS[id] || [320, 185], p = cs.pos[id] || (cs.pos[id] = { x: dp[0], y: dp[1] });
+      if (wx !== undefined) { p.x = Math.round(Math.max(-CAMP_PAD + 12, Math.min(640 + CAMP_PAD - 12, wx))); p.y = Math.round(Math.max(160, Math.min(206, wy))); }
+      else if (!p.placed) { p.x = 320 + Math.round((Math.random() - .5) * 120); p.y = 182 + Math.round(Math.random() * 16); }
+      p.placed = true; RetroAudio.confirm(); saveGame(); try { renderCampShop(); updateCampRecoveryUI(); } catch (e) {}
+      const d = CAMP_DECOS.find(z => z.id === id); if (d) showToast(`🪑 ${d.nom} posé sur le camp !`);
+    }
+    function cmRender() {
+      const cs = getCampState(), own = CAMP_DECOS.filter(d => cs.owned[d.id]), g = document.getElementById("cm-grid"), touch = CM_TOUCH();
+      document.querySelector("#camp-meubles .cm-hint").textContent = !own.length ? "Aucun meuble pour l'instant : fabrique-les à la Menuiserie du Bûcheron." : touch ? "Touche un meuble pour le poser sur ton camp." : "Glisse un meuble sur la scène du camp pour le poser où tu veux (ou clique pour le poser au centre).";
+      g.innerHTML = own.map(d => { const on = cs.pos[d.id] && cs.pos[d.id].placed; return `<div class="cm-tile ${on ? "on" : ""}" data-cm="${d.id}" title="${d.nom.replace(/"/g, "")} — ${campBonusTxt(d.bonus)}"><canvas width="96" height="72"></canvas><b>${d.icon} ${d.nom}</b><small>${on ? "● Sur le camp" : "Rangé"}</small>${on ? `<button type="button" class="ui-btn cm-store" data-cm-store="${d.id}" title="Ranger">📦</button>` : ""}</div>`; }).join("")
+        || `<button type="button" class="ui-btn col-span-full py-2 rounded-lg text-xs font-bold bg-lime-600 text-white" data-goto-buch2>🪚 Ouvrir la Menuiserie</button>`;
+      g.querySelectorAll("[data-cm]").forEach(t => cmThumb(t.querySelector("canvas"), CAMP_DECOS.find(z => z.id === t.dataset.cm)));
+    }
+    window.campMeubles = function (open) {
+      const w = document.getElementById("camp-meubles"), want = open === undefined ? w.classList.contains("hidden") : open;
+      if (want) cmRender(); w.classList.toggle("hidden", !want);
+    };
+    (function bindCampMeubles() {
+      const w = document.getElementById("camp-meubles"), btn = document.getElementById("btn-camp-meubles"); if (!w || !btn) return;
+      btn.addEventListener("click", () => { RetroAudio.cursor(); campMeubles(); });
+      let drag = null;
+      w.addEventListener("click", e => {
+        if (e.target.closest("[data-cm-close]")) { campMeubles(false); return; }
+        if (e.target.closest("[data-goto-buch2]")) { campMeubles(false); state.buchTab = "menuiserie"; switchView("bucheron"); return; }
+        const st = e.target.closest("[data-cm-store]"); if (st) { e.stopPropagation(); const p = getCampState().pos[st.dataset.cmStore]; if (p) p.placed = false; RetroAudio.cursor(); saveGame(); try { renderCampShop(); updateCampRecoveryUI(); } catch (er) {} cmRender(); return; }
+      });
+      w.addEventListener("pointerdown", e => {
+        const t = e.target.closest("[data-cm]"); if (!t || e.target.closest("[data-cm-store]")) return;
+        drag = { id: t.dataset.cm, x0: e.clientX, y0: e.clientY, moved: false, ghost: null, src: t.querySelector("canvas") };
+        if (!CM_TOUCH()) e.preventDefault();
+      });
+      window.addEventListener("pointermove", e => {
+        if (!drag || CM_TOUCH()) return;
+        if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 6) { drag.moved = true; const gi = document.createElement("img"); gi.className = "cm-ghost"; gi.src = drag.src.toDataURL(); document.body.appendChild(gi); drag.ghost = gi; document.getElementById("camp-editor-canvas").classList.add("cm-drop"); }
+        if (drag.ghost) { drag.ghost.style.left = e.clientX + "px"; drag.ghost.style.top = e.clientY + "px"; }
+      });
+      window.addEventListener("pointerup", e => {
+        if (!drag) return; const d = drag; drag = null; const cv = document.getElementById("camp-editor-canvas");
+        if (d.ghost) d.ghost.remove(); if (cv) cv.classList.remove("cm-drop");
+        if (CM_TOUCH()) { if (Math.hypot(e.clientX - d.x0, e.clientY - d.y0) < 12) { cmPlace(d.id); campMeubles(false); } return; }
+        if (!d.moved) { cmPlace(d.id); cmRender(); return; }
+        const r = cv && cv.getBoundingClientRect();
+        if (r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) { const [wx, wy] = campEditorCoords(cv, e); cmPlace(d.id, wx, wy); cmRender(); }
+      });
+    })();
     // ===== Le campement évolue : camp de terre → palissade → enceinte de pierre → maison → manoir → château → citadelle =====
     function campCobbles(ctx, x0, x1, yTop, yBot, mode, t) {
       // pavés en perspective (rangées de plus en plus hautes vers le spectateur)
@@ -10502,7 +10720,9 @@
       }
 
       // 7. Si combat en cours, dessin du monstre
-      if (state.expedition.combat) {
+      if (state.expedition.combat && state.expedition.combat.enemy.ai === "malakor" && malDrawScene(ctx, state.expedition.combat.enemy, timeSec, timeSec - enemyHitT, timeSec - heroHitT)) {
+        // v1.77 : Malakor est peint directement dans la scène, à pleine résolution
+      } else if (state.expedition.combat) {
         drawMonster128(enemyBufferCanvas, state.expedition.combat.enemy, timeSec);
         const ek = timeSec - enemyHitT;
         if (ek >= 0 && ek < 0.16) { const g = enemyBufferCanvas.getContext("2d"); g.globalCompositeOperation = "source-atop"; g.fillStyle = `rgba(255,255,255,${0.75 * (1 - ek / 0.16)})`; g.fillRect(0, 0, 128, 128); g.globalCompositeOperation = "source-over"; }
@@ -12630,7 +12850,7 @@
               <div class="flex flex-col sm:flex-row gap-3">
                 <button id="btn-prof-toggle" type="button"
                   class="ui-btn flex-1 py-2.5 px-4 ${p.manuelActif ? "bg-amber-600 hover:bg-amber-500" : "bg-emerald-600 hover:bg-emerald-500"} text-white font-semibold rounded-lg text-xs">
-                  ${p.manuelActif ? "⏸ Arrêter la récolte" : `▶ ${cfg.icone} Lancer la ${cfg.nom}`}
+                  ${(() => { const A = { peche: ["la pêche", "la pêche"], minage: ["le minage", "le minage"], recolte: ["la récolte", "la récolte"], eclats: ["l'extraction", "l'extraction d'éclats"] }[profKey] || ["l'activité", "l'activité"]; return p.manuelActif ? `⏸ Arrêter ${A[0]}` : `▶ ${cfg.icone} Lancer ${A[1]}`; })()}
                 </button>
                 <button id="btn-prof-hire" type="button" ${state.or < assistCost ? "disabled" : ""}
                   class="ui-btn px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-medium text-sky-300">
@@ -12954,9 +13174,9 @@
         </div>`;
       }
       grid.innerHTML = `<div class="col-span-full grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <div class="lg:col-span-2 space-y-2"><div class="text-[11px] font-bold uppercase tracking-wider text-amber-300">Équipement (hors panoplies)</div><div class="space-y-1.5 max-h-[520px] overflow-y-auto pr-1">${list}</div></div>
+          <div class="lg:col-span-2 space-y-3">${forgeDollHtml("retr", rtSel)}<details class="fm-more" ${items.length <= 6 ? "open" : ""}><summary class="ui-btn text-[11px] font-bold uppercase tracking-wider text-amber-300 cursor-pointer py-1">Tout l'équipement (${items.length}, hors panoplies)</summary><div class="space-y-1.5 max-h-[420px] overflow-y-auto pr-1 mt-2">${list}</div></details></div>
           <div class="lg:col-span-3">${panel}</div></div>`;
-      drawForgeIcons();
+      drawForgeIcons(); bindForgeDoll(grid, "retr", () => renderRetravailView(grid));
       grid.querySelectorAll("[data-rt]").forEach(b => b.addEventListener("click", () => { rtSel = b.dataset.rt; RetroAudio.cursor(); renderRetravailView(grid); }));
       grid.querySelectorAll("[data-rt-grav]").forEach(b => b.addEventListener("click", () => { rtGrav = b.dataset.rtGrav; RetroAudio.cursor(); renderRetravailView(grid); }));
       grid.querySelectorAll("[data-rt-act]").forEach(b => b.addEventListener("click", () => {
@@ -12968,6 +13188,28 @@
       }));
     }
 
+    /* v1.77 — mannequin d'équipement dans Renforcer / Retravailler */
+    function forgeDollHtml(mode, selUid) {
+      const mk = ([k, lab]) => {
+        const it = state.equipementPorte[k], key = it ? (it.setId ? "set" : it.rarete) : "empty", nope = it && mode === "retr" && it.setId;
+        return `<div class="pd-slot"><div class="pd-box ${it ? "r-" + key : "empty"} ${it && it.setId ? "inv-set" : ""} ${it && it.uid === selUid ? "sel" : ""} ${nope ? "nope" : ""}" data-fdoll="${k}" role="button" tabindex="0" title="${it ? it.nom.replace(/"/g, "") : lab + " : vide"}"><canvas width="16" height="16" data-pd-icon="${k}:${key}"></canvas>${it && it.renfort ? `<span class="pd-rf">+${it.renfort}</span>` : ""}</div><span class="pd-lab">${lab}</span></div>`;
+      };
+      const R = PD_SLOTS.right.map(([k, l]) => [k, k === "arme" ? "Arme" : l]);
+      return `<div class="pd-frame fm-doll"><div class="pd-grid"><div class="pd-col">${PD_SLOTS.left.map(mk).join("")}</div>
+        <div class="pd-center"><div class="pd-portrait"><canvas id="forge-hero-canvas" width="128" height="128" class="pixelated"></canvas></div><div class="text-[11px] font-bold text-amber-300 mt-1 text-center">${state.hero.nom || "Héros"}</div></div>
+        <div class="pd-col">${R.map(mk).join("")}</div></div>
+        <div class="text-[10px] text-slate-400 text-center mt-2">${mode === "retr" ? "Clique une pièce portée pour la retravailler (les panoplies se renforcent seulement)" : "Clique une pièce portée pour la renforcer"}</div></div>`;
+    }
+    function bindForgeDoll(grid, mode, rerender) {
+      grid.querySelectorAll("[data-pd-icon]").forEach(cv => { const [k, key] = cv.dataset.pdIcon.split(":"); try { drawSlotIcon(cv, k, key); } catch (e) {} });
+      grid.querySelectorAll("[data-fdoll]").forEach(b => b.addEventListener("click", () => {
+        const it = state.equipementPorte[b.dataset.fdoll];
+        if (!it) { showToast("Aucun objet porté à cet emplacement."); return; }
+        if (mode === "retr" && it.setId) { showToast("Les pièces de panoplie ne se retravaillent pas : utilise l'onglet Renforcer."); return; }
+        RetroAudio.cursor(); if (mode === "retr") rtSel = it.uid; else renfortSel = it.uid; rerender();
+      }));
+      try { drawHero128(document.getElementById("forge-hero-canvas"), state.hero, performance.now() / 1000, 0, false, false); } catch (e) {}
+    }
     function renderRenfortView(grid) {
       const items = allRenfortItems();
       if (!renfortSel || !items.some(x => x.it.uid === renfortSel)) renfortSel = items.length ? items[0].it.uid : null;
@@ -12998,9 +13240,10 @@
         }
       }
       grid.innerHTML = `<div class="col-span-full grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <div class="lg:col-span-2 space-y-2"><div class="text-[11px] font-bold uppercase tracking-wider text-orange-300">Équipement (renfort max actuel : +${renfortMax()})</div>
-            <div class="space-y-1.5 max-h-[calc(100vh-22rem)] overflow-y-auto pr-1">${list}</div></div>
+          <div class="lg:col-span-2 space-y-3">${forgeDollHtml("renf", renfortSel)}<details class="fm-more" ${items.length <= 6 ? "open" : ""}><summary class="ui-btn text-[11px] font-bold uppercase tracking-wider text-orange-300 cursor-pointer py-1">Tout l'équipement (${items.length}) — renfort max actuel : +${renfortMax()}</summary>
+            <div class="space-y-1.5 max-h-[420px] overflow-y-auto pr-1 mt-2">${list}</div></details></div>
           <div class="lg:col-span-3 melvor-card p-4 h-fit">${panel}</div></div>`;
+      bindForgeDoll(grid, "renf", () => renderForgeView());
       grid.querySelectorAll("[data-renf]").forEach(b => b.addEventListener("click", () => { RetroAudio.cursor(); renfortSel = b.dataset.renf; renderForgeView(); }));
       const btn = document.getElementById("btn-renforcer");
       if (btn) btn.addEventListener("click", () => doRenforcer(sel.it));
@@ -13044,6 +13287,10 @@
 
       const fmb = document.getElementById("forge-mastery-box");
       if (fmb) { fmb.innerHTML = craftPaliersHtml("forge"); bindPalToggle(fmb); }
+      { const mode = state.forgeCat === "Renforcement" ? "renf" : state.forgeCat === "Retravail" ? "retr" : "fab";
+        if (mode === "fab") state.forgeLastCat = state.forgeCat;
+        document.querySelectorAll("[data-forge-mode]").forEach(b => { b.classList.toggle("on", b.dataset.forgeMode === mode); b.setAttribute("aria-selected", b.dataset.forgeMode === mode); });
+        const cr = document.getElementById("forge-cat-row"); if (cr) cr.style.display = mode === "fab" ? "" : "none"; }
       { const fb = document.getElementById("forge-slot-filter"); if (fb && (state.forgeCat === "Renforcement" || state.forgeCat === "Retravail")) fb.innerHTML = ""; }
       if (state.forgeCat === "Renforcement") { renderRenfortView(document.getElementById("forge-recipes-list")); return; }
       if (state.forgeCat === "Retravail") { renderRetravailView(document.getElementById("forge-recipes-list")); return; }
@@ -13094,6 +13341,7 @@
         }).join(" ");
 
         const rSlot = forgeRecSlot(rec), slotLbl = FORGE_SLOT_LBL[rSlot] || "";
+        const statsHtml = rec.type === "equipement" ? forgeCardStats(rec) : "";
         return hdr + `
           <div class="melvor-card p-4 flex flex-col justify-between gap-4" data-fslot="${rSlot}">
             <div class="space-y-2">
@@ -13108,6 +13356,7 @@
                 </span>
               </div>
               <p class="text-xs text-slate-400">${rec.desc}</p>
+              ${statsHtml}
               <div class="flex flex-wrap gap-1.5 text-[11px] pt-1">
                 <span class="px-2 py-1 rounded bg-slate-900 border ${orOk ? "border-amber-500/40 text-amber-300" : "border-rose-500/40 text-rose-300"} tabular-nums">
                   🪙 ${rec.coutOr} Or
@@ -13129,6 +13378,26 @@
         btn.addEventListener("click", () => craftRecipe(btn.dataset.craftId));
       });
       drawForgeIcons();
+    }
+    // v1.77 — ligne compacte : niveau de l'objet + fourchette des stats principales (Commun → Légendaire) + comparaison avec l'objet porté
+    const _fcCache = {};
+    function forgeCardStats(rec) {
+      const forge = state.metiers.forge, lvl = Math.max(rec.niveauForgeReq, forge.niveau), key = rec.id + "|" + forge.niveau;
+      let R = _fcCache[key];
+      if (!R) {
+        R = {}; const Q = UNIVERS_CONFIG.qualitesForge, keys = ["atk", "def", "pvMax", "pmMax", "critChance"].concat(Object.keys(rec.extraStats || {}));
+        const gen = q => generateEquipment({ slot: rec.slot, level: lvl, fixedName: rec.nom, fixedQuality: q, basePower: rec.puissance + Math.min(30, Math.max(0, forge.niveau - (rec.niveauForgeReq || 1))) * 0.9, provenance: "aperçu", setId: rec.setId || null, setNom: rec.setNom || null, classeReq: rec.classeReq || null, extraStats: rec.extraStats || null }).stats;
+        try { for (let i = 0; i < 4; i++) [Q[0], Q[Q.length - 1]].forEach((q, j) => { const st = gen(q); keys.forEach(k => { if (!st[k]) return; const r = R[k] || (R[k] = [Infinity, -Infinity]); r[0] = Math.min(r[0], st[k]); r[1] = Math.max(r[1], st[k]); }); }); } catch (e) { R = {}; }
+        _fcCache[key] = R;
+      }
+      const lab = { atk: "⚔️ ATQ", def: "🛡️ DEF", pvMax: "❤️ PV", pmMax: "🔮 PM", critChance: "💥 CRIT", force: "💪 FOR", agilite: "💨 AGI", esprit: "🧠 ESP", chance: "🍀 CHA" };
+      const eq = state.equipementPorte[rec.slot], rf = eq ? 1 + RENFORT_PER_LVL * (eq.renfort || 0) : 1;
+      const fmt = (k, v) => k === "critChance" ? Math.round(v * 100) + "%" : Math.round(v).toLocaleString("fr-FR");
+      const chips = Object.entries(R).filter(([, r]) => isFinite(r[0])).map(([k, [a, b]]) => {
+        let cmp = ""; if (eq && eq.stats && eq.stats[k] !== undefined) { const mine = eq.stats[k] * rf, mid = (a + b) / 2; cmp = mid > mine * 1.02 ? ' <i class="up">▲</i>' : mid < mine * .98 ? ' <i class="dn">▼</i>' : ""; }
+        else if (eq) cmp = ' <i class="up">▲</i>';
+        return `<span>${lab[k] || k} ${fmt(k, a)}${b > a ? "–" + fmt(k, b) : ""}${cmp}</span>`; }).join("");
+      return `<div class="fc-stats" title="Fourchette de Commun à Légendaire ; ▲▼ : comparé à ton objet porté"><span class="lv">Objet Niv. ${lvl}</span>${chips}</div>`;
     }
     // v1.35 — icônes d'emplacement dans la Forge
     const FORGE_SLOT_LBL = { casque: "Tête", armure: "Torse", anneau: "Anneau", arme: "Arme", bouclier: "Bouclier", cape: "Cape", aura: "Aura", potion: "Consommable", composant: "Composant" };
@@ -15327,8 +15596,9 @@ function wmDraw(ctx, t, opt) {
       const zoneTxt = `<div class="mt-1.5 melvor-card p-2"><div class="flex items-center justify-between text-[11px]"><b class="text-sky-300">📈 Niveau de zone ${zS.lvl}${zS.lvl >= ZONE_MAX ? " (MAX)" : ` / ${ZONE_MAX}`}<button type="button" data-lvl-info="zone:${selB.id}" title="Que donne ce niveau ?" class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-sky-900/70 border border-sky-500/60 text-sky-200 text-[10px] font-bold leading-none hover:bg-sky-700 align-middle">i</button></b><span class="text-emerald-300">Quantité : +${Math.round(zB.common * 100)} % communs • +${Math.round(zB.rare * 100)} % rares</span></div>
         ${zS.lvl < ZONE_MAX ? `<div class="h-1.5 bg-slate-900 rounded-full overflow-hidden mt-1"><div class="h-full bg-sky-400" style="width:${zS.xp / zoneXpReq(zS.lvl) * 100}%"></div></div><div class="text-[10px] text-slate-500 mt-0.5">${Math.floor(zS.xp)} / ${zoneXpReq(zS.lvl)} XP de zone • monstre +1, élite +3, boss +10, expédition terminée +5</div>` : ""}</div>`;
       if (trainSel) html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">🎯 Terrain d'entraînement</b> — <b class="text-amber-200">clairière de la Forêt des Murmures</b><br>Une clairière aménagée près du Fief : frappe un mannequin immortel pour tester ton build. Il ne riposte pas et ne donne ni butin ni XP. Compteur de DPS en direct, niveau (DEF) et type (Monstre / Élite / Boss) réglables.<br><button type="button" data-train-start class="ui-btn mt-1.5 w-full px-3 py-2 rounded-lg bg-amber-700/80 hover:bg-amber-600 border border-amber-400/60 text-amber-50 font-semibold text-xs">🎯 Entrer sur le terrain</button></div>`;
-      else html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}${zoneTxt}</div>`;
-      listBox.innerHTML = html;
+      else html += `<div class="text-[11px] text-slate-400 leading-snug"><b class="text-slate-200">${selB.nom}</b>${curD ? ` — ${curD.icone} <b class="text-amber-200">${curD.nom}</b>` : ""}<br>${curD ? curD.desc : selB.desc}<br>${recTxt}${zoneTxt}</div>${curD && curD.boss === "boss_malakor" ? malPanelHtml() : ""}`;
+      listBox.innerHTML = infCardHtml() + html;
+      listBox.querySelectorAll("[data-inf-start]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); RetroAudio.confirm(); infStart(); }));
 
       listBox.querySelectorAll("[data-train-start]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); startTraining(); }));
       listBox.querySelectorAll("[data-train-card]").forEach(b => b.addEventListener("click", () => selectTraining()));
@@ -15798,7 +16068,7 @@ function wmDraw(ctx, t, opt) {
           atb: 45
         };
         RetroAudio.hit(isElite);
-        addExpLog(`⚔️ Embuscade ! Un ${template.nom} (Niv.${template.niveau}) vous barre la route !`, isElite ? "text-amber-300 font-bold" : "text-rose-300 font-semibold");
+        addExpLog(`⚔️ Embuscade ! ${template.nom} (Niv.${template.niveau}) vous barre la route !`, isElite ? "text-amber-300 font-bold" : "text-rose-300 font-semibold");
         renderExpeditionView();
         return;
       }
@@ -15813,7 +16083,7 @@ function wmDraw(ctx, t, opt) {
           kind: "plant",
           icon: "🌿",
           title: `Plante Sauvage Rare : ${exRes.nom}`,
-          desc: `Vous apercevez une ${exRes.nom} intacte en bordure du sentier.`,
+          desc: `Vous apercevez un gisement intact (${exRes.icone} ${exRes.nom}) en bordure du sentier.`,
           resId: exResId,
           qty: 1
         };
@@ -15857,6 +16127,7 @@ function wmDraw(ctx, t, opt) {
     }
 
     function triggerPunitiveDefeat(enemyName) {
+      try { if (state.expedition.infini) infEnd("défaite contre " + enemyName); } catch (e) {}
       const lostGold = Math.floor(state.or * 0.25);
       const lostXp = Math.floor(state.hero.xp * 0.20);
       const u = state.expedition.unsecuredLoot;
@@ -15891,7 +16162,7 @@ function wmDraw(ctx, t, opt) {
 
     function executePlayerCombatAction(action, arg) {
       const combat = state.expedition.combat;
-      if (!combat || combat.turn !== "PLAYER" || combat.atb < 100) return;
+      if (!combat || combat.turn !== "PLAYER" || combat.atb < 100 || combat.hold) return;
 
       const stats = getHeroTotalStats();
       const cls = UNIVERS_CONFIG.classes[state.hero.classe];
@@ -16223,7 +16494,7 @@ function wmDraw(ctx, t, opt) {
       if (en.shield > 0) out.push(`🛡️ Bouclier ${en.shield}`);
       if (en.ritual) out.push(`🔮 Rituel ×${en.ritual}`);
       if (en.charging) out.push(`☄️ CHARGE EN COURS !`);
-      if (en.phase2) out.push(`👁️ Forme Abyssale`);
+      if (en.form === "beast") out.push(`🕳️ Gouffre Éveillé`); else if (en.phase2) out.push(`👁️ Forme Abyssale`);
       return out;
     }
     function tickCombatStatuses(c, dt) {
@@ -16312,7 +16583,7 @@ function wmDraw(ctx, t, opt) {
         else if (n % 4 === 3) { en.charging = true; out.mult = 0.5; addExpLog(`⚠️ ${en.nom} absorbe la lumière… ÉCLIPSE au prochain tour (étourdissez-la ou protégez-vous) !`, "text-amber-300 font-bold"); }
       } else if (en.ai === "malakor") {
         // Phase 2 à 50 % : purge des buffs du héros, bouclier massif, rituel
-        if (!en.phase2 && en.pv < en.pvMax * 0.5) {
+        if (!en.phase2 && !en.first && en.pv < en.pvMax * 0.5) {
           en.phase2 = true;
           if (cur.buffs && cur.buffs.length) { cur.buffs = []; addExpLog("🌀 Malakor dissipe tous vos effets bénéfiques !", "text-purple-300 font-bold"); }
           en.ritual = Math.min(3, (en.ritual || 0) + 1);
@@ -16365,6 +16636,8 @@ function wmDraw(ctx, t, opt) {
         addExpLog(`☠️ Le poison corrosif ronge ${c.enemy.nom} : ${tick} dégâts.`, "text-lime-300");
       }
       absorbEnemyShield(c);
+      if (c.hold) return;
+      try { if (malCheck(c)) return; } catch (e) { console.error(e); }
 
       if (c.enemy.pv <= 0 && c.enemy.ballon) {
         startDeathFx(c.enemy);
@@ -16414,6 +16687,7 @@ function wmDraw(ctx, t, opt) {
           runeLootPush(state.expedition.unsecuredLoot.equips, bossGear);
           addExpLog(`👑 BOSS VAINCU ! +${q} ${bossRes.icone} ${bossRes.nom} et [${bossGear.nom}] (${UNIVERS_CONFIG.raretes[bossGear.rarete].nom}) !`, "text-fuchsia-300 font-bold");
           rollSkinDrop(0.6, biome); rollMountDrop("boss", biome);
+          try { malOnKill(c.enemy); } catch (e) { console.error(e); }
           state.expedition.combat = null;
           completeExpedition();
           return;
@@ -16754,6 +17028,7 @@ function wmDraw(ctx, t, opt) {
     function makeEnemy(t) {
       const biome = UNIVERS_CONFIG.biomes.find(b => b.id === state.expedition.biomeId);
       const e = scaleMonsterByDiff(t, getExpDifficulty(biome));
+      if (state.expedition.infini) { const f = infMult(); e.pvMax = Math.round(e.pvMax * f); e.atk = Math.round(e.atk * f); e.def = Math.round(e.def * (1 + (f - 1) * 0.5)); }
       e.pv = e.pvMax;
       return e;
     }
@@ -16859,7 +17134,8 @@ function wmDraw(ctx, t, opt) {
       addExpLog(`👑 BOSS FINAL ! ${template.nom} (Niv.${template.niveau}) garde la sortie de ${biome.nom} !`, "text-fuchsia-300 font-bold");
       if (template.ai === "malakor") {
         addExpLog("👁️ « Tu as traversé le Néant pour mourir à mes pieds... Soit. » — MALAKOR", "text-purple-300 font-bold");
-        BossMusic.start();
+        try { malOnSpawn(state.expedition.combat); } catch (e) { console.error(e); }
+        updateMusic();
       }
       renderExpeditionView();
     }
@@ -16903,10 +17179,15 @@ function wmDraw(ctx, t, opt) {
         "text-amber-300 font-bold"
       );
 
-      if (state.expedition.autoLoop && state.expedition.stopOnMerchant !== false && marchandState().present) {
+      if (state.expedition.infini) {
+        infNext(biome);
+      } else if (state.expedition.autoLoop && state.expedition.stopOnMerchant !== false && marchandState().present) {
         state.expedition.active = false; state.expedition.progress = 0;
         addExpLog("🛒 Un marchand ambulant est au campement : la boucle automatique est interrompue pour que tu ne le rates pas.", "text-amber-300 font-bold");
         try { showToast("🛒 Boucle interrompue : un marchand est au camp !"); } catch (e) {}
+      } else if (state.expedition.autoLoop && !state.expedition.infini && malIsNeant(biome) && malLocked()) {
+        state.expedition.active = false; state.expedition.progress = 0;
+        addExpLog(`🔒 Boucle interrompue : le Néant Absolu se referme (réouverture dans ${malResetIn()}).`, "text-rose-300 font-bold");
       } else if (state.expedition.autoLoop) {
         state.expedition.progress = 0;
         state.expedition.nextEventAt = 20 + Math.random() * 10;
@@ -17340,7 +17621,7 @@ function wmDraw(ctx, t, opt) {
         intro: "La zone finale propose 5 difficultés, chacune avec son boss et un meilleur butin.",
         steps: ["Normal (niv. 20) → Difficile (32, Ylthra) → Cauchemar (50, Kar'Zul) → Apocalypse (80, Séraphine) → Néant Absolu (120, MALAKOR).",
           "Les boss annoncent leurs attaques dangereuses : étourdissez-les pendant la charge, esquivez ou renforcez votre défense.",
-          "Néant Absolu : le combat automatique est impossible. Malakor pose des boucliers, se renforce par rituels, lance un Météore Noir et passe en Forme Abyssale à 50 % (il dissipe vos buffs)."],
+          "Néant Absolu (combat automatique autorisé) : Malakor pose des boucliers, se renforce par rituels, lance un Météore Noir et passe en Forme Abyssale à 50 % (il dissipe vos buffs)."],
         tips: ["Les affaiblissements d'attaque (Lance de Glace, Brouet, fioles) et la réduction de dégâts sont vos meilleurs alliés contre les « doubles coups »."] },
       divers: { icone: "💾", nom: "Sauvegardes & absence",
         intro: "Trois emplacements de sauvegarde, une progression hors-ligne et des succès.",
@@ -18242,10 +18523,12 @@ function wmDraw(ctx, t, opt) {
     // Choisit la musique à jouer selon la situation
     function updateMusic() {
       if (window.__lumIntroOn) { AmbientMusic.stop(); BossMusic.stop(); return; }
+      const _mc = state.expedition && state.expedition.combat, _me = _mc && _mc.enemy;
+      if (state.started && !state.musicOff && ((_me && _me.ai === "malakor") || malDlgOpen)) { AmbientMusic.stop(); BossMusic.stop(); try { LumIntro.theme(malDlgOpen ? "doubt" : _me && _me.form === "beast" ? "fury" : "battle"); } catch (e) {} return; }
+      try { LumIntro.themeStop(); } catch (e) {}
       if (!state.started) { if (state.musicOff) AmbientMusic.stop(); else AmbientMusic.play("menu"); BossMusic.stop(); return; }
       if (state.musicOff) { AmbientMusic.stop(); BossMusic.stop(); return; }
       const c = state.expedition.combat, en = c && c.enemy;
-      if (en && en.ai === "malakor") { AmbientMusic.stop(); if (!BossMusic.playing) BossMusic.start(); return; }
       if (BossMusic.playing) BossMusic.stop();
       let id = "menu";
       if (en && (en.boss || en.guardian)) id = "boss";
@@ -20321,6 +20604,7 @@ function wmDraw(ctx, t, opt) {
       state.activeView = viewId;
       try { BG.set(viewId); } catch (e) { console.error(e); }
       { const hb = document.getElementById("nav-hub"); if (hb && !hb.classList.contains("hidden")) { hb.classList.add("hidden"); document.body.classList.remove("hub-shown"); } }
+      { const cm = document.getElementById("camp-meubles"); if (cm && viewId !== "campement") cm.classList.add("hidden"); }
 
       document.querySelectorAll(".nav-item").forEach(btn => {
         const active = btn.dataset.nav === viewId;
@@ -20562,6 +20846,7 @@ function wmDraw(ctx, t, opt) {
        ======================================================================= */
     const MALAKOR_HEAD_CHANCE = 0.06;
     function rollMalakorHead(id) {
+      return;   // v1.77 : la Tête de Malakor ne tombe plus au hasard (choix « Tuer » ou l'Ombre de Malakor, une seule fois)
       if (id !== "boss_malakor" || Math.random() >= MALAKOR_HEAD_CHANCE) return;
       state.ressources.tete_malakor = (state.ressources.tete_malakor || 0) + 1; state.tetesMalakor = (state.tetesMalakor || 0) + 1;
       try { addExpLog("💀 OBJET LÉGENDAIRE : la Tête de Malakor roule à tes pieds !", "text-fuchsia-300 font-bold"); showToast("💀 Tête de Malakor obtenue ! (Trophée fabricable chez le Bûcheron)"); RetroAudio.levelUp(); } catch (e) {}
@@ -20575,6 +20860,10 @@ function wmDraw(ctx, t, opt) {
     [["boss_treant", "🌳", "Gardien Millénaire", 2000], ["boss_liche", "💀", "Liche des Brumes", 5000], ["boss_cristal", "💎", "Colosse de Cristal", 12000], ["boss_demon", "😈", "Seigneur Démon Ignis", 30000],
      ["boss_neant", "🌌", "Le Néant Éveillé", 80000], ["boss_ylthra", "👁️", "Ylthra, Héraut du Vide", 200000], ["boss_karzul", "🪨", "Kar'Zul, Colosse Astral", 500000], ["boss_seraphine", "🌑", "Séraphine, l'Étoile Noire", 1200000]
     ].forEach(([id, ic, nm, or]) => A("Boss", "b_" + id, ic, nm, `Vaincre ${nm}.`, () => killed(id), 1, { or, coupons: 2 }));
+    [[10, 3, 100000], [25, 6, 1000000], [50, 10, 10000000], [100, 20, 50000000]].forEach(([n, cp, or]) => A("Exploration", "inf" + n, "♾️", `Sans fin — palier ${n}`, `Atteindre le palier ${n} de l'Exploration infinie.`, () => state.infiniRecord || 0, n, { or, coupons: cp }));
+    A("Boss", "mk_epargne", "🕊️", "Miséricorde du Néant", "Épargner Malakor au terme de votre premier affrontement.", () => (state.malakor && state.malakor.choice === "epargne") ? 1 : 0, 1, { coupons: 5 });
+    A("Boss", "mk_tue", "🗡️", "Bourreau du Néant", "Tuer Malakor au terme de votre premier affrontement.", () => (state.malakor && state.malakor.choice === "tue") ? 1 : 0, 1, { coupons: 5 });
+    A("Boss", "mk_sacs", "🎒", "Pilleur du Néant", "Ouvrir 30 Sacs du Néant.", () => (state.malakor && state.malakor.sacsTotal) || 0, 30, { or: 5000000, coupons: 10 });
     A("Boss", "b_malakor", "🔮", "Le Mage Noir est tombé", "Vaincre MALAKOR en Néant Absolu.", () => killed("boss_malakor"), 1, { or: 10000000, coupons: 10, ress: { noyau_astral: 5 } });
     [["cernunnos", "🦌", "Cernunnos, l'Esprit-Cerf"], ["prof_kaboum", "🧨", "Professeur Kaboum"], ["reine_ysolde", "❄️", "Ysolde, Reine des Glaces"], ["kragg", "🪓", "Kragg, Seigneur de Guerre"]]
       .forEach(([id, ic, nm]) => A("Boss", "g_" + id, ic, nm, `Vaincre le gardien secret ${nm}.`, () => killed(id), 1, { or: 15000, eclats: 15 }));
@@ -20793,6 +21082,7 @@ function wmDraw(ctx, t, opt) {
       if (drawNow && state.activeView === "heros") {
         drawHero128(document.getElementById("hero-view-canvas"), state.hero, tSec, heroPoseTimer, false, false);
       }
+      if (drawNow && !LOWFX && state.activeView === "forge") { const fc = document.getElementById("forge-hero-canvas"); if (fc) drawHero128(fc, state.hero, tSec, 0, false, false); }
 
       if (!window._dcT || tSec - window._dcT > 1) { window._dcT = tSec; try { const el = document.getElementById("tb-cycle"), D = dayCycle(); if (el) { el.style.display = D.off ? "none" : ""; el.textContent = `${D.icon} ${D.name} — ${Math.floor(D.left / 60)}:${String(D.left % 60).padStart(2, "0")}`; }
         const cb = document.getElementById("chk-daycycle"); if (cb && document.activeElement !== cb) cb.checked = !state.cycleOff; } catch (e) {} }
@@ -20854,12 +21144,13 @@ function wmDraw(ctx, t, opt) {
           if (!state.expedition.combat) return requestAnimationFrame(gameLoop);
           if (c.enemy && c.enemy.dummy) trainTick(c, dt);
           { const E = c.enemy; if (E.melt > 0) { E.melt -= dt; if (E.melt <= 0) { E.melt = 0; recomputeEnemyDef(E); } } if (E.weak > 0) E.weak = Math.max(0, E.weak - dt); if (E.frz > 0) E.frz = Math.max(0, E.frz - dt); if (E.chill > 0) E.chill = Math.max(0, E.chill - dt); if (E.frzCd > 0) E.frzCd = Math.max(0, E.frzCd - dt); }
-          if (c.turn === "PLAYER" && c.enemy.pv > 0 && !c.enemy.dummy) {   // jauge d'action du monstre (se remplit en même temps que la tienne ; bloquée si gelé)
+          if (c.hold) { try { malResume(c); } catch (e) {} }
+          if (c.turn === "PLAYER" && c.enemy.pv > 0 && !c.enemy.dummy && !c.hold) {   // jauge d'action du monstre (se remplit en même temps que la tienne ; bloquée si gelé)
             if (!(c.enemy.frz > 0)) c.eatb = Math.min(100, (c.eatb === undefined ? -12 : c.eatb) + dt * 52 * enemySpeed(c.enemy));
             const eb = document.getElementById("combat-enemy-atb-bar"); if (eb) { eb.style.width = `${Math.max(0, c.eatb)}%`; eb.style.filter = c.enemy.frz > 0 ? "grayscale(1) brightness(1.6) hue-rotate(180deg)" : ""; }
             if (c.eatb >= 100) { startEnemyAction(c); return requestAnimationFrame(gameLoop); }
           }
-          if (c.turn === "PLAYER" && c.atb < 100) {
+          if (c.turn === "PLAYER" && c.atb < 100 && !c.hold) {
             c.atb = Math.min(100, c.atb + dt * 52 * stats.atbSpeedMult);
             if (state.activeView === "expedition") updateCombatUI();
             const _bm = UNIVERS_CONFIG.biomes.find(b => b.id === state.expedition.biomeId), _dd = getExpDifficulty(_bm);
@@ -21533,12 +21824,14 @@ function wmDraw(ctx, t, opt) {
       }
       const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
-      function scene(seed) {
-        const P = new Float32Array(W * W * 3);
+      function scene(seed, W = 64, transp = false) {
+        const P = new Float32Array(W * W * 3), A = new Uint8Array(W * W);
         let sd = seed >>> 0; const rnd = () => ((sd = (Math.imul(sd, 1664525) + 1013904223) >>> 0) / 4294967296);
-        const set = (x, y, c) => { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= W) return; const i = (y * W + x) * 3; P[i] = c[0]; P[i + 1] = c[1]; P[i + 2] = c[2]; };
+        const set = (x, y, c) => { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= W) return; const i = (y * W + x) * 3; P[i] = c[0]; P[i + 1] = c[1]; P[i + 2] = c[2]; A[y * W + x] = 255; };
         const get = (x, y) => { const i = (y * W + x) * 3; return [P[i], P[i + 1], P[i + 2]]; };
-        const mix = (x, y, c, a) => { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= W || a <= 0) return; set(x, y, lerp(get(x, y), c, Math.min(1, a))); };
+        const mix = (x, y, c, a) => { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= W || a <= 0) return; a = Math.min(1, a); const j = y * W + x;
+          if (!A[j]) { const i = j * 3; P[i] = c[0]; P[i + 1] = c[1]; P[i + 2] = c[2]; A[j] = Math.round(a * 255); return; }
+          const al = A[j]; set(x, y, lerp(get(x, y), c, a)); A[j] = Math.min(255, Math.round(al + a * (255 - al))); };
         const g = {
           rnd,
           sky(stops, y0 = 0, y1 = W) {
@@ -21637,11 +21930,11 @@ function wmDraw(ctx, t, opt) {
           },
           vignette(a = .5) {
             const c = [6, 6, 20];
-            for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) { const d = Math.hypot((x - 31.5) / 32, (y - 31.5) / 32); if (d > .8) { const w = Math.min(1, (d - .8) / .55) * a, q = Math.floor(w * 4 + bay(x, y) * .5) / 4; if (q > 0) set(x, y, lerp(get(x, y), c, q * .7)); } }
+            for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) { const d = Math.hypot((x - W / 2 + .5) / (W / 2), (y - W / 2 + .5) / (W / 2)); if (d > .8) { const w = Math.min(1, (d - .8) / .55) * a, q = Math.floor(w * 4 + bay(x, y) * .5) / 4; if (q > 0) set(x, y, lerp(get(x, y), c, q * .7)); } }
           },
           canvas() {
             const cv = document.createElement("canvas"); cv.width = cv.height = W; const cx = cv.getContext("2d"), im = cx.createImageData(W, W);
-            for (let i = 0; i < W * W; i++) { im.data[i * 4] = P[i * 3]; im.data[i * 4 + 1] = P[i * 3 + 1]; im.data[i * 4 + 2] = P[i * 3 + 2]; im.data[i * 4 + 3] = 255; }
+            for (let i = 0; i < W * W; i++) { im.data[i * 4] = P[i * 3]; im.data[i * 4 + 1] = P[i * 3 + 1]; im.data[i * 4 + 2] = P[i * 3 + 2]; im.data[i * 4 + 3] = transp ? A[i] : 255; }
             cx.putImageData(im, 0, 0); return cv;
           }
         };
@@ -21964,9 +22257,390 @@ function wmDraw(ctx, t, opt) {
         return g.canvas().toDataURL();
       }
       const fn = id => cache[id] || (cache[id] = render(id));
-      fn.ids = Object.keys(D);
+      fn.ids = Object.keys(D); fn.scene = scene; fn.star = star;
       return fn;
     })();
+
+
+    /* =======================================================================
+       v1.77 — 👁️ MALAKOR : nouvel art (Malakor & Gouffre Éveillé), premier combat raconté,
+       choix Épargner / Tuer, Reflet / Écho / Ombre, sacs du Néant (3 par jour, remise à 4 h)
+       ======================================================================= */
+    const MAL_ART = (() => {
+  function malakorArt(bg) {
+  const g = NAV_ART.scene(4242, 112, !bg), star = NAV_ART.star;
+  if (bg) {
+  g.sky(["#05030f", "#120828", "#22103e", "#2e1250"]);
+  g.stars(70, 80, "#e8d0ff");
+  // faille derrière
+  g.glow(56, 40, 46, "#9b30d0", .45);
+  const rf = g.obj(); rf.poly([[52, 2], [60, 10], [57, 20], [64, 30], [59, 44], [63, 56], [56, 66], [50, 54], [53, 42], [47, 30], [53, 18], [48, 8]], "#05020a", { flat: true }); rf.done({ oc: "#ff6af0" });
+  // sol + trou noir
+  g.ground(98, "#160c26", { tex: .05 });
+  g.glow(56, 101, 30, "#a855f7", .5);
+  const hole = g.obj(); hole.ell(56, 101, 30, 5, "#000000", { flat: true }); hole.done({ oc: "#e879f9" });
+  }
+  // ---- Malakor ----
+  const X = 56;
+  const cape = g.obj();
+  cape.poly([[X - 15, 38], [X + 15, 38], [X + 26, 98], [X + 6, 95], [X, 99], [X - 6, 95], [X - 26, 98]], "#4a2a86", { grad: .9, sx: .7 });
+  cape.done({ oc: "#0e0620" });
+  // bord magenta (lumière de la faille)
+  const rim = g.obj(); for (let y = 40; y < 97; y++) { const x = Math.round(X + 15 + (y - 38) / 60 * 11); rim.px(x, y, "#d946ef"); } rim.done({ outline: false });
+  const inner = g.obj(); inner.poly([[X - 6, 48], [X + 6, 48], [X + 9, 96], [X, 99], [X - 9, 96]], "#170b2c", { grad: .4 }); for (let y = 54; y < 94; y += 7) inner.rect(X - 3, y, 6, 1, "#2a1450", { flat: true }); inner.done({ outline: false });
+  // manches
+  const sl = g.obj();
+  sl.poly([[X - 14, 39], [X - 8, 42], [X - 14, 66], [X - 24, 68], [X - 21, 52]], "#3e2272", { grad: .7 });
+  sl.poly([[X + 14, 39], [X + 8, 42], [X + 14, 66], [X + 24, 68], [X + 21, 52]], "#3e2272", { grad: .7 });
+  sl.done({ oc: "#0e0620" });
+  // mains
+  const hd = g.obj(); hd.ell(X - 19, 68, 2.5, 2.5, "#c4aedc").ell(X + 19, 68, 2.5, 2.5, "#c4aedc"); hd.done({ oc: "#1a0e30" });
+  // capuche
+  const hood = g.obj();
+  hood.poly([[X, 6], [X + 10, 12], [X + 16, 26], [X + 16, 40], [X + 8, 44], [X - 8, 44], [X - 16, 40], [X - 16, 26], [X - 10, 12]], "#5a3496", { grad: 1, sx: .8 });
+  hood.done({ oc: "#0e0620" });
+  const face = g.obj(); face.poly([[X, 13], [X + 8, 18], [X + 10, 30], [X + 9, 40], [X - 9, 40], [X - 10, 30], [X - 8, 18]], "#0d0618", { flat: true }); face.done({ outline: false });
+  // peau du haut du visage + mèches
+  const sk = g.obj(); sk.poly([[X - 7, 22], [X + 7, 22], [X + 7, 29], [X - 7, 29]], "#9c86b8", { grad: .8 });
+  [[X - 6, 17], [X - 2, 16], [X + 3, 16], [X + 6, 18]].forEach(([x, y], i) => sk.line(x, y, x + (i < 2 ? -1 : 1), y + 9, "#1c1030", 1, { flat: true }));
+  sk.rect(X - 7, 23, 5, 1, "#3a2050", { flat: true }).rect(X + 2, 23, 5, 1, "#3a2050", { flat: true });
+  sk.done({ outline: false });
+  // cache-nez noir
+  const cl = g.obj(); cl.poly([[X - 8, 28], [X + 8, 27], [X + 9, 38], [X, 41], [X - 9, 38]], "#14101c", { grad: .6 }); cl.line(X - 7, 32, X + 7, 31, "#2a2236", 1, { flat: true }).line(X - 6, 36, X + 6, 35, "#2a2236", 1, { flat: true }); cl.done({ oc: "#05030a" });
+  // yeux
+  [[X - 4, 25], [X + 4, 25]].forEach(([x, y]) => { g.glow(x, y, 6, "#f472f6", .7); const e = g.obj(); e.rect(x - 1, y, 3, 1, "#ff9cf8", { flat: true }).px(x, y, "#ffffff"); e.done({ outline: false }); });
+  // chaîne d'or + gemme
+  const ch = g.obj(); for (let x = X - 13; x <= X + 13; x += 2) ch.px(x, 47 + Math.round(Math.abs(x - X) / -6), "#f4c247"); ch.ell(X - 13, 45, 1.6, 1.6, "#f4c247").ell(X + 13, 45, 1.6, 1.6, "#f4c247"); ch.rect(X - 1, 49, 2, 22, "#c98a2a", { sx: .8 }); ch.rect(X - 2, 70, 4, 4, "#f4c247"); ch.done({ oc: "#3a1a08" });
+  g.glow(X, 49, 9, "#c084fc", .7);
+  const gm = g.obj(); gm.poly([[X, 44], [X + 3, 49], [X, 54], [X - 3, 49]], "#c084fc", { grad: 1.4, sx: 1 }); gm.done({ oc: "#3a0a50" });
+  // ceinture
+  const bt = g.obj(); bt.rect(X - 12, 62, 24, 3, "#2a1648", { flat: true }); bt.done({ outline: false });
+  // katana du néant (main droite = gauche de l'image)
+  const kt = g.obj();
+  kt.line(X - 19, 70, X - 22, 78, "#3a2a2a", 2);
+  kt.rect(X - 23, 66, 8, 2, "#c98a2a");
+  kt.line(X - 19, 65, X - 36, 18, "#0a0612", 3, { flat: true });
+  kt.line(X - 18, 65, X - 35, 18, "#7c3aed", 1, { flat: true });
+  kt.done({ oc: "#e879f9" });
+  for (let k = 0; k < 9; k++) { const t = k / 9, x = X - 19 - 17 * t + (g.rnd() - .5) * 8, y = 64 - 47 * t + (g.rnd() - .5) * 6; g.obj().px(x, y, k % 2 ? "#e879f9" : "#7c3aed").done({ outline: false }); }
+  g.glow(X - 27, 42, 14, "#7c3aed", .35);
+  // lanterne-trou noir (main gauche = droite de l'image)
+  const ln = g.obj();
+  ln.line(X + 19, 70, X + 22, 76, "#8a6a3a", 1, { flat: true });
+  ln.rect(X + 17, 76, 10, 2, "#3a2a40").rect(X + 16, 92, 12, 2, "#3a2a40");
+  ln.rect(X + 16, 78, 2, 14, "#5a4060", { flat: false }).rect(X + 26, 78, 2, 14, "#5a4060");
+  ln.done({ oc: "#0a0612" });
+  g.glow(X + 22, 85, 13, "#e879f9", .55);
+  const bh = g.obj(); bh.ell(X + 22, 85, 4, 5, "#d946ef", { flat: true }); bh.done({ outline: false });
+  const bh2 = g.obj(); bh2.ell(X + 22, 85, 2.5, 3.5, "#000000", { flat: true }); bh2.done({ outline: false });
+  g.obj().px(X + 19, 82, "#fbcfe8").px(X + 25, 88, "#fbcfe8").done({ outline: false });
+  // particules du Néant
+  for (let k = 0; k < 26; k++) { const x = 20 + g.rnd() * 72, y = 30 + g.rnd() * 66; if (Math.abs(x - X) < 12 && y < 90) continue; g.obj().px(x, y, g.rnd() < .5 ? "#e879f9" : "#a78bfa").done({ outline: false }); }
+  if (bg) g.vignette(.5);
+  return g.canvas();
+  }
+
+  function beastArt(bg) {
+  const g = NAV_ART.scene(777, 112, !bg), star = NAV_ART.star;
+  if (bg) {
+  g.sky(["#030108", "#12041c", "#2a0630", "#3a0a3a"]);
+  g.stars(40, 60, "#f0c0ff");
+  // faille grande ouverte + château
+  g.glow(56, 30, 60, "#c026d3", .45);
+  const rf = g.obj(); rf.poly([[44, 0], [68, 0], [74, 14], [66, 30], [74, 46], [60, 58], [52, 58], [38, 46], [46, 30], [38, 14]], "#05020a", { flat: true }); rf.done({ oc: "#ff6af0" });
+  const cs = g.obj(); cs.rect(52, 14, 8, 40, "#1e0e30", { flat: true }).poly([[51, 14], [56, 3], [61, 14]], "#1e0e30", { flat: true }).rect(43, 30, 6, 24, "#1e0e30", { flat: true }).poly([[42, 30], [46, 22], [50, 30]], "#1e0e30", { flat: true }).rect(63, 26, 6, 28, "#1e0e30", { flat: true }).poly([[62, 26], [66, 18], [70, 26]], "#1e0e30", { flat: true }); for (let y = 18; y < 52; y += 6) cs.px(56, y, "#f0abfc"); cs.done({ outline: false });
+  g.ground(100, "#10061a", { tex: .04 });
+  g.glow(56, 103, 40, "#a21caf", .55);
+  g.obj().ell(56, 104, 44, 6, "#000000", { flat: true }).done({ oc: "#f0abfc" });
+  }
+  const X = 56;
+  // queue spectrale : le bas du corps se dissout en fumée vers le gouffre
+  const tl = g.obj();
+  for (let y = 58; y < 104; y++) { const t = (y - 58) / 46, w = 22 * Math.pow(1 - t, .9) + 2, c = X + Math.sin(y * .16) * 4 * t;
+    for (let x = Math.round(c - w); x <= Math.round(c + w); x++) { const e = Math.abs(x - c) / w; if (t > .45 && g.rnd() < (t - .45) * 1.6 * (.4 + e)) continue; tl.px(x, y, "#160a26", .2 - t * 1.6 - e * .8); } }
+  tl.done({ oc: "#4c1d95" });
+  for (let k = 0; k < 7; k++) { const sx = X + (k - 3) * 7; let x = sx; const wv = g.obj(); for (let y = 66 + k % 3 * 4; y < 102; y++) { x += Math.sin(y * .22 + k * 1.7) * .7; if (g.rnd() < .8) wv.px(x, y, k % 2 ? "#6d28d9" : "#a21caf"); } wv.done({ outline: false, alpha: .55 }); }
+  // corps voûté, tout en rondeurs
+  const bd = g.obj();
+  bd.ell(X, 50, 22, 17, "#1a0c2e", { k: .9 });
+  bd.ell(X - 15, 39, 12, 9, "#1e0e36", { k: .9 }).ell(X + 15, 39, 12, 9, "#1e0e36", { k: .9 });
+  bd.poly([[X - 24, 36], [X - 30, 24], [X - 20, 33]], "#3b1d6e", { grad: 1 }).poly([[X - 18, 32], [X - 20, 20], [X - 12, 31]], "#3b1d6e", { grad: 1 });
+  bd.poly([[X + 24, 36], [X + 30, 24], [X + 20, 33]], "#3b1d6e", { grad: 1 }).poly([[X + 18, 32], [X + 20, 20], [X + 12, 31]], "#3b1d6e", { grad: 1 });
+  bd.done({ oc: "#05020a" });
+  const rim = g.obj(); for (let a = -1.2; a < 1.3; a += .04) { rim.px(X + Math.cos(a) * 23, 50 + Math.sin(a) * 18, "#e879f9"); rim.px(X - Math.cos(a) * 23, 50 + Math.sin(a) * 18, "#7e22ce"); } rim.done({ outline: false, alpha: .8 });
+  // trou noir dans la poitrine (la lanterne avalée)
+  g.glow(X, 52, 22, "#e879f9", .75);
+  g.obj().ell(X, 52, 10, 8, "#f0abfc", { flat: true }).done({ outline: false });
+  g.obj().ell(X, 52, 8, 6.5, "#d946ef", { flat: true }).done({ outline: false });
+  g.obj().ell(X, 52, 6, 5, "#000000", { flat: true }).done({ outline: false });
+  for (let k = 0; k < 18; k++) { const a = k / 18 * 6.28 + .3; g.obj().px(X + Math.cos(a) * 12, 52 + Math.sin(a) * 9.5, k % 2 ? "#fbcfe8" : "#c026d3").done({ outline: false }); }
+  // chaîne d'or brisée
+  const ch = g.obj(); [[X - 20, 40], [X - 17, 42], [X - 14, 43], [X + 14, 43], [X + 17, 42], [X + 20, 40]].forEach(([x, y]) => ch.ell(x, y, 1.3, 1.3, "#f4c247")); ch.done({ oc: "#3a1a08" });
+  // bras longs et courbes, terminés par des faux du Néant
+  const curve = (o, pts, c, w) => { for (let i = 0; i + 1 < pts.length; i++) o.line(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], c, w); };
+  const ar = g.obj();
+  curve(ar, [[X - 24, 40], [X - 32, 30], [X - 38, 20]], "#3b1d6e", 5);
+  curve(ar, [[X + 24, 40], [X + 32, 30], [X + 38, 20]], "#3b1d6e", 5);
+  ar.done({ oc: "#05020a" });
+  // lames-faux : attachées au poignet, larges à la base, recourbées en crochet jusqu'à la pointe
+  const scythe = (p0, p1, p2, th) => {
+    const P = t => [(1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0], (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1]];
+    const outer = [], inner = [], edge = [];
+    for (let i = 0; i <= 30; i++) { const t = i / 30, [x, y] = P(t), [x2, y2] = P(Math.min(1, t + .01)), [x0, y0] = P(Math.max(0, t - .01)); let nx = -(y2 - y0), ny = x2 - x0; const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l; const w = th * Math.pow(1 - t, .7) + .4; outer.push([x + nx * w, y + ny * w]); inner.push([x - nx * w * .35, y - ny * w * .35]); edge.push([x + nx * (w - 1), y + ny * (w - 1)]); }
+    const o = g.obj(); o.poly(outer.concat(inner.reverse()), "#0a0514", { flat: true }); o.rect(p0[0] - 2, p0[1] - 2, 5, 5, "#4c2a85"); o.done({ oc: "#ff6af0" });
+    const e = g.obj(); for (let i = 2; i < edge.length - 1; i++) e.px(edge[i][0], edge[i][1], i % 6 ? "#c084fc" : "#ffffff"); e.done({ outline: false });
+  };
+  scythe([X - 38, 19], [X - 62, 30], [X - 34, 66], 8);
+  scythe([X + 38, 19], [X + 62, 30], [X + 34, 66], 8);
+  g.glow(X - 48, 38, 16, "#c026d3", .4); g.glow(X + 48, 38, 16, "#c026d3", .4);
+  // tête : capuche déchirée (enfoncée entre les épaules)
+  const HY = 8;
+  const hd = g.obj();
+  hd.poly([[X, 12], [X + 6, 16], [X + 14, 14], [X + 12, 22], [X + 16, 32], [X + 14, 42], [X + 6, 46], [X + 2, 42], [X - 2, 46], [X - 6, 42], [X - 14, 42], [X - 16, 32], [X - 12, 22], [X - 14, 14], [X - 6, 16]], "#2a1450", { grad: 1, sx: .7 });
+  hd.done({ oc: "#05020a" });
+  const fc = g.obj(); fc.poly([[X - 9, 22], [X + 9, 22], [X + 11, 32], [X + 7, 40], [X - 7, 40], [X - 11, 32]], "#000000", { flat: true }); fc.done({ outline: false });
+  // lambeaux du cache-nez
+  const rag = g.obj(); [[X - 9, 35, 46], [X - 4, 37, 50], [X + 3, 37, 47], [X + 8, 35, 44]].forEach(([x, y, e]) => rag.poly([[x - 1.5, y], [x + 1.5, y], [x + .5, e], [x - .5, e - 2]], "#14101c", { flat: true })); rag.done({ oc: "#05020a" });
+  // yeux blancs + fissure-sourire
+  [[X - 5, 29], [X + 5, 29]].forEach(([x, y], i) => { g.glow(x, y, 9, "#f5d0fe", .75); const e = g.obj(); e.poly(i ? [[x - 3, y], [x + 3, y - 1], [x + 2, y + 1], [x - 3, y + 1]] : [[x - 3, y - 1], [x + 3, y], [x + 3, y + 1], [x - 2, y + 1]], "#ffffff", { flat: true }); e.done({ outline: false }); });
+  const mo = g.obj(); [[X - 6, 35], [X - 4, 36], [X - 2, 35], [X, 36], [X + 2, 35], [X + 4, 36], [X + 6, 35]].forEach(([x, y]) => mo.px(x, y, "#f0abfc")); mo.done({ outline: false });
+  // éclats du château en orbite
+  [[X - 40, 52, 4], [X + 40, 30, 5], [X - 30, 86, 3], [X + 34, 86, 4], [X - 46, 70, 3], [X + 46, 16, 3], [X + 28, 8, 3]].forEach(([x, y, r], i) => { const s = g.obj(); s.poly([[x - r, y - r * .6], [x + r * .4, y - r], [x + r, y + r * .3], [x - r * .3, y + r]], "#4a3a66", { grad: 1, sx: .8 }); s.done({ oc: "#0a0612" }); g.obj().px(x - r * .6, y - r * .4, "#f0abfc").done({ outline: false }); });
+  if (bg) { for (let k = 0; k < 40; k++) { const x = g.rnd() * 112, y = g.rnd() * 100; g.obj().px(x, y, g.rnd() < .5 ? "#e879f9" : "#7e22ce").done({ outline: false }); } g.vignette(.6); }
+  return g.canvas();
+  }
+
+      const C = {};
+      const tint = (src, f) => { const c = document.createElement("canvas"); c.width = src.width; c.height = src.height; const x = c.getContext("2d"); x.drawImage(src, 0, 0);
+        const im = x.getImageData(0, 0, c.width, c.height), d = im.data; for (let i = 0; i < d.length; i += 4) if (d[i + 3]) f(d, i); x.putImageData(im, 0, 0); return c; };
+      const VAR = {
+        reflet: (d, i) => { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; d[i] = l * .55; d[i + 1] = Math.min(255, l * .95 + 30); d[i + 2] = Math.min(255, l * 1.25 + 50); d[i + 3] = Math.round(d[i + 3] * .82); },
+        echo: (d, i) => { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; d[i] = (d[i] * .35 + l * .65) * .7; d[i + 1] = (d[i + 1] * .35 + l * .65) * .62; d[i + 2] = (d[i + 2] * .35 + l * .65) * .78; },
+        ombre: (d, i) => { const hot = d[i] > 200 && d[i + 2] > 200; if (!hot) { d[i] *= .09; d[i + 1] *= .06; d[i + 2] *= .13; } },
+        flash: (d, i) => { d[i] = d[i + 1] = d[i + 2] = 255; }
+      };
+      return {
+        sprite(form, variant) { const k = form + (variant || ""); if (C[k]) return C[k]; const base = C[form] || (C[form] = form === "beast" ? beastArt(false) : malakorArt(false)); return (C[k] = variant && VAR[variant] ? tint(base, VAR[variant]) : base); },
+        splash(form) { const k = "u" + form; return C[k] || (C[k] = (form === "beast" ? beastArt(true) : malakorArt(true)).toDataURL()); }
+      };
+    })();
+    function malDrawNew(ctx, m, t) {
+      try {
+        const beast = m.form === "beast", spr = MAL_ART.sprite(beast ? "beast" : "malakor", m.variant);
+        const bob = Math.round(Math.sin(t * (beast ? 1.5 : 2.2)) * 2);
+        const g = ctx.createRadialGradient(64, 66, 6, 64, 66, 66); g.addColorStop(0, beast ? "rgba(217,70,239,0.38)" : m.variant === "reflet" ? "rgba(56,189,248,0.25)" : "rgba(124,58,237,0.32)"); g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+        ctx.imageSmoothingEnabled = false; ctx.drawImage(spr, 8, 12 + bob);
+        if (m.shield > 0) { ctx.strokeStyle = "rgba(192,132,252,0.55)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(64, 66, 50, 56, 0, 0, 7); ctx.stroke(); }
+        return true;
+      } catch (e) { return false; }
+    }
+
+    // Malakor directement dans la scène de combat (net, plus grand que le tampon 128 réduit à 104)
+    function malDrawScene(ctx, m, t, ek, hk) {
+      try {
+        const beast = m.form === "beast", flash = ek >= 0 && ek < 0.16, spr = MAL_ART.sprite(beast ? "beast" : "malakor", flash ? "flash" : m.variant);
+        const kick = ek >= 0 && ek < 0.22 ? Math.sin(ek / 0.22 * Math.PI) : 0, lunge = hk >= 0 && hk < 0.3 ? Math.round(-22 * Math.sin(hk / 0.3 * Math.PI)) : 0;
+        const S = beast ? 1.5 : 1.25, w = Math.round(112 * S), bob = Math.round(Math.sin(t * (beast ? 1.5 : 2.2)) * 2);
+        const cx = 443 + Math.round(10 * kick) + lunge, by = 182;
+        const g = ctx.createRadialGradient(cx, by - w * .45, 6, cx, by - w * .45, w * .7); g.addColorStop(0, beast ? "rgba(217,70,239,0.42)" : m.variant === "reflet" ? "rgba(56,189,248,0.28)" : "rgba(124,58,237,0.34)"); g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.save(); ctx.fillStyle = g; ctx.fillRect(cx - w, by - w * 1.2, w * 2, w * 1.3);
+        ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.beginPath(); ctx.ellipse(cx, by - 2, w * .3, 5, 0, 0, 7); ctx.fill();
+        ctx.imageSmoothingEnabled = false; ctx.translate(cx, by - w + bob + Math.round(kick * 3)); ctx.rotate(kick * 0.05); ctx.scale(-1, 1);
+        ctx.drawImage(spr, -w / 2, 0, w, w); ctx.restore();
+        return true;
+      } catch (e) { return false; }
+    }
+    const MAL_SACS = 3;
+    function MK() { return state.malakor || (state.malakor = { choice: null, stopped: false, revealed: false, skin: false, tete: false, sacDay: "", sacN: 0 }); }
+    function malDayKey() { const d = new Date(Date.now() - 4 * 3600e3); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+    function malSacsLeft() { const M = MK(); return M.sacDay !== malDayKey() ? MAL_SACS : Math.max(0, MAL_SACS - (M.sacN || 0)); }
+    function malResetIn() { const n = new Date(), r = new Date(n); r.setHours(4, 0, 0, 0); if (r <= n) r.setDate(r.getDate() + 1); const s = Math.round((r - n) / 1000); return `${Math.floor(s / 3600)} h ${String(Math.floor(s / 60) % 60).padStart(2, "0")}`; }
+    function malFarm() { const M = MK(); return !!(M.choice || M.stopped); }
+    function malLocked() { return malFarm() && malSacsLeft() <= 0; }
+    function malIsNeant(biome) { const d = getExpDifficulty(biome); return !!(d && d.boss === "boss_malakor"); }
+    function malFarmName(v) { return v === "ombre" ? "L'Ombre de Malakor" : v === "echo" ? "Écho du Néant" : "Reflet de Malakor"; }
+
+    // Sac du Néant : 5 composants de 5 biomes différents, 5 à 10 exemplaires chacun selon la Chance
+    function malOpenSac() {
+      const M = MK(); if (M.sacDay !== malDayKey()) { M.sacDay = malDayKey(); M.sacN = 0; }
+      M.sacN = (M.sacN || 0) + 1; M.sacsTotal = (M.sacsTotal || 0) + 1;
+      const st = getHeroTotalStats(), luck = Math.min(1, (st.chance || 0) / 250), u = state.expedition.unsecuredLoot;
+      const bs = UNIVERS_CONFIG.biomes.filter(b => (b.exclusiveRes || []).some(r => UNIVERS_CONFIG.ressources[r])).sort(() => Math.random() - .5).slice(0, 5);
+      const parts = bs.map(b => { const pool = b.exclusiveRes.filter(r => UNIVERS_CONFIG.ressources[r]), id = pool[Math.floor(Math.random() * pool.length)], R = UNIVERS_CONFIG.ressources[id];
+        const q = Math.min(10, 5 + Math.floor(Math.random() * (1 + 5 * luck) + luck * 1.5)); u.ressources[id] = (u.ressources[id] || 0) + q; return `${R.icone} ${q} ${R.nom}`; });
+      addExpLog(`🎒 SAC DU NÉANT (${M.sacN}/${MAL_SACS} aujourd'hui) : ${parts.join(", ")} !`, "text-fuchsia-300 font-bold");
+      showToast(`🎒 Sac du Néant ${M.sacN}/${MAL_SACS} : ${parts.length} composants de biomes différents !`);
+      if (M.sacN >= MAL_SACS) addExpLog(`🔒 Le Néant Absolu se referme jusqu'à 4 h (dans ${malResetIn()}).`, "text-rose-300 font-bold");
+    }
+    function malGiveHead(why) {
+      const M = MK(); if (M.tete) return; M.tete = true;
+      state.ressources.tete_malakor = (state.ressources.tete_malakor || 0) + 1; state.tetesMalakor = (state.tetesMalakor || 0) + 1;
+      addExpLog(`💀 ${why} La Tête de Malakor est à toi (Trophée de Malakor chez le Bûcheron).`, "text-fuchsia-300 font-bold");
+      showToast("💀 Tête de Malakor obtenue ! (meuble chez le Bûcheron)");
+    }
+    const MAL_SKINS = ["casque_malakor", "armure_malakor", "cape_malakor", "aura_malakor", "arme_katana_neant", "bouclier_lanterne_neant"];
+    function malGiveSkins() {
+      const M = MK(); if (M.skin) return; M.skin = true;
+      MAL_SKINS.forEach(id => { state.skinsPossedes[id] = true; });
+      addExpLog("🎁 Malakor te confie sa capuche, sa robe, son manteau, son aura, le Katana du Néant et la Lanterne au Trou Noir (Garde-robe).", "text-fuchsia-300 font-bold");
+      showToast("🎁 Tenue de Malakor, Katana du Néant et Lanterne au Trou Noir débloqués (Garde-robe) !");
+    }
+
+    // Apparition du boss
+    function malOnSpawn(c) {
+      if (state.expedition.infini) { c.enemy.variant = "echo"; c.enemy.nom = "Écho du Néant"; return; }
+      const M = MK(), en = c.enemy;
+      if (!M.choice && !M.stopped) { en.first = true; return; }
+      if (!M.choice && M.stopped) { en.first = true; malHold(c, "return"); return; }
+      en.variant = M.choice === "epargne" && !M.tete ? "ombre" : M.choice === "tue" ? "echo" : "reflet"; en.nom = malFarmName(en.variant);
+      addExpLog(en.variant === "ombre" ? "🌑 Une ombre se détache du Néant… elle porte encore le visage de Malakor." : en.variant === "echo" ? "👁️ L'Écho du Néant se relève là où Malakor est tombé." : "🪞 Le Reflet de Malakor t'attend, comme promis.", "text-purple-300 font-bold");
+      if (malSacsLeft() <= 0) addExpLog("🔒 Plus de Sac du Néant aujourd'hui : ce combat ne rapportera que le butin habituel.", "text-slate-400");
+    }
+    // Après chaque action : coupure à 50 %, choix final
+    function malCheck(c) {
+      const en = c && c.enemy; if (!en || en.ai !== "malakor" || !en.first || c.hold) return false;
+      if (!en.form && !en.revealed && en.pv <= en.pvMax * 0.5) { en.pv = Math.max(en.pv, Math.ceil(en.pvMax * 0.5)); en.revealed = true; MK().revealed = true; malHold(c, "reveal"); return true; }
+      if (en.form === "beast" && en.pv <= 0 && !en.choiceDone) { en.pv = 1; malHold(c, "choice"); return true; }
+      return false;
+    }
+    // Récompenses de victoire (Reflet / Écho / Ombre / premier combat)
+    function malOnKill(en) {
+      if (en.ai !== "malakor" || state.expedition.infini) return;
+      if (en.variant === "ombre") malGiveHead("L'Ombre se dissipe et laisse rouler une tête à tes pieds…");
+      if (malSacsLeft() > 0) malOpenSac();
+    }
+    function malTransform(c) {
+      const en = c.enemy; en.form = "beast"; en.phase2 = true; en.shield = 0; en.charging = false; en.ritual = 0;
+      en.pvMax = Math.round(en.pvMax * 3); en.pv = en.pvMax; en.atk = Math.round(en.atk * 1.5); en._lp = en.pv;
+      en.nom = "MALAKOR, le Gouffre Éveillé";
+      addCanvasFloat("enemy", "GOUFFRE ÉVEILLÉ", "#e879f9"); RetroAudio.hit(true);
+      addExpLog("🕳️ La lanterne avale Malakor… et recrache le GOUFFRE ÉVEILLÉ ! (PV ×3, dégâts ×1,5)", "text-fuchsia-300 font-bold");
+      document.body.classList.add("mal-flash"); setTimeout(() => document.body.classList.remove("mal-flash"), 900);
+    }
+
+    /* ---------- fenêtre de dialogue ---------- */
+    const MAL_TXT = {
+      reveal: { form: "malakor", lines: [
+        ["", "Malakor lève la main. Le combat se fige, comme si le temps lui obéissait."],
+        ["MALAKOR", "Assez."],
+        ["MALAKOR", "Regarde autour de toi, héros. Ces forêts, ces mers, ces royaumes… Tout ceci n'est qu'un décor."],
+        ["MALAKOR", "Une illusion façonnée par mes tantes. Helia et Armine jouent avec ce monde… et avec toi."],
+        ["MALAKOR", "Tu crois choisir ta route ? Ce sont elles qui tirent tes ficelles. Des impostrices, qui se font appeler déesses."],
+        ["MALAKOR", "Je pourrais t'en dire plus… Alors, réponds-moi : veux-tu arrêter ce combat ici ?"]],
+        choices: [["🕊️ Arrêter le combat", "stop", "bg-sky-700 hover:bg-sky-600"], ["⚔️ Continuer", "cont", "bg-rose-700 hover:bg-rose-600"]] },
+      stop: { form: "malakor", lines: [
+        ["MALAKOR", "Sage décision… Il est encore trop tôt pour te dire toute la vérité."],
+        ["MALAKOR", "Tu as besoin de t'entraîner. Sinon… le Néant te dévorera avant même que tu comprennes pourquoi."],
+        ["MALAKOR", "Mon reflet t'attendra ici. Reviens quand tu te sentiras prêt."]], choices: [["Quitter le Néant", "stopEnd", "bg-slate-700 hover:bg-slate-600"]] },
+      cont: { form: "malakor", lines: [
+        ["MALAKOR", "Tu l'auras voulu."],
+        ["MALAKOR", "Contemple ce que le Néant a fait de moi !"]], choices: [["⚔️ Affronter le Gouffre Éveillé", "beast", "bg-fuchsia-700 hover:bg-fuchsia-600"]] },
+      ret: { form: "malakor", lines: [
+        ["MALAKOR", "Te revoilà. Tu as l'air… plus fort."],
+        ["MALAKOR", "Es-tu prêt à affronter ce que je suis vraiment ?"]],
+        choices: [["⚔️ Affronter le Gouffre Éveillé", "beast", "bg-fuchsia-700 hover:bg-fuchsia-600"], ["🪞 Pas encore (combattre son Reflet)", "reflet", "bg-slate-700 hover:bg-slate-600"]] },
+      choice: { form: "malakor", lines: [
+        ["", "Le Gouffre se déchire. Malakor retombe à genoux, de nouveau humain, le cache-nez en lambeaux."],
+        ["MALAKOR", "… Tu es plus fort que je ne le pensais."],
+        ["MALAKOR", "Vas-y. Finis-en. … Ou écoute-moi, pour une fois."]],
+        choices: [["🕊️ Épargner Malakor", "spare", "bg-sky-700 hover:bg-sky-600"], ["🗡️ Tuer Malakor", "kill", "bg-rose-800 hover:bg-rose-700"]] },
+      spare: { form: "malakor", lines: [
+        ["MALAKOR", "… Tu es différent des autres."],
+        ["MALAKOR", "Prends ceci. Ma tenue, mon katana, ma lanterne. Ils te serviront mieux qu'à moi."],
+        ["MALAKOR", "Tu as besoin d'être plus fort pour affronter tes prochaines épreuves. Mon reflet restera ici : entraîne-toi contre lui."],
+        ["MALAKOR", "Et méfie-toi de celles qui te regardent d'en haut."]], choices: [["Accepter", "end", "bg-sky-700 hover:bg-sky-600"]] },
+      kill: { form: "malakor", lines: [
+        ["MALAKOR", "… Alors c'est ça, ta réponse."],
+        ["MALAKOR", "Elles seront fières de toi…"],
+        ["", "Malakor s'effondre. Sa tête roule à tes pieds. Il ne reste de lui qu'un écho, qui hante désormais le Néant."]], choices: [["Ramasser la tête", "end", "bg-rose-800 hover:bg-rose-700"]] }
+    };
+    let malDlgOpen = false;
+    function malHold(c, stage) { c.hold = true; c.holdStage = stage; malShow(stage === "return" ? "ret" : stage); }
+    function malShow(key) {
+      const T = MAL_TXT[key], c = state.expedition.combat; if (!T) return;
+      if (c) c.holdStage = key === "ret" ? "return" : key;
+      let box = document.getElementById("mal-dlg");
+      if (!box) { box = document.createElement("div"); box.id = "mal-dlg"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); document.body.appendChild(box); }
+      const form = c && c.enemy && c.enemy.form === "beast" && key !== "choice" && key !== "spare" && key !== "kill" ? "beast" : T.form;
+      let i = 0; malDlgOpen = true; updateMusic();
+      const draw = () => {
+        const done = i >= T.lines.length - 1, [who, txt] = T.lines[i];
+        box.innerHTML = `<div class="mal-card"><div class="mal-art"><img src="${MAL_ART.splash(form)}" alt=""></div>
+          <div class="mal-body"><div class="mal-who">${who || "&nbsp;"}</div><p class="mal-txt ${who ? "" : "mal-narr"}">${txt}</p>
+          <div class="mal-acts">${done ? T.choices.map(([l, a, cl]) => `<button type="button" data-mal="${a}" class="ui-btn mal-btn ${cl}">${l}</button>`).join("") : `<button type="button" data-mal="next" class="ui-btn mal-btn bg-slate-700 hover:bg-slate-600">Suite ▶</button>`}</div>
+          <div class="mal-dots">${T.lines.map((_, k) => `<i class="${k <= i ? "on" : ""}"></i>`).join("")}</div></div></div>`;
+        box.querySelectorAll("[data-mal]").forEach(b => b.addEventListener("click", () => { const a = b.dataset.mal; if (a === "next") { i++; RetroAudio.cursor(); draw(); } else malAct(a); }));
+      };
+      box.classList.remove("hidden"); draw();
+    }
+    function malClose() { const b = document.getElementById("mal-dlg"); if (b) b.classList.add("hidden"); malDlgOpen = false; updateMusic(); }
+    function malAct(a) {
+      const c = state.expedition.combat, en = c && c.enemy, M = MK(); RetroAudio.confirm();
+      if (a === "stop" || a === "cont" || a === "spare" || a === "kill") {
+        if (a === "spare" || a === "kill") { M.choice = a === "spare" ? "epargne" : "tue"; if (a === "spare") malGiveSkins(); else malGiveHead("Tu as tranché."); if (en) en.choiceDone = true; saveGame(); }
+        malShow(a); return;
+      }
+      malClose();
+      if (!c) return;
+      if (a === "stopEnd") {
+        M.stopped = true; c.hold = false; state.expedition.combat = null;
+        addExpLog("🕊️ Tu baisses ton arme. Malakor s'efface dans le Néant… pour cette fois.", "text-sky-300 font-bold");
+        completeExpedition(); return;
+      }
+      if (a === "beast") { c.hold = false; c.holdStage = null; malTransform(c); c.turn = "PLAYER"; renderExpeditionView(); saveGame(); return; }
+      if (a === "reflet") { c.hold = false; c.holdStage = null; en.first = false; en.variant = "reflet"; en.nom = malFarmName("reflet"); addExpLog("🪞 Malakor sourit et s'efface : son Reflet prend sa place.", "text-purple-300 font-bold"); c.turn = "PLAYER"; renderExpeditionView(); return; }
+      if (a === "end") { c.hold = false; c.holdStage = null; en.pv = 0; c.turn = "BUSY"; updateCombatUI(); setTimeout(resolveAfterPlayerAction, 300); }
+    }
+    // Rechargement de la page en plein dialogue : on rouvre la bonne fenêtre
+    function malResume(c) { if (malDlgOpen || !c.hold) return; const st = c.holdStage || "reveal"; malShow(st === "return" ? "ret" : st); }
+    function malPanelHtml() {
+      const M = MK(), left = malSacsLeft();
+      const st = !M.choice && !M.stopped ? "Premier affrontement : Malakor t'attend au bout du Néant Absolu." : !M.choice ? "Tu as arrêté le combat. Tu peux revenir affronter sa vraie forme… ou t'entraîner contre son Reflet." : M.choice === "epargne" ? (M.tete ? "Tu as épargné Malakor : son Reflet t'entraîne." : "Tu as épargné Malakor. Une Ombre rôde encore : elle porte sa tête.") : "Tu as tué Malakor : son Écho hante le Néant.";
+      return `<div class="mal-panel"><img src="${MAL_ART.splash("malakor")}" alt=""><div><b class="text-fuchsia-300">👁️ Malakor, fils de Limuse</b><div class="text-[11px] text-slate-300 mt-0.5">${st}</div>
+        ${malFarm() ? `<div class="text-[11px] mt-1 ${left ? "text-emerald-300" : "text-rose-300"}">🎒 Sacs du Néant : ${MAL_SACS - left}/${MAL_SACS} aujourd'hui${left ? "" : ` — 🔒 réouverture dans ${malResetIn()}`}</div>` : ""}</div></div>`;
+    }
+
+
+    /* =======================================================================
+       v1.77 — ♾️ EXPLORATION INFINIE : un biome au hasard à chaque boucle, dans sa difficulté
+       la plus haute, et +4 % de puissance ennemie par palier franchi jusqu'à la défaite
+       ======================================================================= */
+    const INF_LVL = 40, INF_STEP = 1.04;
+    function infMult() { const I = state.expedition.infini; return I ? Math.pow(INF_STEP, I.palier - 1) : 1; }
+    function infMaxDiff(b) { const L = state.hero.niveau, ds = (b.difficultes || []).filter(d => L >= d.heroReq && !(d.heroMax && L > d.heroMax) && !d.solo); return ds.length ? ds[ds.length - 1] : null; }
+    function infPickBiome(prev) { const L = state.hero.niveau, pool = UNIVERS_CONFIG.biomes.filter(b => L >= b.niveauReq && b.id !== prev); return pool[Math.floor(Math.random() * pool.length)] || UNIVERS_CONFIG.biomes[0]; }
+    function infGo(b) { state.expedition.biomeId = b.id; const d = infMaxDiff(b); if (d) state.expedition.difficulte = d.id; state.expedition.trainSel = false; return d; }
+    function infStart() {
+      if (state.expedition.active) { showToast("Termine ou interromps l'expédition en cours avant de lancer l'Exploration infinie."); return; }
+      if (state.hero.niveau < INF_LVL) { showToast(`♾️ Exploration infinie : niveau ${INF_LVL} requis.`); return; }
+      state.expedition.infini = { palier: 1, t0: Date.now() };
+      const b = infPickBiome(null), d = infGo(b);
+      addExpLog(`♾️ EXPLORATION INFINIE ! Palier 1 : ${b.icone || ""} ${b.nom}${d ? " (" + d.court + ")" : ""}. Chaque biome réussi rend le suivant 4 % plus coriace…`, "text-cyan-300 font-bold");
+      document.getElementById("btn-exp-start").click();
+      if (!state.expedition.active) state.expedition.infini = null;
+    }
+    function infNext(biome) {
+      const I = state.expedition.infini; const done = I.palier; I.palier++;
+      if (done > (state.infiniRecord || 0)) state.infiniRecord = done;
+      if (done % 5 === 0) { showToast(`♾️ Bravo ! Tu as atteint le palier ${done} de l'Exploration infinie !`); RetroAudio.levelUp(); }
+      const nb = infPickBiome(biome.id), d = infGo(nb);
+      addExpLog(`♾️ Palier ${done} franchi ! Palier ${I.palier} : ${nb.icone || ""} ${nb.nom}${d ? " (" + d.court + ")" : ""} — ennemis ×${infMult().toFixed(2)}.`, "text-cyan-300 font-bold");
+      state.expedition.progress = 0; state.expedition.nextEventAt = 20 + Math.random() * 10;
+    }
+    function infEnd(why) {
+      const I = state.expedition.infini; if (!I) return; state.expedition.infini = null;
+      const done = I.palier - 1; if (done > (state.infiniRecord || 0)) state.infiniRecord = done;
+      state.infiniRuns = (state.infiniRuns || 0) + 1;
+      addExpLog(`♾️ Exploration infinie terminée (${why}) : ${done} palier${done > 1 ? "s" : ""} franchi${done > 1 ? "s" : ""}. Record : ${state.infiniRecord || 0}.`, "text-cyan-300 font-bold");
+      showToast(`♾️ Fin de l'Exploration infinie : palier ${done} (record ${state.infiniRecord || 0}).`);
+    }
+    function infCardHtml() {
+      const I = state.expedition.infini, ok = state.hero.niveau >= INF_LVL, rec = state.infiniRecord || 0;
+      return `<div class="inf-card ${I ? "on" : ""} ${ok ? "" : "lock"}"><div class="inf-ic">♾️</div><div class="inf-tx"><b>Exploration infinie</b>
+        <small>${!ok ? `🔒 Niveau ${INF_LVL} requis` : I ? `Palier <b>${I.palier}</b> en cours • ennemis ×${infMult().toFixed(2)} • record ${rec}` : `Un biome au hasard à chaque boucle, en difficulté max. +4 % par palier, jusqu'à la défaite. Record : <b>${rec}</b>`}</small></div>
+        ${ok && !I ? `<button type="button" data-inf-start class="ui-btn inf-go">Lancer</button>` : ""}</div>`;
+    }
 
     /* =======================================================================
        v1.75 — 🎬 PROLOGUE : cinématique pixel art avant la création du héros
@@ -23018,7 +23692,9 @@ function wmDraw(ctx, t, opt) {
         dark: { bpm: 68, chords: [[50, 53, 57], [46, 50, 53], [43, 46, 50], [45, 49, 52]], arp: [0, 1, 2, 1], wave: "triangle", vol: .55 },
         void: { bpm: 56, chords: [[38, 41, 44], [37, 40, 43]], arp: null, wave: "triangle", vol: .7 },
         malakor: { bpm: 72, theme: "AB", vol: .5 },   // le thème de Malakor : A menaçant, B qui doute
-        doubt: { bpm: 66, theme: "B", vol: .45 }
+        doubt: { bpm: 66, theme: "B", vol: .45 },
+        battle: { bpm: 80, theme: "A", vol: .5 },               // v1.77 : combat contre Malakor
+        fury: { bpm: 96, theme: "A", vol: .55, fury: true }     // v1.77 : le Gouffre Éveillé
       };
       const MUS = { g: null, timer: 0, step: 0, next: 0, mood: null };
       function note(f, t0, dur, type, vol, dest, att = .01) { const ac = RetroAudio.ctx, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + att); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur); o.connect(g); g.connect(dest); o.start(t0); o.stop(t0 + dur + .05); }
@@ -23088,7 +23764,7 @@ function wmDraw(ctx, t, opt) {
       }
       function bell(m, t0, vol) { [[1, 1], [2.76, .5], [5.4, .25]].forEach(([r, a]) => { const ac = RetroAudio.ctx, o = ac.createOscillator(), g = ac.createGain(); o.type = "sine"; o.frequency.value = mf(m) * r; g.gain.setValueAtTime(vol * a, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + 3.2 / r); o.connect(g); o.start(t0); o.stop(t0 + 3.3); outTo(g, .6); }); }
       function themeStep(M, st, t0, s8) {
-        const seq = M.theme === "AB" ? THEME_A.concat(THEME_B) : THEME_B, bar = seq[Math.floor(st / 8) % seq.length], k = st % 8, barDur = s8 * 8;
+        const seq = M.theme === "AB" ? THEME_A.concat(THEME_B) : M.theme === "A" ? THEME_A : THEME_B, bar = seq[Math.floor(st / 8) % seq.length], k = st % 8, barDur = s8 * 8;
         if (k === 0) {
           bar.ch.forEach(m => choir(m, t0, bar.ch2 ? barDur * .5 : barDur, bar.pad ? .028 : .035, bar.pad ? "o" : "a"));
           if (bar.ch2) bar.ch2.forEach(m => choir(m, t0 + barDur * .5, barDur * .5, .028, "o"));
@@ -23096,7 +23772,8 @@ function wmDraw(ctx, t, opt) {
           if (bar.stab) bar.ch.forEach(m => brass(m - 12, t0, s8 * 1.2, .035));
           if (bar.bell) bell(bar.ch[bar.ch.length - 1] + 12, t0, .05);
         }
-        if (bar.osti) strings(bar.bass + (k % 4 === 2 ? 12 : 0), t0, s8 * .9, k % 4 === 0 ? .07 : .045);
+        if (bar.osti || M.fury) strings(bar.bass + (k % 4 === 2 ? 12 : 0), t0, s8 * .9, k % 4 === 0 ? .07 : .045);
+        if (M.fury && k % 2 === 0 && !(bar.timp && bar.timp.includes(k))) timpani(t0, .13);
         if (bar.timp && bar.timp.includes(k)) timpani(t0, k === 0 ? .32 : .2);
         (bar.mel || []).forEach(([sk, m, d]) => { if (sk === k) { brass(m, t0, s8 * d, .05); brass(m - 12, t0, s8 * d, .03); } });
         (bar.lead || []).forEach(([sk, m, d]) => { if (sk === k) choir(m, t0, s8 * d * 1.05, .06, "a"); });
@@ -23218,7 +23895,7 @@ function wmDraw(ctx, t, opt) {
       }
       // outil de mise au point : LumIntro.seek(scène, ligne, secondes)
       function seek(s_, l_, t_ = 2) { if (!on) return; gate = false; gateEl.classList.add("off"); si = s_; li = l_; leaving = false; startLine(); sT = lT = gT = t_; typed = cur().t.length; txtEl.textContent = cur().t; fade = 0; holdT = -999; draw(); }
-      return { play, seek, get on() { return on; } };
+      return { play, seek, get on() { return on; }, theme(m) { if (!on) musPlay(m); }, themeStop() { if (!on && MUS.mood) musStop(); } };
     })();
 
     /* Création : étapes */
@@ -23231,8 +23908,31 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.76";
+    const GAME_VERSION = "1.78";
     const PATCH_NOTES = [
+      { v: "1.78", date: "22/11/2026", titre: "Aperçu des classes et meubles du camp", items: [
+        "⚔️ Création du héros : l'onglet Classe montre maintenant un aperçu de combat animé de la classe choisie, contre un mannequin : attaque de base, compétence, puis ultime, en boucle, avec leur description.",
+        "🌳 Nouveau bouton « En savoir plus » sur l'aperçu : il ouvre l'arbre de compétences complet de la classe (voies, compétences actives et passives, niveau de déblocage).",
+        "🪑 Campement : nouveau bouton « Mes meubles » qui affiche tous tes meubles en vignettes. Sur mobile, touche un meuble : il est posé sur le camp et la fenêtre se ferme. Sur PC, glisse une vignette directement sur la scène du camp (ou clique pour la poser au centre). Le bouton 📦 range un meuble.",
+        "🪑 La Chaise & tabouret a retrouvé son barreau manquant.",
+        "✏️ Corrections de texte : « Lancer le minage / la pêche / la récolte / l'extraction » (au lieu de « Lancer la Minage »), « Arrêter » adapté à chaque métier, et quelques accords dans les embuscades et les découvertes."
+      ] },
+      { v: "1.77", date: "22/11/2026", titre: "Malakor, fils de Limuse", items: [
+        "👁️ Nouveau Malakor en combat : capuche, cache-nez noir, Katana du Néant et Lanterne au Trou Noir, dans la lignée du prologue. Il est peint en pleine résolution, plus grand et plus net.",
+        "🎬 Premier affrontement raconté : à la moitié de ses PV, Malakor arrête le combat et te parle… puis te laisse le choix : arrêter là, ou continuer.",
+        "🕳️ Si tu continues, il se transforme en GOUFFRE ÉVEILLÉ (PV ×3, dégâts ×1,5) : bras-faux du Néant, trou noir dans la poitrine, nouvel art lui aussi.",
+        "⚖️ À la fin, choix définitif : ÉPARGNER Malakor (sa tenue complète, le Katana du Néant et la Lanterne au Trou Noir, une seule fois) ou le TUER (sa Tête, pour le Trophée du Bûcheron, une seule fois).",
+        "🪞 Ensuite, le Néant Absolu propose le Reflet de Malakor (si tu l'as épargné) ou l'Écho du Néant (si tu l'as tué). Si tu l'as épargné, une Ombre de Malakor apparaît d'abord : elle laisse sa Tête une seule fois.",
+        "🎒 Chaque victoire au Néant Absolu ouvre un Sac du Néant : 5 composants de 5 biomes différents, 5 à 10 de chaque selon ta Chance. 3 sacs par jour, puis le Néant Absolu se referme jusqu'à 4 h du matin.",
+        "🤖 Le combat automatique est maintenant autorisé en Néant Absolu.",
+        "🎵 Le thème orchestral de Malakor (prologue) l'accompagne en combat, en version plus rapide et plus lourde pour le Gouffre Éveillé, et en version « doute » pendant ses dialogues.",
+        "💀 La Tête de Malakor ne tombe plus au hasard : uniquement via le choix « Tuer » ou l'Ombre de Malakor.",
+        "♾️ Nouveau mode EXPLORATION INFINIE (niveau 40) : à chaque fin de boucle, un biome au hasard se lance dans sa difficulté la plus haute, et chaque biome réussi rend le suivant 4 % plus coriace. La partie s'arrête à la défaite ou à l'abandon ; ton record est gardé.",
+        "🏆 Nouveaux succès : paliers 10, 25, 50 et 100 de l'Exploration infinie, Miséricorde du Néant, Bourreau du Néant et Pilleur du Néant (30 sacs).",
+        "🔨 Forge : trois grands onglets Fabriquer / Renforcer / Retravailler. Renforcer et Retravailler affichent ton équipement porté sur un mannequin avec ton héros : clique une pièce pour la sélectionner (le reste du sac est dans une liste dépliable).",
+        "🪓 Bûcheron : sa barre d'expérience apparaît enfin dans le menu de gauche (et sur sa tuile du Hub), comme les autres métiers.",
+        "📊 Forge : chaque recette d'équipement affiche directement le niveau de l'objet et la fourchette de ses stats principales (de Commun à Légendaire), avec ▲ / ▼ par rapport à ce que tu portes."
+      ] },
       { v: "1.76", date: "22/11/2026", titre: "Hub en tuiles, menu Options et confort mobile", items: [
         "▦ Nouveau Hub en tuiles : tous les écrans du jeu réunis sous forme de cases illustrées, rangées par Aventure, Métiers, Atelier et Héros.",
         "🏷️ Chaque tuile affiche son niveau ou sa progression (N.12, 1/50, 5/21, Codex en %…), une barre d'XP pour les métiers et une pastille rouge quand quelque chose t'attend (points à répartir…).",
@@ -23824,6 +24524,7 @@ function wmDraw(ctx, t, opt) {
       // Expédition & Campement
       document.getElementById("btn-exp-start").addEventListener("click", () => {
         if (state.expedition.trainSel) { startTraining(); return; }
+        { const bL = UNIVERS_CONFIG.biomes.find(b => b.id === state.expedition.biomeId); if (bL && !state.expedition.infini && malIsNeant(bL) && malLocked()) { showToast(`🔒 Néant Absolu refermé : 3 Sacs du Néant déjà récupérés aujourd'hui. Réouverture dans ${malResetIn()}.`); return; } }
         if (state.hero.pv <= 1) {
           showToast("⚠️ Vos PV sont critiques ! Utilisez un Coupon de Repos au campement ou attendez la régénération.");
         }
@@ -23844,6 +24545,7 @@ function wmDraw(ctx, t, opt) {
       document.getElementById("btn-exp-stop").addEventListener("click", () => {
         RetroAudio.cursor();
         if (state.expedition.training) { stopTraining(); return; }
+        try { if (state.expedition.infini) infEnd("abandon"); } catch (e) {}
         const hadLoot = state.expedition.unsecuredLoot.gold > 0 ||
           Object.keys(state.expedition.unsecuredLoot.ressources).length > 0 ||
           state.expedition.unsecuredLoot.equips.length > 0;
@@ -23938,6 +24640,14 @@ function wmDraw(ctx, t, opt) {
         if (b && !b.disabled) { toggleCombatItemsMenu(false); executePlayerCombatAction("item", b.dataset.combatItem); }
       });
 
+      // v1.77 — grands onglets Fabriquer / Renforcer / Retravailler
+      document.querySelectorAll("[data-forge-mode]").forEach(btn => btn.addEventListener("click", () => {
+        RetroAudio.cursor(); const m = btn.dataset.forgeMode;
+        state.forgeCat = m === "renf" ? "Renforcement" : m === "retr" ? "Retravail" : (state.forgeLastCat && !["Renforcement", "Retravail"].includes(state.forgeLastCat) ? state.forgeLastCat : "Armes");
+        document.querySelectorAll(".forge-cat-tab").forEach(b => { const act = b.dataset.forgeCat === state.forgeCat;
+          b.className = act ? "forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-orange-500/20 text-orange-300 border border-orange-500/50" : "forge-cat-tab ui-btn px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700"; });
+        renderForgeView();
+      }));
       // Onglets de Forge
       document.querySelectorAll(".forge-cat-tab").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -24057,8 +24767,8 @@ function wmDraw(ctx, t, opt) {
       // ---- v1.75 : HUB EN TUILES ----
       const HUB_TAB_IDS = ["expedition", "campement", "inventaire", "heros"];
       function navXpPct(id) {
-        try { const m = state.metiers && state.metiers[id]; if (!m || m.niveau === undefined) return null;
-          const req = ["peche", "minage", "recolte", "eclats"].includes(id) ? getGatherXpReq(m.niveau) : (id === "forge" || id === "alchimie") ? getProfXpReq(m.niveau) : 0;
+        try { if (id === "bucheron") buchState(); const m = state.metiers && state.metiers[id]; if (!m || m.niveau === undefined) return null;
+          const req = ["peche", "minage", "recolte", "eclats", "bucheron"].includes(id) ? getGatherXpReq(m.niveau) : (id === "forge" || id === "alchimie") ? getProfXpReq(m.niveau) : 0;
           if (!req) return null; return Math.max(0, Math.min(100, Math.round((m.xp || 0) / req * 100))); } catch (e) { return null; }
       }
       function navHubRender() {
