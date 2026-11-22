@@ -278,12 +278,12 @@
     .title-ui { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 6vh 16px 14px; }
     .title-logo { text-align: center; }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-    .tlogo { width: clamp(280px, 44vw, 720px); height: auto; image-rendering: pixelated; opacity: 0; filter: drop-shadow(0 8px 18px rgba(0,0,0,.55)); }
+    .tlogo { width: clamp(280px, 44vw, 1100px); height: auto; image-rendering: auto; opacity: 0; filter: drop-shadow(0 8px 18px rgba(0,0,0,.55)); }
     .tlogo.on { animation: tlogoIn 2.6s cubic-bezier(.2,.8,.25,1) forwards; }
     @keyframes tlogoIn { 0% { opacity: 0; transform: scale(1.12); filter: blur(8px) brightness(2.4) drop-shadow(0 8px 18px rgba(0,0,0,.55)); } 60% { opacity: 1; filter: blur(0) brightness(1.3) drop-shadow(0 8px 18px rgba(0,0,0,.55)); } 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 8px 18px rgba(0,0,0,.55)); } }
     #screen-title .title-menu { opacity: 0; animation: tmenuIn 1s 2.4s ease-out forwards; }
     @keyframes tmenuIn { to { opacity: 1; } }
-    #title-canvas { object-position: 38% 50%; }
+    #title-canvas { image-rendering: auto; }
     .tl-sub { font-family: 'Silkscreen', monospace; font-size: clamp(9px, 1.4vw, 13px); letter-spacing: .25em; color: #a5b4fc; text-shadow: 0 2px 0 #000; }
     .tl-main { font-family: 'Press Start 2P', monospace; font-size: clamp(34px, 8vw, 92px); line-height: 1.15; margin: 10px 0 4px; color: #ffd54f; background: linear-gradient(180deg,#fff3b0 0%,#ffd54f 45%,#f59e0b 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 0 #3a2200) drop-shadow(0 0 22px rgba(255,180,50,.35)); letter-spacing: .04em; }
     .tl-void { font-family: 'Press Start 2P', monospace; font-size: clamp(11px, 2.2vw, 22px); color: #d8b4fe; letter-spacing: .3em; text-shadow: 0 0 16px #a855f7, 0 3px 0 #1a0033; }
@@ -18531,9 +18531,10 @@ function wmDraw(ctx, t, opt) {
     function updateMusic() {
       if (window.__lumIntroOn) { AmbientMusic.stop(); BossMusic.stop(); return; }
       const _mc = state.expedition && state.expedition.combat, _me = _mc && _mc.enemy;
-      if (state.started && !state.musicOff && ((_me && _me.ai === "malakor") || malDlgOpen)) { AmbientMusic.stop(); BossMusic.stop(); try { LumIntro.theme(malDlgOpen ? "doubt" : _me && _me.form === "beast" ? "fury" : "battle"); } catch (e) {} return; }
-      if (state.started) { try { LumIntro.themeStop(); } catch (e) {} }
-      if (!state.started) { BossMusic.stop(); AmbientMusic.stop(); if (state.musicOff) { try { LumIntro.themeStop(); } catch (e) {} } else { try { LumIntro.theme("lumenia"); } catch (e) { AmbientMusic.play("menu"); } } return; }
+      const _sg = document.getElementById("screen-game"), _inGame = state.started && _sg && !_sg.classList.contains("hidden");
+      if (_inGame && !state.musicOff && ((_me && _me.ai === "malakor") || malDlgOpen)) { AmbientMusic.stop(); BossMusic.stop(); try { LumIntro.theme(malDlgOpen ? "doubt" : _me && _me.form === "beast" ? "fury" : "battle"); } catch (e) {} return; }
+      if (_inGame) { try { LumIntro.themeStop(); } catch (e) {} }
+      if (!_inGame) { BossMusic.stop(); AmbientMusic.stop(); if (state.musicOff) { try { LumIntro.themeStop(); } catch (e) {} } else { try { LumIntro.theme("lumenia"); } catch (e) { AmbientMusic.play("menu"); } } return; }
       if (state.musicOff) { AmbientMusic.stop(); BossMusic.stop(); return; }
       const c = state.expedition.combat, en = c && c.enemy;
       if (BossMusic.playing) BossMusic.stop();
@@ -21665,6 +21666,7 @@ function wmDraw(ctx, t, opt) {
       if (name === "slots" || name === "creator") { try { BG.set(name, "bg-stage-pre"); } catch (e) {} }
       if (name === "title") titleStart(); else titleStop();
       document.body.classList.toggle("pre-game", name !== "game");
+      try { updateMusic(); } catch (e) {}
       if (name === "creator") setCrTab(window.__crTab || "lignee");
     }
     function bestSlot() {
@@ -21781,8 +21783,9 @@ function wmDraw(ctx, t, opt) {
       TITLE.raf = requestAnimationFrame(titleDraw);
       if (LOWFX && (TITLE._f = (TITLE._f || 0) + 1) % 2) return;
       titleSetup();
-      const cv = document.getElementById("title-canvas"); if (!cv || !TT.img.complete || !TT.img.naturalWidth) return;
-      const ctx = cv.getContext("2d"), t = ts / 1000, R = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+      const disp = document.getElementById("title-canvas"); if (!disp || !TT.img.complete || !TT.img.naturalWidth) return;
+      if (!TT.base) { TT.base = document.createElement("canvas"); TT.base.width = 1920; TT.base.height = 1080; }
+      const ctx = TT.base.getContext("2d"), t = ts / 1000, R = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
       if (!TT.t0) TT.t0 = t;
       ctx.imageSmoothingEnabled = false; ctx.setTransform(1, 0, 0, 1, 0, 0);
       // lent mouvement de caméra
@@ -21838,7 +21841,22 @@ function wmDraw(ctx, t, opt) {
       // vignette
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       const vg = ctx.createRadialGradient(960, 540, 420, 960, 540, 1150); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(3,1,10,.5)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, 1920, 1080);
+      titlePresent(disp);
       titleLogoDraw(t);
+    }
+    // v1.79 — affichage net à toutes les résolutions (1080p, 2K, 4K…) : la toile prend la taille réelle de l'écran,
+    // l'image 1920×1080 est agrandie au pixel près (facteur entier) puis ramenée en douceur à la taille exacte.
+    function titlePresent(disp) {
+      const r = disp.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, LOWFX ? 2 : 4);
+      const tw = Math.max(320, Math.round(r.width * dpr)), th = Math.max(180, Math.round(r.height * dpr));
+      if (disp.width !== tw || disp.height !== th) { disp.width = tw; disp.height = th; }
+      const o = disp.getContext("2d"), S = Math.max(tw / 1920, th / 1080), dw = 1920 * S, dh = 1080 * S, dx = (tw - dw) * .38, dy = (th - dh) / 2;
+      if (S <= 1 || LOWFX) { o.imageSmoothingEnabled = true; o.imageSmoothingQuality = "high"; o.drawImage(TT.base, dx, dy, dw, dh); return; }
+      if (Math.abs(S - Math.round(S)) < .01) { o.imageSmoothingEnabled = false; o.drawImage(TT.base, Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh)); return; }
+      const k = Math.ceil(S);
+      if (!TT.up || TT.up.width !== 1920 * k) { TT.up = document.createElement("canvas"); TT.up.width = 1920 * k; TT.up.height = 1080 * k; }
+      const u = TT.up.getContext("2d"); u.imageSmoothingEnabled = false; u.drawImage(TT.base, 0, 0, 1920 * k, 1080 * k);
+      o.imageSmoothingEnabled = true; o.imageSmoothingQuality = "high"; o.drawImage(TT.up, dx, dy, dw, dh);
     }
     /* ---- le logo : l'épée dans l'éclipse, LUMENIA en lettres d'or, MALAKOR'S VOID ---- */
     const TLG = {
@@ -21881,7 +21899,9 @@ function wmDraw(ctx, t, opt) {
     function titleLogoDraw(t) {
       const cv = document.getElementById("title-logo-cv"); if (!cv) return;
       if (!TT.logoSched) { TT.logoSched = true; setTimeout(() => cv.classList.add("on"), 900); }
-      const x = cv.getContext("2d"); x.imageSmoothingEnabled = false; x.clearRect(0, 0, 300, 196);
+      const kL = Math.max(1, Math.min(10, Math.ceil((cv.clientWidth || 300) * (window.devicePixelRatio || 1) / 300)));
+      if (cv.width !== 300 * kL) { cv.width = 300 * kL; cv.height = 196 * kL; }
+      const x = cv.getContext("2d"); x.setTransform(kL, 0, 0, kL, 0, 0); x.imageSmoothingEnabled = false; x.clearRect(0, 0, 300, 196);
       const cx = 150, cy = 54;
       // halo violet + tourbillon autour de l'éclipse
       const g = x.createRadialGradient(cx, cy, 10, cx, cy, 52); g.addColorStop(0, "rgba(192,38,211,.55)"); g.addColorStop(1, "rgba(192,38,211,0)"); x.fillStyle = g; x.fillRect(cx - 60, cy - 60, 120, 120);
@@ -24175,7 +24195,7 @@ function wmDraw(ctx, t, opt) {
       }
       // outil de mise au point : LumIntro.seek(scène, ligne, secondes)
       function seek(s_, l_, t_ = 2) { if (!on) return; gate = false; gateEl.classList.add("off"); si = s_; li = l_; leaving = false; startLine(); sT = lT = gT = t_; typed = cur().t.length; txtEl.textContent = cur().t; fade = 0; holdT = -999; draw(); }
-      return { play, seek, get on() { return on; }, theme(m) { if (!on) musPlay(m); }, themeStop() { if (!on && MUS.mood) musStop(); } };
+      return { play, seek, get on() { return on; }, get mood() { return MUS.mood; }, theme(m) { if (!on) musPlay(m); }, themeStop() { if (!on && MUS.mood) musStop(); } };
     })();
 
     /* Création : étapes */
@@ -24194,6 +24214,8 @@ function wmDraw(ctx, t, opt) {
         "🎵 Nouveau thème principal « Lumenia » sur l'écran titre, le choix des emplacements et la création du héros : une voix seule et une harpe sur un bourdon grave, puis les cordes et le chœur montent, et le tutti (cuivres, chœur, tambours, cymbales) porte la mélodie jusqu'au sommet avant de s'éclairer en majeur.",
         "🌌 Nouvel écran titre : l'illustration de LUMENIA prend vie en 1920×1080. La cape du héros flotte au vent, la faille respire et crache des éclairs, des braises et des débris montent du château, le feu de camp fume, la brume glisse et les étoiles scintillent.",
         "⚔️ Nouveau logo en pixel art qui apparaît en fondu : l'épée de lumière plantée dans l'éclipse, la garde en croissant d'or et sa gemme, LUMENIA en lettres d'or et MALAKOR'S VOID.",
+        "🖥️ L'écran titre s'affiche à la résolution réelle de ton écran (1080p, 2K, 4K, écrans Retina) : pixels nets et réguliers, sans flou, et le logo suit la même netteté.",
+        "🎵 Correctif : le thème de l'écran titre se lance aussi quand une partie est déjà sauvegardée (il restait muet).",
         "📱 Mobile : la barre d'onglets du bas n'apparaît plus sur l'écran titre, les emplacements et la création du héros."
       ] },
       { v: "1.78", date: "22/11/2026", titre: "Aperçu des classes et meubles du camp", items: [
@@ -24800,7 +24822,8 @@ function wmDraw(ctx, t, opt) {
       document.getElementById("rng-vol-sfx").addEventListener("change", () => RetroAudio.cursor());
       document.getElementById("chk-vol-music").addEventListener("change", e => { state.musicOff = !e.target.checked; syncVolumeUI(); updateMusic(); saveGame(); });
       document.getElementById("chk-vol-sfx").addEventListener("change", e => { RetroAudio.enabled = e.target.checked; state.sfxOff = !RetroAudio.enabled; syncVolumeUI(); if (RetroAudio.enabled) RetroAudio.cursor(); saveGame(); });
-      document.addEventListener("pointerdown", () => { try { RetroAudio.init(); } catch (e) {} }, { once: true });
+      const _audioKick = () => { try { RetroAudio.init(); const ac = RetroAudio.ctx; if (ac && ac.resume) ac.resume().then(() => { try { updateMusic(); } catch (e) {} }); updateMusic(); } catch (e) {} };
+      ["pointerdown", "touchend", "keydown"].forEach(ev => document.addEventListener(ev, _audioKick, { once: true, capture: true }));
       document.getElementById("btn-topbar-sfx").addEventListener("click", e => {
         RetroAudio.enabled = !RetroAudio.enabled; state.sfxOff = !RetroAudio.enabled;
         syncVolumeUI(); saveGame();
