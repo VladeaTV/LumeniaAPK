@@ -23231,18 +23231,27 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.75";
+    const GAME_VERSION = "1.76";
     const PATCH_NOTES = [
+      { v: "1.76", date: "22/11/2026", titre: "Hub en tuiles, menu Options et confort mobile", items: [
+        "▦ Nouveau Hub en tuiles : tous les écrans du jeu réunis sous forme de cases illustrées, rangées par Aventure, Métiers, Atelier et Héros.",
+        "🏷️ Chaque tuile affiche son niveau ou sa progression (N.12, 1/50, 5/21, Codex en %…), une barre d'XP pour les métiers et une pastille rouge quand quelque chose t'attend (points à répartir…).",
+        "🔒 Les écrans pas encore débloqués apparaissent assombris, avec leur niveau requis.",
+        "📱 Sur mobile, l'onglet ☰ Menu ouvre maintenant le Hub en 3 colonnes (Expédition, Camp, Sac et Héros restent dans la barre du bas).",
+        "🖥️ Sur PC, ouvre le Hub avec la touche Tab ou le bouton « ▦ Vue d'ensemble » en haut de la barre latérale ; Échap ou un clic à côté le referme.",
+        "🎨 22 nouvelles illustrations en pixel art détaillé (64×64) : ombres et lumières, contours colorés, halos lumineux (feu de camp, forge, cristaux, potion, lame runique…) et ciels en dégradé.",
+        "🧭 La barre latérale du PC reprend ces illustrations à la place des émojis, avec une fine barre d'XP sous chaque métier.",
+        "⚙️ Nouveau Menu Options (touche Échap, ou bouton ⚙️ Options en haut à droite sur mobile) : son, sauvegarde, emplacements, export / import, notes de mise à jour, tutoriel, prologue et configuration au même endroit. Les petits boutons en bas à gauche sont remplacés par un seul bouton « ⚙️ Menu Options ».",
+        "📱 Mobile — fluidité : le jeu tourne nettement mieux sur téléphone (environ 2,5 fois plus d'images par seconde en test). Les décors animés sont dessinés à 30 images/s, l'en-tête (PV, PM, ressources) se met à jour moins souvent, le brouillard de la carte n'est plus recalculé en permanence, et les effets de flou coûteux sont désactivés sur mobile.",
+        "📱 Mobile — plus de rechargement accidentel : tirer l'écran vers le bas ne recharge plus la page, et le navigateur demande confirmation avant de quitter une partie en cours.",
+        "📱 Mobile — interface épurée : en-tête compact (PV, PM et ressources sur 3 lignes, ressources défilantes), textes plus grands, aides repliées sur 2 lignes (touche pour déplier).",
+        "⚽ Vroum Vroum Ballon se fait (beaucoup) plus rare : 5 fois moins de chances de le croiser en expédition."
+      ] },
       { v: "1.75", date: "22/11/2026", titre: "Prologue : la naissance de Malakor", items: [
         "🎬 Nouvelle cinématique en pixel art avant la création du héros : les trois déesses, la chute des deux royaumes, Lumenia et son prisme, Limuse, la pierre Lumins… et la naissance de Malakor.",
         "⏭️ Touche l'écran (ou Espace / Entrée) pour accélérer le texte, bouton « PASSER » ou Échap pour sauter la cinématique.",
         "📜 Nouveau bouton PROLOGUE sur l'écran titre pour la revoir quand tu veux.",
-        "⚙️ Nouveau Menu Options (touche Échap, ou bouton ⚙️ Options en haut à droite sur mobile) : son, sauvegarde, emplacements, export / import, notes de mise à jour, tutoriel, prologue et configuration au même endroit. Les petites icônes en bas à gauche laissent place à un seul bouton « Menu Options ».",
-        "🎬 Les héros déjà créés découvrent le prologue une fois, au premier chargement de leur sauvegarde.",
-        "⚽ Vroum Vroum Ballon se fait (beaucoup) plus rare : 5 fois moins de chances de le croiser en expédition.",
-        "📱 Version mobile épurée : en-tête compact (PV, PM et ressources sur 3 lignes, ressources défilantes), textes plus grands, aides repliées sur 2 lignes (touche pour déplier), menu en accordéon qui ouvre directement la bonne section.",
-        "▦ Nouveau Hub en tuiles : chaque écran a sa petite illustration, son niveau et sa barre d'XP. Sur mobile, il remplace le menu ☰ ; sur PC, ouvre-le avec Tab ou « Vue d'ensemble ». La barre latérale reçoit aussi les illustrations et les barres d'XP des métiers.",
-        "📱 Mobile : plus de rechargement accidentel en tirant l'écran vers le bas, et un jeu nettement plus fluide (décors à 30 i/s, moins de calculs inutiles)."
+        "🎬 Les héros déjà créés découvrent le prologue une fois, au premier chargement de leur sauvegarde."
       ] },
       { v: "1.74", date: "21/11/2026", titre: "Vignettes de destination sans étirement", items: [
         "🗺️ Les vignettes des destinations (Forêt, Marais, Mines, Citadelle, Abysse, Terrain d'entraînement) ne sont plus étirées : le décor est peint à la largeur réelle de chaque carte, quelle que soit la taille de l'écran.",
