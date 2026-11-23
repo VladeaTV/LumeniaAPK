@@ -3125,15 +3125,50 @@
       try { localStorage.setItem(SLOT_PREF_KEY, String(n)); sessionStorage.setItem("chroniques_slot_choisi", "1"); } catch (e) {}
       (window.__allowUnload = true, location.reload());
     }
+    function rawDownload(n) {
+      try { const raw = localStorage.getItem(slotKey(n)); if (!raw) return; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([raw], { type: "application/json" })); a.download = `lumenia-slot${n}-brut.json`; document.body.appendChild(a); a.click(); setTimeout(() => a.remove(), 500); showToast("📥 Fichier de sauvegarde téléchargé : garde-le précieusement."); } catch (e) {}
+    }
+    async function slotRescueScan() {
+      for (const n of [1, 2, 3]) {
+        const box = document.querySelector(`[data-rescue-slot="${n}"]`); if (!box) continue;
+        const a = await SAVE_DB.get(slotKey(n) + "|live"), b = await SAVE_DB.get(slotKey(n) + "|load"), c = await SAVE_DB.get(slotKey(n) + "|reset"), bk = [a, b, c].filter(Boolean).sort((x, y) => y.at - x.at)[0];
+        if (!bk) continue;
+        const d = new Date(bk.at).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+        box.innerHTML = `<button type="button" class="ui-btn w-full px-2 py-2 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white">🛟 Restaurer la copie de secours<br><span class="font-normal">${coopEsc(bk.nom)} niv. ${bk.niveau} — ${d}</span></button>`;
+        box.firstChild.onclick = () => {
+          if (!confirm(`Restaurer ${bk.nom} (niv. ${bk.niveau}, copie du ${d}) dans l'emplacement ${n} ?${localStorage.getItem(slotKey(n)) ? "\n\nLa sauvegarde illisible sera d'abord téléchargée dans un fichier." : ""}`)) return;
+          try { if (localStorage.getItem(slotKey(n))) rawDownload(n); localStorage.setItem(slotKey(n), bk.raw); showToast("🛟 Sauvegarde restaurée !"); window.__allowUnload = true; setTimeout(() => location.reload(), 900); } catch (e) { showToast("⚠️ Restauration impossible : stockage plein ?"); }
+        };
+      }
+    }
+    function showLoadError() {
+      const e = window.__loadErr, m = document.createElement("div");
+      m.className = "fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80";
+      m.innerHTML = `<div class="melvor-panel max-w-md w-full p-5 space-y-3" style="background:#1a0b0b;border:2px solid #f87171">
+        <div class="text-base font-bold text-rose-200">🛟 Ta sauvegarde n'a pas pu être chargée</div>
+        <div class="text-sm text-slate-200">Pas de panique : <b>elle n'a pas été effacée</b> et le jeu ne l'écrasera pas.</div>
+        <ul class="text-xs text-slate-300 list-disc pl-5 space-y-1"><li><b>Récupère le fichier</b> pour la garder en sécurité (et l'envoyer au développeur si besoin).</li><li>Si une <b>copie de secours</b> existe, un bouton vert « Restaurer » apparaît sur l'emplacement.</li></ul>
+        <div class="text-[10px] text-slate-500 break-all">Détail technique : ${coopEsc(String(e && (e.message || e) || "inconnu")).slice(0, 220)}</div>
+        <div class="flex gap-2"><button type="button" data-le="dl" class="ui-btn flex-1 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 text-white text-sm font-bold">📥 Récupérer le fichier</button><button type="button" data-le="x" class="ui-btn px-4 py-2 rounded-lg bg-slate-700 text-white text-sm">OK</button></div></div>`;
+      document.body.appendChild(m);
+      m.addEventListener("click", ev => { const b = ev.target.closest("[data-le]"); if (!b) return; if (b.dataset.le === "dl") rawDownload(currentSlot); else m.remove(); });
+    }
     function renderSlotScreen() {
       const grid = document.getElementById("slots-grid"), best = bestSlot();
       const fmtDate = d => { try { return new Date(d).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
       grid.innerHTML = [1, 2, 3].map(n => {
         const p = readSlot(n);
+        let rawN = null; try { rawN = localStorage.getItem(slotKey(n)); } catch (e) {}
+        if (!p && rawN) return `<div class="slot-card slot-empty" style="border-color:#f87171">
+            <div class="slot-head"><span>EMPLACEMENT ${n}</span><em style="color:#fca5a5">⚠️ ILLISIBLE</em></div>
+            <div class="slot-stage"><div class="text-5xl">🛟</div></div>
+            <div class="slot-body text-center"><div class="text-xs text-rose-200">Une sauvegarde existe mais n'a pas pu être lue. Elle est protégée : rien ne l'écrasera.</div><div data-rescue-slot="${n}" class="mt-2"></div></div>
+            <div class="slot-actions"><button type="button" data-raw-dl="${n}" class="slot-play ui-btn">📥 Récupérer le fichier</button></div>
+          </div>`;
         if (!p) return `<div class="slot-card slot-empty">
             <div class="slot-head"><span>EMPLACEMENT ${n}</span></div>
             <div class="slot-stage"><div class="text-5xl opacity-30">✦</div></div>
-            <div class="slot-body text-center"><div class="text-sm text-slate-400">Emplacement libre</div></div>
+            <div class="slot-body text-center"><div class="text-sm text-slate-400">Emplacement libre</div><div data-rescue-slot="${n}" class="mt-2"></div></div>
             <div class="slot-actions"><button type="button" data-slot-play="${n}" class="slot-play ui-btn">✚ NOUVELLE PARTIE</button></div>
           </div>`;
         const h = p.hero, cls = UNIVERS_CONFIG.classes[h.classe], lin = UNIVERS_CONFIG.lignees[h.lignee], last = best && best.n === n;
@@ -3161,6 +3196,8 @@
         try { drawHero128(cv, { ...createInitialState().hero, ...p.hero, skins: { ...createInitialState().hero.skins, ...(p.hero.skins || {}) } }, 0, 0, false, false); } catch (e) {}
       });
       grid.querySelectorAll("[data-slot-play]").forEach(b => b.addEventListener("click", () => { RetroAudio.confirm(); chooseSlot(+b.dataset.slotPlay); }));
+      grid.querySelectorAll("[data-raw-dl]").forEach(b => b.addEventListener("click", () => rawDownload(+b.dataset.rawDl)));
+      slotRescueScan();
       grid.querySelectorAll("[data-slot-del]").forEach(b => b.addEventListener("click", () => {
         const n = +b.dataset.slotDel, p = readSlot(n);
         if (!confirmSlotDelete(n, p)) return;
@@ -3178,16 +3215,43 @@
       return false;
     }
 
+    /* v1.80 — 🛡️ SAUVEGARDES BLINDÉES
+       • une sauvegarde illisible n'est plus jamais écrasée par une partie neuve (le jeu se bloque en lecture et propose de la récupérer) ;
+       • copies de secours dans IndexedDB (au chargement + toutes les 2 min) avec restauration depuis l'écran des emplacements ;
+       • stockage plein : alerte claire au lieu d'un échec silencieux ; demande de stockage persistant au navigateur. */
+    const SAVE_DB = (() => {
+      let dbp = null;
+      const open = () => dbp || (dbp = new Promise((res, rej) => { try { const r = indexedDB.open("lumenia_saves", 1); r.onupgradeneeded = () => r.result.createObjectStore("s"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }));
+      const run = (mode, fn) => open().then(db => new Promise((res, rej) => { const t = db.transaction("s", mode), r = fn(t.objectStore("s")); t.oncomplete = () => res(r ? r.result : undefined); t.onerror = () => rej(t.error); }));
+      return { put: (k, v) => run("readwrite", st => st.put(v, k)).catch(() => {}), get: k => run("readonly", st => st.get(k)).catch(() => null) };
+    })();
+    function backupSlot(n, raw, kind) { try { const p = JSON.parse(raw); if (!p || !p.hero || !p.started) return; SAVE_DB.put(slotKey(n) + "|" + kind, { raw, at: Date.now(), nom: p.hero.nom || "Héros", niveau: p.hero.niveau || 1 }); } catch (e) {} }
+    try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+    let _saveWarned = false, _lastBak = 0;
     function saveGame(notify = false) {
-      if (window.__ioLock) return;
+      if (window.__ioLock || window.__loadFailed) return;
       try {
         const ss = document.getElementById("screen-slots");
         if (ss && !ss.classList.contains("hidden")) return;   // pas d'écriture tant qu'aucun emplacement n'est choisi
+        if (!state.started && window.__slotHadSave) return;   // jamais une partie neuve par-dessus une vraie sauvegarde
         state.savedAt = Date.now();
         state.lastSeen = Date.now();
-        localStorage.setItem(getSaveKey(), JSON.stringify(state));
+        const raw = JSON.stringify(state);
+        localStorage.setItem(getSaveKey(), raw);
+        if (state.started) { window.__slotHadSave = true; if (Date.now() - _lastBak > 120000) { _lastBak = Date.now(); backupSlot(currentSlot, raw, "live"); } }
         if (notify) showToast("💾 Sauvegarde enregistrée !");
-      } catch (e) {}
+      } catch (e) {
+        if (!_saveWarned) { _saveWarned = true; saveFailBanner(e); }
+      }
+    }
+    function saveFailBanner(e) {
+      const full = e && (e.name === "QuotaExceededError" || e.code === 22 || /quota/i.test(e.message || ""));
+      let b = document.getElementById("save-fail"); if (!b) { b = document.createElement("div"); b.id = "save-fail"; document.body.appendChild(b); }
+      b.style.cssText = "position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:120;max-width:560px;width:calc(100% - 24px);background:#450a0a;border:2px solid #f87171;border-radius:12px;padding:12px 14px;color:#fee2e2;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.6)";
+      b.innerHTML = `<b>⚠️ Ta partie ne peut plus être sauvegardée</b><br>${full ? "Le stockage du navigateur est plein." : "Le navigateur refuse l'écriture (navigation privée, stockage bloqué ou plein)."} Exporte ta sauvegarde dans un fichier pour ne rien perdre.
+        <div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="ui-btn" style="flex:1;padding:8px;border-radius:8px;background:#b91c1c;color:#fff;font-weight:700" id="save-fail-exp">📤 Exporter maintenant</button><button type="button" class="ui-btn" style="padding:8px 12px;border-radius:8px;background:#1f2937;color:#fff" id="save-fail-x">Plus tard</button></div>`;
+      b.querySelector("#save-fail-exp").onclick = () => { try { const blob = new Blob([JSON.stringify({ game: "LUMENIA", version: GAME_VERSION, exported: Date.now(), save: state })], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `lumenia-${(state.hero.nom || "heros").replace(/[^a-z0-9_-]/gi, "_")}-secours.json`; document.body.appendChild(a); a.click(); setTimeout(() => a.remove(), 500); } catch (er) {} };
+      b.querySelector("#save-fail-x").onclick = () => { b.remove(); setTimeout(() => { _saveWarned = false; }, 600000); };
     }
 
     function loadGame() {
@@ -3225,8 +3289,10 @@
           }
         };
         migrateSave(parsed);
+        try { backupSlot(currentSlot, raw, "load"); } catch (e) {}
         return true;
       } catch (e) {
+        window.__loadErr = e; console.error("Chargement de la sauvegarde impossible :", e);
         return false;
       }
     }
@@ -24195,7 +24261,20 @@ function wmDraw(ctx, t, opt) {
       }
       // outil de mise au point : LumIntro.seek(scène, ligne, secondes)
       function seek(s_, l_, t_ = 2) { if (!on) return; gate = false; gateEl.classList.add("off"); si = s_; li = l_; leaving = false; startLine(); sT = lT = gT = t_; typed = cur().t.length; txtEl.textContent = cur().t; fade = 0; holdT = -999; draw(); }
-      return { play, seek, get on() { return on; }, get mood() { return MUS.mood; }, theme(m) { if (!on) musPlay(m); }, themeStop() { if (!on && MUS.mood) musStop(); } };
+      // rendu hors-ligne d'un thème (export audio haute qualité)
+      async function renderTheme(mood, bars, sr = 48000) {
+        const M = MOODS[mood], s8 = 60 / M.bpm / 2, per = M.theme === "E" ? 6 : M.theme === "H" ? 16 : 8, steps = bars * per, dur = steps * s8 + 7;
+        const off = new OfflineAudioContext(2, Math.ceil(dur * sr), sr), saveCtx = RetroAudio.ctx, saveBus = RetroAudio.bus, saveMus = { ...MUS };
+        const master = off.createGain(); master.gain.value = .9; master.connect(off.destination);
+        RetroAudio.ctx = off; RetroAudio.bus = () => master;
+        try {
+          MUS.g = off.createGain(); MUS.g.gain.value = M.vol; MUS.g.connect(master);
+          const rv = revFor(off), rg = off.createGain(); rg.gain.value = .9; rv.connect(rg); rg.connect(MUS.g); MUS.rev = rv;
+          for (let st = 0; st < steps; st++) themeStep(M, st, .2 + st * s8, s8);
+        } finally { RetroAudio.ctx = saveCtx; RetroAudio.bus = saveBus; Object.assign(MUS, saveMus); }
+        return off.startRendering();
+      }
+      return { play, seek, renderTheme, get on() { return on; }, get mood() { return MUS.mood; }, theme(m) { if (!on) musPlay(m); }, themeStop() { if (!on && MUS.mood) musStop(); } };
     })();
 
     /* Création : étapes */
@@ -24208,8 +24287,15 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.79";
+    const GAME_VERSION = "1.80";
     const PATCH_NOTES = [
+      { v: "1.80", date: "23/11/2026", titre: "Sauvegardes blindées", items: [
+        "🛡️ Une sauvegarde qui n'arrive pas à se charger n'est plus jamais écrasée par une nouvelle partie : le jeu la protège, te prévient et te propose de la récupérer dans un fichier.",
+        "🛟 Copies de secours automatiques (au lancement et toutes les 2 minutes de jeu), dans un second stockage du navigateur. Si un emplacement est vide ou illisible, un bouton vert « Restaurer la copie de secours » apparaît sur l'écran des emplacements.",
+        "⚠️ Si le navigateur refuse d'enregistrer (stockage plein, navigation privée…), une alerte rouge s'affiche avec un bouton pour exporter ta partie, au lieu d'échouer en silence.",
+        "🔒 Le jeu demande au navigateur de ne pas effacer ses données quand l'espace manque.",
+        "💡 Conseil : pense à exporter régulièrement ta sauvegarde (📤 sur l'emplacement ou Options → Export / Import), surtout avant de changer de navigateur, d'ordinateur ou de dossier."
+      ] },
       { v: "1.79", date: "22/11/2026", titre: "Le thème de Lumenia et un nouvel écran titre", items: [
         "🎵 Nouveau thème principal « Lumenia » sur l'écran titre, le choix des emplacements et la création du héros : une voix seule et une harpe sur un bourdon grave, puis les cordes et le chœur montent, et le tutti (cuivres, chœur, tambours, cymbales) porte la mélodie jusqu'au sommet avant de s'éclairer en majeur.",
         "🌌 Nouvel écran titre : l'illustration de LUMENIA prend vie en 1920×1080. La cape du héros flotte au vent, la faille respire et crache des éclairs, des braises et des débris montent du château, le feu de camp fume, la brume glisse et les étoiles scintillent.",
@@ -24722,7 +24808,9 @@ function wmDraw(ctx, t, opt) {
     }
 
     window.addEventListener("DOMContentLoaded", () => {
+      const _rawAtBoot = (() => { try { return localStorage.getItem(getSaveKey()); } catch (e) { return null; } })();
       const hasSave = loadGame();
+      if (_rawAtBoot) { window.__slotHadSave = true; if (!hasSave) { window.__loadFailed = true; window.__ioLock = true; state = createInitialState(); } }
 
       // Écouteurs Créateur
       document.getElementById("creator-name-input").addEventListener("input", e => {
@@ -25024,7 +25112,8 @@ function wmDraw(ctx, t, opt) {
         document.getElementById("modal-reset").classList.add("hidden");
       });
       document.getElementById("btn-confirm-reset").addEventListener("click", () => {
-        localStorage.removeItem(getSaveKey());
+        try { const old = localStorage.getItem(getSaveKey()); if (old) backupSlot(currentSlot, old, "reset"); } catch (e) {}
+        localStorage.removeItem(getSaveKey()); window.__slotHadSave = false;
         state = createInitialState();
         battleFloats = []; forgeFx = null;
         Object.keys(workFx).forEach(k => delete workFx[k]);
@@ -25182,7 +25271,9 @@ function wmDraw(ctx, t, opt) {
       let slotChosen = false;
       try { slotChosen = sessionStorage.getItem("chroniques_slot_choisi") === "1"; sessionStorage.removeItem("chroniques_slot_choisi"); } catch (e) { slotChosen = true; }
       let skipTitle = false; try { skipTitle = sessionStorage.getItem("lumenia_skip_title") === "1"; sessionStorage.removeItem("lumenia_skip_title"); } catch (e) {}
-      if (!slotChosen) {
+      if (window.__loadFailed) {
+        renderSlotScreen(); renderTitleMenu(); showScreen("slots"); setTimeout(showLoadError, 300);
+      } else if (!slotChosen) {
         renderSlotScreen(); renderTitleMenu(); showScreen(skipTitle ? "slots" : "title");
       } else if (hasSave && state.started) {
         showScreen("game");
