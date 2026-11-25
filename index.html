@@ -15066,7 +15066,10 @@
           [[30, 52, 16, 64], [50, 70, 50, 46], [100, 44, 16, 72], [118, 66, 40, 50]].forEach(([a, b, w, h]) => { x.fillRect(a, b, w, h); for (let q = 0; q < w; q += 5) x.fillRect(a + q, b - 4, 3, 4); });
           x.beginPath(); x.moveTo(28, 52); x.lineTo(38, 36); x.lineTo(48, 52); x.fill(); x.beginPath(); x.moveTo(98, 44); x.lineTo(108, 26); x.lineTo(118, 44); x.fill();
           [[36, 64], [40, 80], [106, 58], [106, 76], [70, 84]].forEach(([a, b]) => { rect(a, b, 3, 5, "#fb923c"); glow(a + 1, b + 2, 6, "rgba(251,146,60,0.5)"); }); };
-        for (let dx = 0; dx + 160 <= 170 + ox; dx += 170) { x.save(); x.translate(dx, 0); wall(); x.restore(); }
+        // v1.84.2 : un seul château ; les répétitions sont de simples remparts
+        const ramp = () => { x.fillStyle = "#14090a"; x.fillRect(0, 76, 170, 40); for (let q = 0; q < 170; q += 7) x.fillRect(q, 72, 4, 4); x.fillRect(60, 62, 22, 14); for (let q = 0; q < 22; q += 6) x.fillRect(60 + q, 58, 3, 4);
+          [[68, 68], [30, 90], [120, 94]].forEach(([a, b]) => { rect(a, b, 3, 5, "#fb923c"); glow(a + 1, b + 2, 6, "rgba(251,146,60,0.5)"); }); };
+        for (let dx = 0; dx + 160 <= 170 + ox; dx += 170) { x.save(); x.translate(dx, 0); dx === 0 ? wall() : ramp(); x.restore(); }
         x.fillStyle = "#292524"; x.fillRect(0, 114, W, H);
         x.save(); x.scale(k, 1);   // rivière de lave : simple courbe, l'étirer ne se voit pas
         x.fillStyle = grad(118, 132, [[0, "#fde047"], [0.5, "#f97316"], [1, "#b91c1c"]]); x.beginPath(); x.moveTo(0, 124); x.quadraticCurveTo(120, 114, 200, 126); x.quadraticCurveTo(260, 134, 320, 122); x.lineTo(320, 130); x.quadraticCurveTo(250, 140, 190, 133); x.quadraticCurveTo(110, 122, 0, 132); x.fill();
@@ -15167,22 +15170,91 @@
       tile(1, 90, x => { ctx.fillStyle = "#334155"; ctx.fillRect(x + 20, 196, 8, 4); ctx.fillRect(x + 60, 202, 5, 3); ctx.fillStyle = "#38bdf8"; ctx.fillRect(x + 44, 162, 3, 3); ctx.fillStyle = "#a855f7"; ctx.fillRect(x + 76, 166, 2, 2); });
       ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let i = 0; i < 14; i++) { const ph = (t * 0.15 + scR(i, 11)) % 1, x = ((scR(i, 12) * W - walk * 0.2) % W + W) % W, y = 40 + ph * 110; ctx.fillStyle = `rgba(165,180,252,${0.5 * Math.sin(ph * Math.PI)})`; ctx.fillRect(x, y, 1.5, 1.5); } ctx.restore();
     }
+    // ---- v1.84.2 : la Citadelle (unique) et ses remparts ----
+    function citadelIsVoid() { try { const b = vdBiome(state.expedition.biomeId); return !!(b && b.void && state.expedition.active && !state.expedition.sub); } catch (e) { return false; } }
+    function citadelKeep(ctx, cx, t) {
+      const V = citadelIsVoid(), col = "#1d0c0c", R = (x, y, w, h) => ctx.fillRect(Math.round(cx + x), y, w, h);
+      const merl = (x, y, w) => { for (let k = 0; k < w; k += 6) R(x + k, y - 4, 3, 4); };
+      const roof = (x, y, w, h) => { ctx.beginPath(); ctx.moveTo(cx + x - 2, y); ctx.lineTo(cx + x + w / 2, y - h); ctx.lineTo(cx + x + w + 2, y); ctx.fill(); };
+      ctx.fillStyle = col;
+      R(-56, 78, 112, 80);                 // enceinte
+      merl(-56, 78, 112);
+      R(-62, 56, 18, 102); roof(-62, 56, 18, 18);   // tour gauche
+      R(44, 56, 18, 102); roof(44, 56, 18, 18);     // tour droite
+      R(-22, 40, 44, 118); merl(-22, 40, 44);       // donjon
+      R(-8, 22, 16, 20); roof(-8, 22, 16, 22);      // flèche centrale
+      R(-1, -6, 2, 8);                              // hampe
+      const wv = Math.sin(t * 2.4) * 2; ctx.fillStyle = V ? "#a21caf" : "#991b1b";
+      ctx.beginPath(); ctx.moveTo(cx + 1, -6); ctx.lineTo(cx + 13 + wv, -3); ctx.lineTo(cx + 1, 1); ctx.fill();
+      // porte et fenêtres éclairées
+      ctx.fillStyle = "#0b0404"; ctx.beginPath(); ctx.moveTo(cx - 9, 158); ctx.lineTo(cx - 9, 140); ctx.quadraticCurveTo(cx, 130, cx + 9, 140); ctx.lineTo(cx + 9, 158); ctx.fill();
+      const lit = V ? "232,121,249" : "251,146,60";
+      [[-12, 56], [8, 56], [-12, 80], [8, 80], [-56, 72], [50, 72], [-56, 96], [50, 96], [-2, 30]].forEach(([a, b], i) => {
+        const f = 0.55 + 0.45 * Math.sin(t * 3 + i * 1.7); ctx.fillStyle = `rgba(${lit},${f})`; R(a, b, 4, 6); });
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, cx, 70, 70, lit, 0.1); ctx.restore();
+    }
+    function citadelEruption(ctx, vx, t) {
+      const Rn = (i, s) => { const v = Math.sin((i * 12.73 + s) * 78.1) * 43758.5453; return v - Math.floor(v); };
+      const pulse = 0.5 + 0.5 * Math.sin(t * 3.1) * Math.sin(t * 1.3);
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      scGlow(ctx, vx, 46, 170, "249,115,22", 0.28 + 0.18 * pulse); scGlow(ctx, vx, 40, 70, "253,224,71", 0.25 + 0.2 * pulse); scGlow(ctx, vx, 30, 120, "192,38,211", 0.1 + 0.08 * pulse);
+      ctx.restore();
+      // colonne de cendre noire
+      for (let i = 0; i < 9; i++) { const ph = (t * 0.12 + i / 9) % 1; ctx.fillStyle = `rgba(28,20,24,${0.6 * (1 - ph)})`; ctx.beginPath(); ctx.arc(vx + Math.sin(i * 2.3 + t * 0.4) * 14 + ph * 30, 40 - ph * 90, 12 + ph * 34, 0, 7); ctx.fill(); }
+      // fontaine de lave dans le cratère
+      const fh = 18 + 10 * pulse;
+      let g = ctx.createLinearGradient(0, 52 - fh, 0, 54); g.addColorStop(0, "rgba(253,224,71,0)"); g.addColorStop(0.35, "#fde047"); g.addColorStop(1, "#f97316");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(vx - 14, 54); ctx.quadraticCurveTo(vx - 4, 52 - fh * 0.6, vx + Math.sin(t * 7) * 3, 52 - fh); ctx.quadraticCurveTo(vx + 4, 52 - fh * 0.6, vx + 14, 54); ctx.fill();
+      // coulées de lave sur les flancs
+      [[-1, 0, 0.35], [1, 1, 0.5], [-1, 2, 0.75], [1, 3, 0.25]].forEach(([d, i, sl]) => {   // coulées sinueuses, à l'intérieur du cône
+        const len = 45 + 40 * Rn(i, 3), x0 = vx + d * (4 + i * 3), flow = (t * 0.6 + Rn(i, 6)) % 1;
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        [["#9a3412", 4], ["#f97316", 2.5], ["#fde047", 1]].forEach(([c, w]) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(x0, 54);
+          for (let k = 1; k <= 8; k++) { const y = 54 + len * k / 8; ctx.lineTo(x0 + d * (y - 54) * sl + Math.sin(k * 1.9 + i) * 3, y); } ctx.stroke(); });
+        const fy = 54 + len * flow; ctx.fillStyle = `rgba(255,247,237,${1 - flow})`; ctx.fillRect(Math.round(x0 + d * (fy - 54) * sl + Math.sin(flow * 8 * 1.9 + i) * 3 - 1), Math.round(fy), 2, 2); });
+      // boules de feu projetées en arc
+      for (let i = 0; i < 9; i++) {
+        const dur = 2.2 + Rn(i, 1) * 1.4, cyc = Math.floor((t + Rn(i, 2) * dur) / dur), ph = ((t + Rn(i, 2) * dur) % dur) / dur;
+        const vxp = (Rn(i, cyc + 5) - 0.5) * 260, vyp = 120 + Rn(i, cyc + 9) * 90, tt = ph * 1.9;
+        const bx = vx + vxp * tt, by = 46 - vyp * tt + 105 * tt * tt;
+        if (by > 150) continue;
+        const r = 2.5 + Rn(i, 4) * 2.5;
+        for (let k = 1; k <= 5; k++) { const tk = Math.max(0, tt - k * 0.035); ctx.fillStyle = `rgba(249,115,22,${0.5 - k * 0.09})`; ctx.beginPath(); ctx.arc(vx + vxp * tk, 46 - vyp * tk + 105 * tk * tk, r * (1 - k * 0.14), 0, 7); ctx.fill(); }
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, bx, by, r * 4, "251,146,60", 0.55); ctx.restore();
+        ctx.fillStyle = "#fde047"; ctx.beginPath(); ctx.arc(bx, by, r, 0, 7); ctx.fill();
+        ctx.fillStyle = i % 3 ? "#fff7ed" : "#f0abfc"; ctx.beginPath(); ctx.arc(bx - r * 0.3, by - r * 0.3, r * 0.45, 0, 7); ctx.fill();
+      }
+    }
+    function citadelRamparts(ctx, W, t, walk) {
+      const sp = 0.22, tw = 300, off = walk * sp, o = off % tw;
+      const TOP = 104, BOT = 160;
+      for (let x0 = -tw; x0 < W + tw; x0 += tw) {
+        const x = x0 - o, wi = Math.round((x0 - o + off) / tw);
+        ctx.fillStyle = "#14090a";
+        ctx.fillRect(Math.round(x), TOP, tw, BOT - TOP);                                   // courtine
+        for (let k = 0; k < tw; k += 8) ctx.fillRect(Math.round(x + k), TOP - 5, 4, 5);     // créneaux
+        [[40, 26], [190, 30]].forEach(([a, w]) => { ctx.fillRect(Math.round(x + a), TOP - 20, w, 20); for (let k = 0; k < w; k += 6) ctx.fillRect(Math.round(x + a + k), TOP - 25, 3, 5); });   // bastions carrés
+        ctx.fillStyle = "#1f0f0d"; for (let k = 6; k < tw; k += 30) ctx.fillRect(Math.round(x + k), TOP + 18 + (k % 3) * 9, 14, 1);   // joints de pierre
+        [[52, TOP - 12], [204, TOP - 12], [110, TOP + 16], [258, TOP + 22], [20, TOP + 30]].forEach(([a, b], i) => {
+          const f = 0.6 + 0.4 * Math.sin(t * 5 + i * 1.3 + wi); ctx.fillStyle = `rgba(251,146,60,${f})`; ctx.fillRect(Math.round(x + a), b, 3, 5); });
+      }
+    }
     // ---------------- CITADELLE CENDRÉE ----------------
     function drawCitadelScene(ctx, W, t, walk, DC) {
       const S = scSky(ctx, W, DC, ["#1c0606", "#5b1a0d", "#3a1208"], ["#5b2a1a", "#a4502a", "#c9774a"], ["#3a0f1a", "#b4401f", "#f08a3c"]);
       if (typeof vdRiftLayer === "function") vdRiftLayer(ctx, W, t, walk, "sky");   // v1.84 : failles du Néant, sur le plan le plus lointain (ciel / paroi du fond)
       const tile = (sp, w, f) => { const o = (walk * sp) % w; for (let x = -w; x < W + w; x += w) f(x - o); };
-      const vx = 470 - (walk * 0.04) % 40;
+      const vx = Math.round(W * 0.735);   // v1.84.2 : volcan fixe à l'horizon (plus de saut brutal)
       ctx.save(); ctx.globalCompositeOperation = "lighter"; scGlow(ctx, vx, 50, 120, "249,115,22", 0.3 + 0.08 * Math.sin(t * 2)); ctx.restore();
       for (let i = 0; i < 7; i++) { const ph = (t * 0.08 + i / 7) % 1; ctx.fillStyle = `rgba(68,64,60,${0.5 * (1 - ph)})`; ctx.beginPath(); ctx.arc(vx + Math.sin(i * 2 + t * 0.3) * 10 + ph * 50, 46 - ph * 60, 10 + ph * 26, 0, 7); ctx.fill(); }
       ctx.fillStyle = "#2b0d0d"; ctx.beginPath(); ctx.moveTo(vx - 150, 150); ctx.lineTo(vx - 22, 52); ctx.lineTo(vx + 22, 52); ctx.lineTo(vx + 150, 150); ctx.fill();
       ctx.fillStyle = "#f97316"; ctx.fillRect(vx - 20, 50, 40, 5);
       for (let i = 0; i < 4; i++) { const lp = (t * 0.25 + i * 0.25) % 1; ctx.fillStyle = i % 2 ? "#ea580c" : "#fb923c"; ctx.fillRect(vx - 16 + i * 9 - lp * (i - 1.5) * 18, 55 + lp * 70, 3, 10); }
-      tile(0.22, 300, x => { ctx.fillStyle = "#14090a";
-        [[20, 60, 18, 90], [40, 86, 54, 64], [96, 50, 18, 100], [116, 80, 40, 70], [200, 70, 22, 80], [222, 96, 50, 54]].forEach(([a, b, w, h]) => { ctx.fillRect(x + a, b, w, h); for (let k = 0; k < w; k += 6) ctx.fillRect(x + a + k, b - 4, 3, 4); });
-        ctx.beginPath(); ctx.moveTo(x + 18, 60); ctx.lineTo(x + 29, 40); ctx.lineTo(x + 40, 60); ctx.fill(); ctx.beginPath(); ctx.moveTo(x + 94, 50); ctx.lineTo(x + 105, 28); ctx.lineTo(x + 116, 50); ctx.fill();
-        [[26, 74], [28, 98], [102, 66], [102, 92], [64, 104], [208, 86], [240, 112]].forEach(([a, b], i) => { const f = 0.6 + 0.4 * Math.sin(t * 5 + i * 1.3); ctx.fillStyle = `rgba(251,146,60,${f})`; ctx.fillRect(x + a, b, 3, 5); });
-      });
+      if (citadelIsVoid()) citadelEruption(ctx, vx, t);   // v1.84.2 : Citadelle Corrompue — le volcan est en éruption
+      // v1.84.2 : UN seul château (la Citadelle), au loin, fixe comme le volcan
+      citadelKeep(ctx, Math.round(W * 0.4), t);
+      // v1.84.2 : remparts continus devant (plus de châteaux répétés) — rongés par le Néant dans la Citadelle Corrompue
+      citadelRamparts(ctx, W, t, walk);
       tile(0.55, 260, x => {
         ctx.fillStyle = "#2a1512"; ctx.fillRect(x + 30, 102, 16, 58); ctx.fillRect(x + 26, 98, 24, 6); ctx.fillStyle = "#3b1d17"; ctx.fillRect(x + 30, 102, 4, 58);
         ctx.fillStyle = "#2a1512"; ctx.fillRect(x + 150, 118, 14, 42); ctx.beginPath(); ctx.moveTo(x + 150, 118); ctx.lineTo(x + 158, 108); ctx.lineTo(x + 164, 118); ctx.fill();
@@ -23081,7 +23153,7 @@ function wmDraw(ctx, t, opt) {
       if (a === "end") { c.hold = false; c.holdStage = null; en.pv = 0; c.turn = "BUSY"; updateCombatUI(); setTimeout(resolveAfterPlayerAction, 300); }
     }
     // Rechargement de la page en plein dialogue : on rouvre la bonne fenêtre
-    function malResume(c) { if (malDlgOpen || !c.hold) return; const st = c.holdStage || "reveal"; malShow(st === "return" ? "ret" : st); }
+    function malResume(c) { if (malDlgOpen || !c.hold || !c.enemy || c.enemy.ai !== "malakor") return; const st = c.holdStage || "reveal"; malShow(st === "return" ? "ret" : st); }
     function malPanelHtml() {
       const M = MK(), left = malSacsLeft();
       const st = !M.choice && !M.stopped ? "Premier affrontement : Malakor t'attend au bout du Néant Absolu." : !M.choice ? "Tu as arrêté le combat. Tu peux revenir affronter sa vraie forme… ou t'entraîner contre son Reflet." : M.choice === "epargne" ? (M.tete ? "Tu as épargné Malakor : son Reflet t'entraîne." : "Tu as épargné Malakor. Une Ombre rôde encore : elle porte sa tête.") : "Tu as tué Malakor : son Écho hante le Néant.";
@@ -24593,8 +24665,14 @@ function wmDraw(ctx, t, opt) {
       const pv = document.getElementById("btn-cr-prev"), nx = document.getElementById("btn-cr-next");
       if (pv) pv.style.visibility = i === 0 ? "hidden" : "visible"; if (nx) nx.classList.toggle("hidden", i === CR_TABS.length - 1);
     }
-    const GAME_VERSION = "1.84.1";
+    const GAME_VERSION = "1.84.2";
     const PATCH_NOTES = [
+      { v: "1.84.2", date: "25/11/2026", titre: "Correctifs — dialogues des gardiens & Citadelle Cendrée", items: [
+        "🌋 Citadelle Cendrée : le volcan reste maintenant à sa place à l'horizon, il ne « saute » plus brutalement pendant la marche.",
+        "🏰 Citadelle Cendrée : il n'y a plus qu'un seul château, la Citadelle, qui se dresse au loin. Les autres châteaux du décor sont remplacés par une longue ligne de remparts crénelés avec leurs bastions (décor de marche et vignette du biome).",
+        "🌋 Citadelle Corrompue : le volcan est en éruption ! Une fontaine de lave jaillit du cratère, des coulées dévalent ses flancs et il crache des boules de feu à travers le ciel.",
+        "🐙 La fenêtre de dialogue de Malakor ne s'ouvre plus par erreur pendant les combats contre le Sphinx, l'Oiseau de Glace et le Léviathan Kraken (ni contre les Sœurs) : seule l'intro du gardien s'affiche désormais."
+      ] },
       { v: "1.84.1", date: "24/11/2026", titre: "Correctif — quête, compagnon et confort", items: [
         "📈 Le niveau suit enfin l'histoire (nouvelles parties) : ton héros ne peut plus dépasser le niveau que la prochaine étape de la quête te demandera d'atteindre. Quand une étape demande le niveau 7, il faut vraiment monter jusqu'au 7 — et les nouveaux lieux (Marais, Mines, Citadelle…) s'ouvrent ainsi au rythme des chapitres.",
         "💾 Rien n'est perdu : l'XP gagnée au plafond est mise en réserve (jusqu'à un niveau d'avance) et t'est rendue dès que la quête avance. Le plafond disparaît à la fin de l'Acte I. Les anciennes sauvegardes (tout débloqué) ne sont pas concernées.",
