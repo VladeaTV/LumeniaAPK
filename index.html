@@ -499,6 +499,13 @@
       #combat-status-line { font-size: 8px !important; right: 6px; bottom: 8px; padding: 2px 5px; max-width: 42% !important; }
       #skill-strip { transform: scale(.78); transform-origin: left bottom; left: 4px; bottom: 6px; }
     }
+    /* v1.85 : HUD sous la scène sur téléphone */
+    #stage-below:empty { display: none; }
+    #stage-below { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+    #stage-below #ult-gauge-box { position: static !important; width: 100% !important; padding: 6px 10px; border-radius: 10px; }
+    #stage-below #ult-gauge-box .text-\[10px\] { font-size: 11px; }
+    #stage-below #ult-gauge-box .h-1\.5 { height: 8px; }
+    #stage-below #skill-strip { position: static !important; transform: none !important; background: rgba(2,6,23,.55); border: 1px solid rgba(148,163,184,.2); border-radius: 10px; padding: 6px 8px; }
     #mob-vitals { display: none; }
     @media (max-width: 1023px) {
       #mob-vitals { display: flex; position: fixed; left: 0; right: 0; top: 0; z-index: 53; align-items: center; gap: 8px; padding: calc(6px + env(safe-area-inset-top)) 10px 6px;
@@ -657,6 +664,33 @@
     .cm-store { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 6px; font-size: 12px; background: rgba(15,23,42,.85); border: 1px solid #475569; }
     .cm-ghost { position: fixed; z-index: 99; pointer-events: none; width: 96px; height: 72px; image-rendering: pixelated; opacity: .9; transform: translate(-50%, -70%); filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)); }
     #camp-editor-canvas.cm-drop { outline: 3px dashed #fbbf24; outline-offset: -3px; }
+    /* v1.85 : fenêtre « Décorer mon camp » plein écran (téléphone) */
+    #btn-camp-decorer { display: none; }
+    #camp-deco-full { position: fixed; inset: 0; z-index: 66; background: #0b0805; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); }
+    #camp-deco-full.hidden { display: none; }
+    .cdf-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #4a3410; background: linear-gradient(180deg,#1a1408,#0d0a05); }
+    .cdf-head h3 { font-family: 'Press Start 2P', monospace; font-size: 11px; color: #fcd34d; }
+    .cdf-x { width: 36px; height: 36px; border-radius: 10px; background: #1e293b; color: #e2e8f0; font-size: 15px; }
+    #cdf-stage { flex: 0 0 auto; border-bottom: 2px solid #b45309; background: #020617; }
+    #cdf-stage #camp-editor-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+    #cdf-stage #camp-editor-canvas { height: min(44vh, 300px); width: calc(min(44vh, 300px) * 4.5714) !important; max-width: none; aspect-ratio: auto !important; }
+    .cdf-sel { display: flex; align-items: center; gap: 8px; padding: 8px 12px; min-height: 52px; background: #17110a; border-bottom: 1px solid #4a3410; font-size: 12px; color: #fef3c7; }
+    .cdf-sel .cdf-b { min-width: 40px; height: 36px; padding: 0 10px; border-radius: 9px; background: #1e293b; border: 1px solid #475569; color: #e2e8f0; font-weight: 700; }
+    .cdf-sel .cdf-b.warn { background: #3f1d1d; border-color: #7f1d1d; color: #fecaca; }
+    .cdf-hint { font-size: 11px; color: #d6b98a; padding: 6px 12px 0; }
+    .cdf-grid { flex: 1 1 auto; overflow-y: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px 12px 14px; align-content: start; }
+    .cdf-grid .cm-tile { cursor: pointer; } .cdf-grid .cm-tile.sel { border-color: #facc15; box-shadow: 0 0 0 2px rgba(250,204,21,.35); }
+    @media (max-width: 1023px) { #btn-camp-decorer { display: block; } }
+    /* v1.85 : éditeur du camp lisible sur téléphone — affiché en grand et défilable */
+    .cm-mob-hint { display: none; }
+    @media (max-width: 760px) {
+      #camp-editor-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+      #camp-editor-canvas { width: 1050px !important; max-width: none; height: 230px; aspect-ratio: auto !important; }
+      .cm-mob-hint { display: block; position: absolute; left: 8px; bottom: 8px; font-size: 10px; padding: 2px 8px; border-radius: 999px; background: rgba(0,0,0,.6); color: #fde68a; pointer-events: none; }
+      #exp-tab-camp .absolute.bottom-2.right-2 { display: none; }
+      #exp-tab-camp .absolute.top-2.left-2 { display: none; }
+      #btn-camp-meubles { padding: 4px 10px; font-size: 11px; }
+    }
     @media (max-width: 1023px) {
       #camp-meubles { inset: auto 0 calc(64px + env(safe-area-inset-bottom)) 0; top: auto; width: 100%; max-height: 70vh; z-index: 56; }
       .cm-panel { border-radius: 16px 16px 0 0; border-width: 2px 0 0; } .cm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -1192,6 +1226,8 @@
                   </div>
                 </div>
 
+                <!-- v1.85 : sur téléphone, l'ultime et les compétences passent sous la scène (elles cachaient la vue) -->
+                <div id="stage-below"></div>
                 <!-- Progression -->
                 <div class="space-y-1">
                   <div class="flex justify-between text-[11px] text-slate-400 tabular-nums">
@@ -1323,8 +1359,10 @@
                 <button type="button" data-nav-go="bucheron" class="ui-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-lime-700 hover:bg-lime-600 text-white">🪓 Aller chez le Bûcheron</button>
               </div>
               <div id="exp-tab-camp" class="space-y-3">
+                <button type="button" id="btn-camp-decorer" class="ui-btn w-full py-3 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-lg">🎨 Décorer mon camp</button>
                 <div class="rounded-xl overflow-hidden border border-slate-700 bg-slate-950 relative">
-                  <canvas id="camp-editor-canvas" width="960" height="210" class="pixelated w-full block" style="aspect-ratio: 960 / 210; touch-action: none;"></canvas>
+                  <div id="camp-editor-scroll"><canvas id="camp-editor-canvas" width="960" height="210" class="pixelated w-full block" style="aspect-ratio: 960 / 210; touch-action: none;"></canvas></div>
+                  <span class="cm-mob-hint">↔ Glisse pour défiler • glisse un meuble pour le placer</span>
                   <span class="absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/60 text-amber-200 border border-amber-700/60">🏕️ Votre campement — glissez les décorations pour les déplacer</span>
                   <span class="absolute bottom-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-black/50 text-slate-400">Zone claire = visible pendant le repos • zones sombres = abords du camp</span>
                   <button type="button" id="btn-camp-meubles" class="ui-btn absolute top-2 right-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-lg">🪑 Mes meubles</button>
@@ -1688,6 +1726,14 @@
   </div>
   <!-- v1.28 : barre d'onglets mobile -->
   <div id="mob-backdrop"></div>
+  <!-- v1.85 — DÉCORER LE CAMP (plein écran, téléphone) -->
+  <div id="camp-deco-full" class="hidden" role="dialog" aria-label="Décorer mon camp">
+    <div class="cdf-head"><h3>🎨 Décorer mon camp</h3><button type="button" class="ui-btn cdf-x" data-cdf-close aria-label="Fermer">✕</button></div>
+    <div id="cdf-stage"></div>
+    <div id="cdf-sel" class="cdf-sel"></div>
+    <p class="cdf-hint">Touche un meuble pour le poser • glisse-le sur le camp pour le placer • glisse le décor pour défiler</p>
+    <div id="cdf-grid" class="cdf-grid"></div>
+  </div>
   <!-- v1.78 — MES MEUBLES (campement) -->
   <div id="camp-meubles" class="hidden" role="dialog" aria-labelledby="cm-title">
     <div class="cm-panel"><div class="cm-head"><h3 id="cm-title">🪑 Mes meubles</h3><button type="button" class="ui-btn opt-x" data-cm-close aria-label="Fermer">✕</button></div>
@@ -5150,7 +5196,128 @@ const PhoenixV3 = (() => {
     [["loup_gris", null], ["loup_roux", null], ["loup_ombre", "#a78bfa"], ["jaguar", null], ["panthere_neiges", "#bae6fd"]].forEach(([k, glow]) => { if (!BEAST_SPECS[k]) BEAST_SPECS[k] = { ...(BEAST_SPECS.fenrir || {}), glow: glow || undefined, stars: false }; });
     NewMounts.ALL.forEach(k => { const sp = BEAST_SPECS[k]; if (!sp) return; sp.scale = 1; sp.wing = NewMounts.WINGED.includes(k) ? (sp.wing || true) : false; sp.front = NewMounts.WINGED.includes(k); });
 
+// v1.85 — Familiers redessinés (loup, sanglier, ours, dragonnet) : grille 40×26, sol y=25, 6 frames de marche + 4 de repos.
+// Les couleurs viennent du pelage (BEAST_SPECS : body, mane, dark, belly, wing, horn, eye).
+const PetV3 = (() => {
+  const W = 44, H = 28, GY = 26;
+  const hx = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const mix = (h, k) => "#" + hx(h).map(v => Math.max(0, Math.min(255, Math.round(k < 1 ? v * k : v + (255 - v) * (k - 1))))).map(v => v.toString(16).padStart(2, "0")).join("");
+  function pal(sp) {
+    const B = sp.body || "#8b95a5", M = sp.mane || mix(B, 0.7);
+    return { l: mix(B, 1.25), b: B, d: mix(B, 0.78), D: mix(B, 0.6), m: M, M: mix(M, 0.75), p: sp.belly || mix(B, 1.45), e: sp.eye || "#fbbf24", E: "#ffffff",
+      n: mix(B, 0.4), w: sp.wing || mix(B, 1.15), W: mix(sp.wing || B, 0.75), h: sp.horn || "#fef3c7", t: "#f8fafc", s: "#f9a8d4", S: "#fecaca", k: sp.dark || mix(B, 0.32), q: mix(B, 0.48), K: mix(B, 0.32) };
+  }
+  function build(type, f) {
+    const g = []; for (let y = 0; y < H; y++) g.push(new Array(W).fill(0));
+    const walk = f < 6, i = walk ? f : f - 6;
+    const bob = walk ? [0, 1, 0, 0, 1, 0][i] : [0, 0, 1, 1][i];
+    const OY = type === "sanglier" ? 2 : 0;
+    const set = (x, y, c) => { x = Math.round(x); y = Math.round(y) + OY; if (c && y >= 0 && y < H && x >= 0 && x < W) g[y][x] = c; };
+    const rect = (x, y, w, h, c) => { for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) set(x + xx, y + yy, c); };
+    const ell = (cx, cy, rx, ry, fn) => { for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) { const dx = (x - cx) / rx, dy = (y - cy) / ry; if (dx * dx + dy * dy <= 1) set(x, y, typeof fn === "function" ? fn(x, y, dx, dy) : fn); } };
+    const line = (x0, y0, x1, y1, c, th) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let s = 0; s <= n; s++) for (let k = 0; k < (th || 1); k++) set(x0 + (x1 - x0) * s / n + k, y0 + (y1 - y0) * s / n, c); };
+    const poly = (pts, c) => { const ys = pts.map(p => p[1]); for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++) { const yc = y + 0.5, cut = []; for (let k = 0; k < pts.length; k++) { const [ax, ay] = pts[k], [bx, by] = pts[(k + 1) % pts.length]; if ((ay <= yc && by > yc) || (by <= yc && ay > yc)) cut.push(ax + (yc - ay) / (by - ay) * (bx - ax)); } cut.sort((a, b) => a - b); for (let k = 0; k + 1 < cut.length; k += 2) for (let x = Math.round(cut[k]); x < Math.round(cut[k + 1]); x++) set(x, y, c); } };
+    // pattes : paires diagonales, le pied posé ne glisse pas
+    const PH = [[2, 0], [1, 0], [0, 0], [-1, 0], [0, 2], [1, 1]];
+    const leg = (hx0, top, len, w, ph, cDark, cMain, paw) => {
+      const [dx, lift] = walk ? PH[(i + ph) % 6] : [0, 0];
+      const fx = hx0 + dx, fy = GY - lift - OY;
+      line(hx0, top, fx, fy - 1, cMain, w); line(hx0, top, fx, fy - 1, cDark, 1);
+      rect(fx, fy, w + 1, 1, paw || cDark);
+    };
+    const B = bob;
+    if (type === "loup") {
+      leg(11, 17 + B, 7, 2, 3, "D", "d"); leg(24, 17 + B, 7, 2, 0, "D", "d");                     // pattes lointaines
+      // queue touffue qui retombe
+      const tw = walk ? [0, 1, 1, 0, -1, -1][i] : [0, 0, 1, 1][i];
+      poly([[10, 11 + B], [6, 12 + B], [2, 16 + tw], [3, 19 + tw], [6, 17 + tw], [10, 15 + B]], "d"); poly([[6, 13 + B], [3, 16 + tw], [3, 18 + tw], [5, 17 + tw]], "b"); set(2, 18 + tw, "l"); set(3, 19 + tw, "l");
+      ell(18, 14 + B, 10, 5, (x, y, dx, dy) => dy > 0.45 ? "p" : dy < -0.5 ? "l" : "b");          // corps
+      rect(11, 9 + B, 12, 1, "m"); [12, 15, 18, 21].forEach(x => set(x, 8 + B, "m"));               // poil du dos
+      ell(26, 12 + B, 4.5, 5.5, (x, y, dx, dy) => dx > 0.1 && dy > -0.1 ? "p" : "b");             // poitrail profond
+      // tête
+      ell(30, 8 + B, 4.2, 3.6, (x, y, dx, dy) => dy > 0.5 ? "d" : "b"); rect(32, 8 + B, 5, 3, "b"); rect(33, 10 + B, 4, 1, "p"); rect(36, 8 + B, 2, 1, "n");
+      rect(28, 3 + B, 2, 3, "b"); set(28, 2 + B, "l"); rect(31, 3 + B, 2, 3, "d"); set(29, 4 + B, "s");   // oreilles
+      set(32, 7 + B, "e"); set(33, 7 + B, "e"); set(34, 11 + B, "D");
+      leg(13, 17 + B, 7, 2, 0, "d", "b"); leg(26, 17 + B, 7, 2, 3, "d", "b");                     // pattes proches
+    } else if (type === "sanglier") {
+      leg(10, 17 + B, 7, 3, 3, "D", "d"); leg(25, 17 + B, 7, 3, 0, "D", "d");
+      set(3, 11 + B, "d"); set(2, 10 + B, "d"); set(2, 9 + (walk && i % 2 ? 1 : 0) + B, "m");         // petite queue en tire-bouchon
+      ell(17, 13 + B, 12, 6.5, (x, y, dx, dy) => dy > 0.5 ? "d" : dy < -0.45 ? "l" : "b");           // corps trapu
+      for (let x = 8; x <= 26; x++) { const yy = 13 + B - Math.round(Math.sqrt(Math.max(0, 1 - ((x - 17) / 12) ** 2)) * 6.5) - 1; set(x, yy, "m"); if (x % 2 === 0) set(x, yy - 1, "M"); }   // crête de soies
+      [[12, 12], [16, 14], [20, 12], [14, 16]].forEach(([x, y]) => set(x, y + B, "d"));
+      // tête basse
+      ell(30, 14 + B, 5, 4.5, (x, y, dx, dy) => dy > 0.5 ? "d" : "b"); rect(33, 13 + B, 4, 4, "b");
+      rect(37, 13 + B, 2, 4, "s"); set(38, 14 + B, "n"); set(38, 16 + B, "n");                      // groin
+      set(35, 17 + B, "t"); set(36, 16 + B, "t"); set(36, 15 + B, "t");                               // défense
+      rect(29, 8 + B, 2, 2, "d"); set(29, 9 + B, "s"); set(31, 12 + B, "e"); set(32, 12 + B, "E");
+      leg(12, 17 + B, 7, 3, 0, "d", "b"); leg(27, 17 + B, 7, 3, 3, "d", "b");
+    } else if (type === "ours") {
+      // OURS — repris pixel par pixel de la référence de VladeaTV (corps, tête, pattes et ombres).
+      // Couleurs : w pelage, l ombre légère, m ombre, D ombre profonde, o contour = teinte la plus foncée (jamais du noir).
+      // Marche : les 4 pattes de la référence avancent par paires diagonales, avec un léger lever de pied.
+      const T = ["..................ooo.......", "......oooooo....oowwooo.....", "....oowwwwwwoooolowmwwwoo...", "...DwwwwwwwwlllwwmDwwwwwwo..", "..owwwwwwwwwwwwwlwwwwwwewwoo", "..owwwwwwwwwwwwwwwlwwwwwwwDo", ".owwwwwwwwwwwwwwwwwlwwwwlwmo", ".owwwwwwwwwwwwwwwlllllllmoo.", ".owwwwlwwwwwwwwwllwmmmoooo..", ".olwwwlllwwllwwwllmmoo......", ".olwwwwmlllDwwwwlmmDo.......", ".olwwwwDmmmDwwwwmmomo.......", ".owwwwlommowwwwlDommo.......", "olwwwwooooolwwlDoommo.......", "olwwwooDDowowwlDwommmD......", "olwlooDDDowowwwDwoDmmD......", "olwwwooDDDoolwwwo.oDmmo.....", "ooooooooooo.ooooo..oooo....."], X0 = 8, Y0 = GY - 17;
+      const C = { o: "K", w: "b", l: "d", m: "D", D: "q", e: "n" };
+      const LG = [[0, 5, 0, false], [6, 10, 3, true], [11, 15, 3, false], [16, 22, 0, true]];   // [col début, col fin, phase, au fond]
+      const ST = walk ? [[0, 0], [0, 0], [0, 0], [0, 1], [0, 1], [0, 0]] : [[0, 0], [0, 0], [0, 0], [0, 0]];   // pas de glissement latéral : le pied se lève d'un pixel
+      const drawLeg = ([a, b2, ph]) => { const [dx, lf] = ST[(i + ph) % (walk ? 6 : 4)];
+        for (let y = 11; y < T.length; y++) for (let x = a; x <= b2; x++) { const c = T[y][x]; if (!c || c === ".") continue;
+          const low = y >= 15; set(X0 + x, Y0 + y - (low ? lf : 0) + (y < 13 ? B : 0), C[c]); } };
+      LG.filter(l => l[3]).forEach(drawLeg);                                                       // pattes du fond
+      for (let y = 0; y < 11; y++) for (let x = 0; x < T[y].length; x++) { const c = T[y][x]; if (c !== ".") set(X0 + x, Y0 + y + B, C[c]); }
+      LG.filter(l => !l[3]).forEach(drawLeg);                                                      // pattes proches
+      // aucun interstice d'un pixel entre deux pattes qui se touchent (sinon une barre vide apparaît)
+      for (let y = Y0 + 11; y <= GY; y++) for (let x = X0; x < X0 + 24; x++) { const yy = y + OY; if (yy >= H || g[yy][x]) continue; if (g[yy][x - 1] && g[yy][x + 1]) g[yy][x] = g[yy][x - 1]; }
+    } else {   // dragonnet — repris pixel par pixel de la référence de VladeaTV (bébé dragon assis), retourné pour regarder à droite.
+      // Adapté à la DA : seul le contour extérieur reste (teinte la plus foncée, jamais du noir), les traits intérieurs deviennent des ombres, ombres isolées lissées.
+      // Marche : petits bonds ; repos : respiration.
+      const T = [".....................o.........", ".................o..oco........", "................oBo..oBo.......", "................oBco.oBcco.....", ".................occoBBccco....", "............BB....occBBcccwo...", ".............BBBB..oBwwwwcwo...", ".......oooooocBBBooBBwwwwwwwo..", ".o......ocwwwBBBBcwwwwwwwwwwo..", "oBo......oBBBwwBBBBBBwwBEBwwco.", "oBBoo.....ocBBwwBBBBBwweeccwwwo", "oBcBBo...owwcBBwBBBccBwwBBwwcwo", "oBcwwo....occcBwBBBBBBBwwwwwwo.", ".occwo.....occBwBBBBBBBBBBooo..", "..ooco.....ococBcBBBBBwBBo.....", "....oo......o.oBcwwBBBwwco.....", "....oco........oBBwBBwwwcco....", ".....oco.....BoBBBBwwwwwcco....", ".....occooB.BBBcwBwwwwwcco.....", ".....occcBBoBBccwwBwBwwcBo.....", "......oBBwwcBBBcwwBBBwwBBo.....", ".......ooBBBBBBBBBBBBwwBBBo....", ".........ooooooBwwwBocwwooo....", "...............ooooo.ooo......."], X0 = 6, hop = walk ? [0, 1, 2, 2, 1, 0][i] : 0, br = walk ? 0 : [0, 0, 1, 1][i];
+      const Y0 = GY - T.length + 1 - hop, C = { o: "K", w: "l", c: "b", B: "D", e: "n", E: "E" };
+      T.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const c = row[x]; if (c !== ".") set(X0 + x, Y0 + y + (y < 14 ? br : 0), C[c]); } });
+      if (!walk && i >= 2) { set(X0 + 31, Y0 + 9 + br, "y"); set(X0 + 32, Y0 + 8 + br, "Y"); }                  // petite flammèche au repos
+    }
+    g._bob = bob; return g;
+  }
+  // bouche les pixels vides isolés à l'intérieur de la silhouette
+  function fillGrid(g) {
+    const Hh = g.length, Ww = g[0].length, A = (x, y) => x >= 0 && y >= 0 && x < Ww && y < Hh && !!g[y][x];
+    for (let pass = 0; pass < 2; pass++) { const fix = [];
+      for (let y = 1; y < Hh - 1; y++) for (let x = 1; x < Ww - 1; x++) { if (g[y][x]) continue; const u = A(x, y - 1), d = A(x, y + 1), l = A(x - 1, y), r = A(x + 1, y);
+        if (u + d + l + r >= 3 || (u && d && (A(x - 1, y - 1) || A(x + 1, y + 1)))) fix.push([x, y, u ? g[y - 1][x] : l ? g[y][x - 1] : r ? g[y][x + 1] : g[y + 1][x]]); }
+      if (!fix.length) break; fix.forEach(([x, y, c]) => { g[y][x] = c; }); }
+    return g;
+  }
+  // contour façon « ours de référence » : chaque vide qui touche la silhouette prend la teinte la plus foncée du pelage
+  function outline(g) {
+    const Hh = g.length, Ww = g[0].length, add = [];
+    for (let y = 0; y < Hh; y++) for (let x = 0; x < Ww; x++) { if (g[y][x]) continue;
+      const ok = c => c && c !== "K"; if ((y > 0 && ok(g[y - 1][x])) || (y < Hh - 1 && ok(g[y + 1][x])) || (x > 0 && ok(g[y][x - 1])) || (x < Ww - 1 && ok(g[y][x + 1]))) add.push([x, y]); }
+    add.forEach(([x, y]) => { g[y][x] = "K"; }); return g;
+  }
+  const cache = {};
+  function frame(key, type, f, sp) {
+    const k = key + "|" + f; if (cache[k]) return cache[k];
+    if (type === "loup_v3") {   // (ancienne version : loup des montures réduit) = le loup des montures (validé), en plus petit via BEAST_SPECS.loup.scale
+      const c = document.createElement("canvas"); c.width = 64; c.height = 34; const x = c.getContext("2d"), B = sp.body || "#8b95a5";
+      const P = { l: mix(B, 1.25), b: B, d: mix(B, 0.78), D: sp.mane || mix(B, 0.6), e: sp.eye || "#fbbf24", E: "#fef3c7", n: mix(B, 0.35), w: "#ffffff", i: mix(B, 1.25) };
+      const gr = fillGrid(WolfV3.build(f)); for (let y = 0; y < gr.length; y++) for (let i = 0; i < gr[0].length; i++) { const col = gr[y][i]; if (col && P[col]) { x.fillStyle = P[col]; x.fillRect(i, y, 1, 1); } }
+      c._cx = 32; c._gy = 32; c._sx = 31; c._sy = 7; return (cache[k] = c);
+    }
+    const c = document.createElement("canvas"); c.width = W; c.height = H; const x = c.getContext("2d"), P = pal(sp);
+    P.y = "#fde047"; P.Y = "#f97316";
+    const gr = fillGrid(outline(fillGrid(build(type, f)))); for (let y = 0; y < H; y++) for (let i = 0; i < W; i++) { const col = gr[y][i]; if (col && P[col]) { x.fillStyle = P[col]; x.fillRect(i, y, 1, 1); } }
+    c._cx = 22; c._gy = GY; c._sx = 18; c._sy = 6;
+    return (cache[k] = c);
+  }
+  const TYPES = ["loup", "sanglier", "ours", "dragonnet"];   // ours et dragonnet : en attente de références, ancien dessin conservé
+  const typeOf = key => { if (TYPES.includes(key)) return key; const m = /^(?:pet|tst)_([a-z]+)_?/.exec(key || ""); return m && TYPES.includes(m[1]) ? m[1] : (/^tst_([a-z]+?)\d/.exec(key || "") || [])[1] || null; };
+  return { frame, typeOf, TYPES, W, H };
+})();
+
+    const _emptyBeast = (() => { const c = document.createElement("canvas"); c.width = c.height = 1; c._cx = 0; c._gy = 0; c._sx = 0; c._sy = 0; return c; })();
+    BEAST_SPECS.ours.scale = 1.25;   // v1.85 : l'ours familier, plus massif
+    BEAST_SPECS.dragonnet.scale = 1.25;   // v1.85 : le dragonnet (référence de VladeaTV), même échelle que l'ours
     function beastFrame(key, t, walking, saddle, part) {
+      { const pty = PetV3.typeOf(key); if (pty) { if (part && part !== "body") return PetV3.frame(key + "_none", pty, 0, BEAST_SPECS[key]) && _emptyBeast; return PetV3.frame(key, pty, walking ? Math.floor(t * 10) % 6 : 6 + Math.floor(t * 3) % 4, BEAST_SPECS[key] || BEAST_SPECS[pty]); } }   // v1.85 : familiers redessinés
       if (NewMounts.has(key)) return NewMounts.frame(key, walking ? Math.floor(t * 10) % 6 : 6 + Math.floor(t * 3) % 4, saddle, part);
       const f = walking ? Math.floor(t * 9) % 4 : 4 + Math.floor(t * 3) % 4;
       return BeastGfx.frame(key, f, saddle, part);
@@ -11351,6 +11518,7 @@ function citPxDraw(t, px, ln, ell, timeSec) {
     }
     function drawCampEditor(t, dt) {
       const cv = document.getElementById("camp-editor-canvas"); if (!cv) return;
+      { const scr = document.getElementById("camp-editor-scroll"); if (scr && scr.clientWidth > 0) { if (!scr._centered && scr.scrollWidth > scr.clientWidth) { scr.scrollLeft = (scr.scrollWidth - scr.clientWidth) / 2; scr._centered = true; } } else if (scr) scr._centered = false; }
       const ctx = cv.getContext("2d"); ctx.imageSmoothingEnabled = false;
       ctx.setTransform(1, 0, 0, 1, CAMP_PAD, 0);
       renderCampfireIdleScene(ctx, 640 + CAMP_PAD * 2, 210, t, dt, true);
@@ -11366,6 +11534,10 @@ function citPxDraw(t, px, ln, ell, timeSec) {
         ctx.fillStyle = "rgba(0,0,0,0.38)"; ctx.fillRect(0, 0, L, 210); ctx.fillRect(Rr, 0, 640 + CAMP_PAD * 2 - Rr, 210); ctx.fillRect(L, 0, Rr - L, T);
         ctx.strokeStyle = "rgba(251,191,36,0.85)"; ctx.lineWidth = 2; ctx.strokeRect(L + 1, T + 1, Rr - L - 2, 208 - T);
       }
+      // v1.85 : meuble sélectionné (fenêtre « Décorer » sur téléphone)
+      if (window.CDF_SEL) { const d = CAMP_DECOS.find(z => z.id === window.CDF_SEL), p = getCampState().pos[window.CDF_SEL];
+        if (d && p && p.placed) { const sc = p.s || 1, x0 = p.x + CAMP_PAD - d.hw * sc - 3, y0 = p.y - d.hh * sc - 3, ph = (Math.sin(t * 6) + 1) / 2;
+          ctx.setLineDash([5, 4]); ctx.lineDashOffset = -t * 20; ctx.strokeStyle = `rgba(250,204,21,${0.6 + 0.4 * ph})`; ctx.lineWidth = 2; ctx.strokeRect(Math.round(x0), Math.round(y0), Math.round(d.hw * sc * 2 + 6), Math.round(d.hh * sc + 9)); ctx.setLineDash([]); } }
     }
     function campEditorCoords(cv, e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * (640 + CAMP_PAD * 2) - CAMP_PAD, (e.clientY - r.top) / r.height * 210]; }
     const CAMP_SCALE_MIN = 0.5, CAMP_SCALE_MAX = 2;
@@ -11378,13 +11550,18 @@ function citPxDraw(t, px, ln, ell, timeSec) {
     }
     function bindCampEditor() {
       const cv = document.getElementById("camp-editor-canvas"); if (!cv || cv._bound) return; cv._bound = true;
-      cv.addEventListener("pointerdown", e => { const [wx, wy] = campEditorCoords(cv, e), id = campPickAt(wx, wy); if (!id) return; const p = getCampState().pos[id]; campDrag = { id, ox: p.x - wx, oy: p.y - wy }; cv.setPointerCapture(e.pointerId); cv.style.cursor = "grabbing"; });
+      const scr = document.getElementById("camp-editor-scroll"); let pan = null;
+      if (scr) requestAnimationFrame(() => { if (scr.scrollWidth > scr.clientWidth) scr.scrollLeft = (scr.scrollWidth - scr.clientWidth) / 2; });   // vue centrée sur le feu
+      cv.addEventListener("pointerdown", e => { const [wx, wy] = campEditorCoords(cv, e), id = campPickAt(wx, wy);
+        if (!id) { if (scr && scr.scrollWidth > scr.clientWidth) { pan = { x: e.clientX, sl: scr.scrollLeft }; cv.setPointerCapture(e.pointerId); } return; } const p = getCampState().pos[id]; campDrag = { id, ox: p.x - wx, oy: p.y - wy, sx: e.clientX, sy: e.clientY, mv: false }; cv.setPointerCapture(e.pointerId); cv.style.cursor = "grabbing"; });
       cv.addEventListener("pointermove", e => {
+        if (pan) { scr.scrollLeft = pan.sl - (e.clientX - pan.x); return; }
         const [wx, wy] = campEditorCoords(cv, e);
-        if (campDrag) { const p = getCampState().pos[campDrag.id]; p.x = Math.round(Math.max(-CAMP_PAD + 12, Math.min(640 + CAMP_PAD - 12, wx + campDrag.ox))); p.y = Math.round(Math.max(160, Math.min(206, wy + campDrag.oy))); }
+        if (campDrag && !campDrag.mv && Math.hypot(e.clientX - campDrag.sx, e.clientY - campDrag.sy) < 6) return;
+        if (campDrag) { campDrag.mv = true; const p = getCampState().pos[campDrag.id]; p.x = Math.round(Math.max(-CAMP_PAD + 12, Math.min(640 + CAMP_PAD - 12, wx + campDrag.ox))); p.y = Math.round(Math.max(160, Math.min(206, wy + campDrag.oy))); }
         else { campHover = campPickAt(wx, wy); cv.style.cursor = campHover ? "grab" : "default"; }
       });
-      const end = () => { if (campDrag) { campDrag = null; cv.style.cursor = "grab"; saveGame(); } };
+      const end = () => { pan = null; if (campDrag) { const d = campDrag; campDrag = null; cv.style.cursor = "grab"; if (!d.mv) { if (window.cdfSelect) cdfSelect(d.id); } else saveGame(); } };
       cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end); cv.addEventListener("pointerleave", () => { if (!campDrag) campHover = null; });
       // molette sur un meuble = changer sa taille
       cv.addEventListener("wheel", e => { const [wx, wy] = campEditorCoords(cv, e), id = campPickAt(wx, wy); if (!id) return; e.preventDefault();
@@ -11557,6 +11734,51 @@ function citPxDraw(t, px, ln, ell, timeSec) {
         if (!d.moved) { cmPlace(d.id); cmRender(); return; }
         const r = cv && cv.getBoundingClientRect();
         if (r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) { const [wx, wy] = campEditorCoords(cv, e); cmPlace(d.id, wx, wy); cmRender(); }
+      });
+    })();
+    /* v1.85 — 🎨 « Décorer mon camp » : fenêtre plein écran pour téléphone, juste le camp + les meubles débloqués.
+       Le vrai éditeur (canvas + gestes) est déplacé dans la fenêtre pendant qu'elle est ouverte, puis remis à sa place. */
+    window.CDF_SEL = null;
+    function cdfSelRender() {
+      const el = document.getElementById("cdf-sel"); if (!el) return; const id = window.CDF_SEL, d = id && CAMP_DECOS.find(z => z.id === id), p = id && getCampState().pos[id];
+      if (!d || !p || !p.placed) { el.innerHTML = `<span class="text-amber-200/70">Touche un meuble du camp pour le sélectionner.</span>`; return; }
+      el.innerHTML = `<b class="flex-1 truncate">${d.icon} ${d.nom}</b><button type="button" class="ui-btn cdf-b" data-cdf-sz="-">−</button><span class="tabular-nums w-12 text-center">${Math.round((p.s || 1) * 100)} %</span><button type="button" class="ui-btn cdf-b" data-cdf-sz="+">+</button><button type="button" class="ui-btn cdf-b warn" data-cdf-store>Ranger</button>`;
+    }
+    window.cdfSelect = function (id) { if (document.getElementById("camp-deco-full").classList.contains("hidden")) return; window.CDF_SEL = id; RetroAudio.cursor(); cdfSelRender(); cdfGrid(); };
+    function cdfCenterOn(x) { const scr = document.getElementById("camp-editor-scroll"), cv = document.getElementById("camp-editor-canvas"); if (!scr || !cv) return;
+      const px = (x + CAMP_PAD) / (640 + CAMP_PAD * 2) * cv.getBoundingClientRect().width; scr.scrollLeft = Math.max(0, px - scr.clientWidth / 2); }
+    function cdfViewX() { const scr = document.getElementById("camp-editor-scroll"), cv = document.getElementById("camp-editor-canvas"); if (!scr || !cv) return 320;
+      return (scr.scrollLeft + scr.clientWidth / 2) / cv.getBoundingClientRect().width * (640 + CAMP_PAD * 2) - CAMP_PAD; }
+    function cdfGrid() {
+      const g = document.getElementById("cdf-grid"); if (!g) return; const cs = getCampState(), own = CAMP_DECOS.filter(d => cs.owned[d.id]);
+      g.innerHTML = own.map(d => { const on = cs.pos[d.id] && cs.pos[d.id].placed; return `<div class="cm-tile ${on ? "on" : ""} ${window.CDF_SEL === d.id ? "sel" : ""}" data-cdf="${d.id}"><canvas width="96" height="72"></canvas><b>${d.icon} ${d.nom}</b><small>${on ? "● Sur le camp" : "Rangé"}</small></div>`; }).join("")
+        || `<p class="col-span-full text-xs text-amber-200/80 py-4 text-center">Aucun meuble pour l'instant : fabrique-les à la Menuiserie du Bûcheron.</p><button type="button" class="ui-btn col-span-full py-2 rounded-lg text-xs font-bold bg-lime-600 text-white" data-cdf-buch>🪚 Ouvrir la Menuiserie</button>`;
+      g.querySelectorAll("[data-cdf]").forEach(t => cmThumb(t.querySelector("canvas"), CAMP_DECOS.find(z => z.id === t.dataset.cdf)));
+    }
+    window.campDecoFull = function (open) {
+      const w = document.getElementById("camp-deco-full"), stage = document.getElementById("cdf-stage"), scr = document.getElementById("camp-editor-scroll"); if (!w || !scr) return;
+      if (open) {
+        if (!scr._home) { scr._home = scr.parentNode; scr._next = scr.nextSibling; }
+        stage.appendChild(scr); w.classList.remove("hidden"); document.body.style.overflow = "hidden";
+        window.CDF_SEL = null; cdfSelRender(); cdfGrid(); scr._centered = true; cdfCenterOn(320); requestAnimationFrame(() => cdfCenterOn(320));
+      } else {
+        w.classList.add("hidden"); document.body.style.overflow = ""; window.CDF_SEL = null;
+        if (scr._home) scr._home.insertBefore(scr, scr._next); scr._centered = false;
+        try { renderCampShop(); updateCampRecoveryUI(); } catch (e) {} saveGame();
+      }
+    };
+    (function bindCampDecoFull() {
+      const btn = document.getElementById("btn-camp-decorer"), w = document.getElementById("camp-deco-full"); if (!btn || !w) return;
+      btn.addEventListener("click", () => { RetroAudio.cursor(); campDecoFull(true); });
+      w.addEventListener("click", e => {
+        if (e.target.closest("[data-cdf-close]")) { RetroAudio.cursor(); campDecoFull(false); return; }
+        if (e.target.closest("[data-cdf-buch]")) { campDecoFull(false); state.buchTab = "menuiserie"; switchView("bucheron"); return; }
+        const sz = e.target.closest("[data-cdf-sz]"); if (sz && window.CDF_SEL) { const p = getCampState().pos[window.CDF_SEL]; campSetScale(window.CDF_SEL, (p.s || 1) + (sz.dataset.cdfSz === "+" ? 0.1 : -0.1)); RetroAudio.cursor(); cdfSelRender(); return; }
+        if (e.target.closest("[data-cdf-store]") && window.CDF_SEL) { const p = getCampState().pos[window.CDF_SEL]; if (p) p.placed = false; RetroAudio.cursor(); saveGame(); window.CDF_SEL = null; cdfSelRender(); cdfGrid(); return; }
+        const t = e.target.closest("[data-cdf]"); if (t) { const id = t.dataset.cdf, p = getCampState().pos[id];
+          if (p && p.placed) { cdfCenterOn(p.x); window.CDF_SEL = id; RetroAudio.cursor(); }
+          else { cmPlace(id, cdfViewX(), 186); window.CDF_SEL = id; }
+          cdfSelRender(); cdfGrid(); }
       });
     })();
     // ===== Le campement évolue : camp de terre → palissade → enceinte de pierre → maison → manoir → château → citadelle =====
@@ -12768,9 +12990,12 @@ function citPxDraw(t, px, ln, ell, timeSec) {
       const heroX = (state.expedition.combat ? 145 : 165) - (heroHurt ? Math.round(6 * Math.sin(hk / 0.22 * Math.PI)) : 0);
       const petT = getPetType();
       const mnt = getMountLook();   // v1.73 : apparence choisie (ou à pied) — le bonus de vitesse reste celui de la monture équipée
-      if (_rlS) { RUNE_SCENE.cx = heroX + 52; RUNE_SCENE.cy = mnt ? 106 : 128; RUNE_SCENE.t = timeSec; try { drawRuneOrbit(ctx, state.hero, RUNE_SCENE.cx, RUNE_SCENE.cy, RUNE_SCENE.sc, timeSec, "back", true); } catch (e) {} }
-      if (mnt && _camp) { try { drawBeast(ctx, mnt.id, 520, 178, 0.9, timeSec, false, true); } catch (e) {} }   // la monture se repose près de la tente
-      if (mnt && !_camp) drawRider(ctx, mnt.id, state.hero, heroX + 52, 176, timeSec, isWalking, 1, heroPoseTimer);
+      // v1.85 : sur téléphone la scène est recadrée (x 130 → 520) : la monture entière doit rester dans le cadre
+      let riderCx = heroX + 52;
+      if (mnt && !_camp) { try { const bf = beastFrame(mnt.id, timeSec, isWalking, true), bs = beastPx(1, BEAST_SPECS[mnt.id]); riderCx = Math.max(riderCx, 134 + Math.round(bf._cx * bs)); } catch (e) {} }
+      if (_rlS) { RUNE_SCENE.cx = mnt && !_camp ? riderCx : heroX + 52; RUNE_SCENE.cy = mnt && !_camp ? 106 : 128; RUNE_SCENE.t = timeSec; try { drawRuneOrbit(ctx, state.hero, RUNE_SCENE.cx, RUNE_SCENE.cy, RUNE_SCENE.sc, timeSec, "back", true); } catch (e) {} }
+      if (mnt && _camp) { try { const bs = beastPx(0.62, BEAST_SPECS[mnt.id]), bf = beastFrame(mnt.id, timeSec, false, true); drawBeast(ctx, mnt.id, Math.min(470, 516 - Math.round((bf.width - bf._cx) * bs)), 178, 0.62, timeSec, false, true); } catch (e) {} }   // la monture se repose devant la tente, dans la partie visible sur téléphone
+      if (mnt && !_camp) drawRider(ctx, mnt.id, state.hero, riderCx, 176, timeSec, isWalking, 1, heroPoseTimer);
       else {
         ctx.drawImage(heroBufferCanvas, heroX, 74, 104, 104);
         if (_hdaScene) { try { drawHDArmorTest(ctx, _hdaScene, timeSec, { x: heroX, y: 74, s: 104 / 128 }); } catch (e) { console.error(e); } }
@@ -12789,7 +13014,7 @@ function citPxDraw(t, px, ln, ell, timeSec) {
           drawDiscovery(ctx, ev.kind, 389, 174, timeSec, biome.theme);
         }
       }
-      if (petT) drawPetFull(ctx, heroX + (state.expedition.combat ? 150 : 175), 180, timeSec + 0.4, isWalking);   // v1.84.1 : le compagnon passe devant les grottes et coffres
+      if (petT) drawPetFull(ctx, heroX + (state.expedition.combat ? 150 : 175) + (mnt && !_camp ? riderCx - heroX - 52 : 0), 180, timeSec + 0.4, isWalking);   // v1.84.1 : le compagnon passe devant les grottes et coffres
 
       // 7. Si combat en cours, dessin du monstre
       if (state.expedition.combat && state.expedition.combat.enemy.ai === "malakor" && malDrawScene(ctx, state.expedition.combat.enemy, timeSec, timeSec - enemyHitT, timeSec - heroHitT)) {
@@ -26872,6 +27097,8 @@ function wmDraw(ctx, t, opt) {
         "🎨 Les 108 compétences ont leur icône pixel (pastille aux couleurs de la classe + symbole dessiné), dans l'arbre, les boutons de combat, les infobulles et le journal. Les branches de talents et le bandeau (Battle Power, coupons, sac) passent aussi en pixel art.",
         "🌀 Faille Dimensionnelle : Éclat Fantôme, Larve Dimensionnelle, Œil Flottant du Vide et le Tisseur de Failles. ⛪ Cathédrale Éteinte : Prêtre du Néant, Gargouille Astrale, Chevalier Éteint et le Gardien des Astres Morts.",
         "🏜️ Derniers bestiaires redessinés : Désert des Mirages (Scorpion des Sables, Serpent des Dunes, Squelette Ensablé, Djinn de Chaleur, Colosse de Grès), Pic des Neiges (Loup des Neiges, Golem de Givre, Feu-Follet Glacé, Chiroptère Gelé, Alpha Blanc), Archipel des Tempêtes (Crapaud des Tempêtes, Serpent de Mer, Gelée Abyssale, Noyé du Néant, Hydre des Récifs) et Tours Dorées (Sentinelle Dorée, Séraphin Solaire, Chevalier d'Écume, Prêtresse de Magma, Archonte Doré).",
+        "🐾 Compagnons du Rôdeur : le loup, le sanglier, l'ours et le dragonnet sont entièrement redessinés, avec un contour dans la teinte du pelage, des ombres douces, une marche animée et une respiration au repos. Tous les pelages, tailles et effets s'appliquent.",
+        "📱 Campement sur téléphone : nouveau bouton « 🎨 Décorer mon camp », qui ouvre une fenêtre plein écran avec le camp en grand et tes meubles débloqués. Touche un meuble pour le poser, glisse-le pour le placer, règle sa taille ou range-le.",
         "🧭 Conseils : les zones du Néant ne sont plus proposées aux héros débutants. Après Malakor, la zone conseillée dépend de ta puissance (BP).",
         "📱 Bandeau du haut : touche une pastille (coupons, potions, or, éclats, sac…) pour afficher son explication, aussi sur mobile.",
         "📍 Forge, Alchimie et Forge Étoilée : touche directement un composant de la recette pour ouvrir « Où le trouver ».",
@@ -27498,8 +27725,9 @@ function wmDraw(ctx, t, opt) {
       document.getElementById("btn-patch-more").classList.toggle("hidden", !!all);
       m.classList.remove("hidden");
     }
-    function markPatchSeen() { try { localStorage.setItem("lumenia_patch_seen", GAME_VERSION); } catch (e) {} }
-    function patchUnseen() { try { return localStorage.getItem("lumenia_patch_seen") !== GAME_VERSION; } catch (e) { return false; } }
+    const PATCH_SEEN_TAG = GAME_VERSION + "-slides2";   // v1.85 : change ce suffixe pour réafficher les slides une fois à tout le monde
+    function markPatchSeen() { try { localStorage.setItem("lumenia_patch_seen", PATCH_SEEN_TAG); } catch (e) {} }
+    function patchUnseen() { try { return localStorage.getItem("lumenia_patch_seen") !== PATCH_SEEN_TAG; } catch (e) { return false; } }
     /* =======================================================================
        v1.85 — NOUVEAUTÉS EN SLIDES : à l'arrivée en jeu, une fenêtre animée (vrais sprites du jeu)
        remplace la note écrite. Les notes écrites restent consultables (historique, menu).
@@ -27530,6 +27758,8 @@ function wmDraw(ctx, t, opt) {
           art: "where", mon: "golem_obsidienne", theme: "mines" },
         { tag: "Combat", t: "Choisis tes potions", d: "Dans Automatisation, choisis la potion que l'IA boit, ou classe-les par priorité avec ▲ ▼. Les premières potions sont plafonnées pour rester utiles sans écraser le late game.",
           art: "icons", res: ["potion_soin", "ration_voyage", "elixir_royal"], big: true },
+        { tag: "Téléphone", t: "Pensé pour le mobile", d: "Décore ton camp dans une fenêtre plein écran, retrouve tes compétences et ton ultime sous la scène, et ta monture reste toujours visible.",
+          art: "riders", ids: ["cheval"], theme: "forest" },
         { tag: "Confort", t: "Plus clair, partout", d: "Conseils adaptés à ton niveau, bandeau expliqué au toucher sur mobile, recettes cliquables et montures sans pixels qui sautent.",
           art: "riders", ids: ["jaguar"], theme: "swamp" }
       ]
@@ -28318,6 +28548,16 @@ const SkillIcons = (() => {
         tm = setTimeout(() => { if (tip) { tip.remove(); tip = null; } }, 3500);
       });
     })();
+
+    // v1.85 : sur téléphone, la jauge d'ultime et la barre de compétences passent sous la scène d'expédition
+    (function stageHudPlacement() {
+      const mq = window.matchMedia("(max-width: 640px)");
+      const place = () => { const stage = document.getElementById("scene-stage"), below = document.getElementById("stage-below"), ult = document.getElementById("ult-gauge-box"), sk = document.getElementById("skill-strip"); if (!stage || !below || !ult || !sk) return;
+        if (mq.matches) { if (ult.parentNode !== below) below.appendChild(ult); if (sk.parentNode !== below) below.appendChild(sk); }
+        else { const ref = document.getElementById("combat-hud-overlay"); if (ult.parentNode !== stage) stage.insertBefore(ult, ref); if (sk.parentNode !== stage) stage.insertBefore(sk, document.getElementById("skill-tip")); } };
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", place); else place();
+      (mq.addEventListener ? mq.addEventListener("change", place) : mq.addListener(place));
+    })();
     function applyPixelIcons() {
       if (window._pxiDone) return; window._pxiDone = true;
       const R = UNIVERS_CONFIG.ressources; let css = `.pxi,[class^="pxi-"]{display:inline-block;width:1.15em;height:1.15em;background-size:100% 100%;background-repeat:no-repeat;image-rendering:pixelated;vertical-align:-0.22em}`;
@@ -28711,7 +28951,7 @@ const SkillIcons = (() => {
         if (cv) cv.addEventListener("wheel", e => { if (state.expedition.active) return; const cur = campFovGet(), nv = Math.max(CAMP_FOV_MIN, Math.min(CAMP_FOV_MAX, cur + (e.deltaY > 0 ? 4 : -4))); if (nv === cur) return; e.preventDefault(); campFovSet(nv, true); }, { passive: false }); }
       document.getElementById("btn-patch-more").addEventListener("click", () => { RetroAudio.cursor(); showPatchNotes(true); });
       document.getElementById("modal-patch").addEventListener("click", e => { if (e.target.id === "modal-patch") closePatch(); });
-      document.getElementById("btn-open-patch").addEventListener("click", () => { RetroAudio.cursor(); showPatchNotes(false); });
+      document.getElementById("btn-open-patch").addEventListener("click", () => { RetroAudio.cursor(); if (!PatchSlides.open(GAME_VERSION)) showPatchNotes(false); });   // v1.85 : les nouveautés en images d'abord
       // ---- v1.75 : HUB EN TUILES ----
       const HUB_TAB_IDS = ["expedition", "campement", "inventaire", "heros"];
       function navXpPct(id) {
