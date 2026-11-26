@@ -16851,7 +16851,7 @@ function citPxDraw(t, px, ln, ell, timeSec) {
       }
 
       const parts = [];
-      if (u.gold > 0) parts.push(`<i class=pxi-or></i> ${u.gold} Or`);
+      if (u.gold > 0) parts.push(`<i class=pxi-or></i> ${Math.round(u.gold).toLocaleString("fr-FR")} Or`);
       Object.entries(u.ressources).forEach(([resId, qty]) => {
         if (qty > 0) {
           const r = UNIVERS_CONFIG.ressources[resId];
@@ -16859,14 +16859,15 @@ function citPxDraw(t, px, ln, ell, timeSec) {
         }
       });
       u.equips.forEach(eq => {
-        parts.push(`⚔️ ${eq.nom}`);
+        let ic = "⚔️"; try { ic = eqIco(eq) || ic; } catch (e) {}
+        parts.push(`${ic} ${eq.nom}`);
       });
 
       if (parts.length === 0) {
         box.classList.add("hidden");
       } else {
         box.classList.remove("hidden");
-        sumEl.textContent = parts.join(" • ");
+        pxiRich(sumEl, parts.join(" • "));
       }
     }
 
