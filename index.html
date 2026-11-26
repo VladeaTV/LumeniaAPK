@@ -5029,7 +5029,7 @@ const PhoenixV3 = (() => {
   function grid() { const a = []; for (let y = 0; y < H; y++) a.push(new Array(W).fill(0)); return a; }
   function build(f) {
     const g = grid(), walk = f < 6, i = walk ? f : f - 6;
-    const bob = walk ? [0, 1, 1, 0, 1, 1][i] : [0, 0, 1, 1][i];
+    const bob = walk ? [0, 1, 0, 0, 1, 0][i] : [0, 0, 1, 1][i];
     const set = (x, y, c) => { x = Math.round(x); y = Math.round(y); if (y >= 0 && y < H && x >= 0 && x < W && c) g[y][x] = c; };
     const ell = (cx, cy, rx, ry, fn) => { for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) { const dx = (x - cx) / rx, dy = (y - cy) / ry; if (dx * dx + dy * dy <= 1) set(x, y, fn(x, y, dx, dy)); } };
     const line = (x0, y0, x1, y1, c, th) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let s = 0; s <= n; s++) for (let k = 0; k < (th || 1); k++) set(x0 + (x1 - x0) * s / n, y0 + (y1 - y0) * s / n + k, c); };
@@ -5124,7 +5124,25 @@ const PhoenixV3 = (() => {
           if (S.wings && (!part || part === "front")) paint(x, Wings.near(64, 36 + TP, f, RW, S.wings), S.pal);
           c._cx = 32; c._gy = 34 + TP; c._sx = 34; c._sy = sy + 1;
         }
+        fillHoles(c);
         return (cache[k] = c);
+      }
+      // bouche les pixels transparents isolés DANS la silhouette (sinon le décor transparaît : « lignes manquantes »)
+      function fillHoles(c) {
+        const x = c.getContext("2d"), W = c.width, H = c.height; if (!W || !H) return;
+        const im = x.getImageData(0, 0, W, H), d = im.data, A = (i, j) => (i < 0 || j < 0 || i >= W || j >= H) ? 0 : d[(j * W + i) * 4 + 3];
+        for (let pass = 0; pass < 2; pass++) {
+          const fix = [];
+          for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) {
+            if (A(i, j)) continue;
+            const u = A(i, j - 1) > 0, dn = A(i, j + 1) > 0, l = A(i - 1, j) > 0, r = A(i + 1, j) > 0, n = u + dn + l + r;
+            if (n >= 3 || (u && dn && (A(i - 1, j - 1) || A(i + 1, j + 1))) || (l && r && n >= 2 && (A(i, j - 1) || A(i, j + 1)))) {
+              const s2 = u ? (j - 1) * W + i : l ? j * W + i - 1 : r ? j * W + i + 1 : (j + 1) * W + i; fix.push([(j * W + i) * 4, s2 * 4]); }
+          }
+          if (!fix.length) break;
+          fix.forEach(([o, sIdx]) => { d[o] = d[sIdx]; d[o + 1] = d[sIdx + 1]; d[o + 2] = d[sIdx + 2]; d[o + 3] = 255; });
+        }
+        x.putImageData(im, 0, 0);
       }
       const ALL = [...HORSE, ...WOLF, ...FEL, ...DEER, ...BIRD];
       return { has: k => ALL.includes(k), frame, ALL, WINGED: ["pegase", "griffon", "chimere", "phenix"] };
@@ -5161,10 +5179,10 @@ const PhoenixV3 = (() => {
     function riderLean(cv, hero) {   // v1.84 : le buste penche légèrement vers l'encolure, les hanches restent dans la selle
       const hip = (23 + (hero.lignee === "nain" ? 1 : 0)) * 4, b = _leanBuf.getContext("2d"), x = cv.getContext("2d");
       b.clearRect(0, 0, 128, 128); b.drawImage(cv, 0, 0); x.clearRect(0, 0, 128, hip);
-      const neck = hip - 9 * 4; for (let yy = 0; yy < hip; yy += 4) { const dx = Math.round(Math.min(hip - yy, hip - neck) / 4 * 0.34); x.drawImage(_leanBuf, 0, yy, 128, 4, dx, yy, 128, 4); }
+      for (let yy = 0; yy < hip; yy += 4) { const dx = yy < hip - 9 * 4 ? 4 : 0; x.drawImage(_leanBuf, 0, yy, 128, 4, dx, yy, 128, 4); }
     }
     function drawRiderProfileBase(cv, hero, t, pose) {
-      const ctx = cv.getContext("2d"); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, 128, 128);
+      const ctx = cv.getContext("2d"); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, cv.width, cv.height);
       const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x * 4), Math.round(y * 4), Math.round(w * 4), Math.round(h * 4)); };
       const look = getHeroLook(hero), skin = hero.couleurPeau, hc = hero.couleurCheveux, cl = hero.classe;
       const A = look.armor, H = look.helm, W = look.weapon, S = look.shield, C = look.cape;
@@ -5222,7 +5240,7 @@ const PhoenixV3 = (() => {
       }
 
       // ---------- BRAS ARRIÈRE (rênes) ----------
-      P(17, 18, 5, 2, shade(outfit)); P(21, 18, 2, 2, shade(skin));
+      P(17, 19, 4, 2, shade(outfit)); P(21, 19, 2, 2, shade(skin));
 
       // ---------- TORSE + ARMURE ----------
       P(12, 15, 7, 9, outfit); P(12, 15, 2, 9, shade(outfit));
@@ -5295,24 +5313,21 @@ const PhoenixV3 = (() => {
       // ---------- JAMBES : cuisse sur la selle, mollet le long du flanc, botte à l'étrier ----------
       const robe = (A && (A.kind === "robe" || A.kind === "stellar_robe" || A.kind === "frost_robe")) || (!A && cl === "occultiste");
       // v1.84 : posture de cavalier — cuisse qui descend vers le genou, mollet ramené sous la hanche, talon bas dans l'étrier
-      P(13, 23, 5, 3, robe ? outfit : pants); P(16, 24, 4, 3, robe ? outfit : pants); P(19, 25, 1, 2, robe ? outfit : pants);
-      P(18, 26, 3, 3, pants); P(17, 28, 3, 3, pants); P(17, 28, 1, 3, "#334155"); P(18, 26, 1, 2, "#334155");
-      P(16, 30, 5, 2, boots); P(21, 31, 1, 1, boots); P(16, 30, 1, 1, shade(boots));
-      P(15, 29, 1, 3, "#cbd5e1"); P(15, 32, 7, 1, "#94a3b8");
-      if (robe) { P(12, 24, 8, 3, outfit); P(12, 26, 8, 1, A ? A.trim : shade(outfit)); }
+      // v1.85 : vraie posture à cheval — cuisse posée vers l'avant, genou plié, jambe qui descend le long du flanc, talon bas dans l'étrier
+      const th = robe ? outfit : pants, thD = shade(th), pD = shade(pants), bD = shade(boots);
+      P(16, 27, 1, 9, "#78350f");                                                            // étrivière
+      P(12, 23, 7, 3, th); P(18, 24, 2, 3, th); P(19, 25, 2, 3, th); P(13, 25, 6, 1, thD);  // cuisse
+      P(18, 28, 3, 2, pants); P(18, 30, 3, 4, pants); P(18, 28, 1, 6, pD);                   // genou + mollet
+      P(17, 34, 5, 2, boots); P(17, 33, 3, 1, boots); P(22, 35, 1, 1, bD); P(17, 34, 1, 2, bD);   // botte, pointe vers l'avant
+      P(17, 36, 5, 1, "#a8a29e");                                                            // étrier
+      if (robe) { P(12, 24, 9, 5, outfit); P(12, 28, 9, 1, A ? A.trim : shade(outfit)); }
 
       // ---------- TÊTE DE PROFIL ----------
       const spans = (rows, c) => rows.forEach(([yy, x0, x1]) => P(x0, yy, x1 - x0 + 1, 1, c));
-      if (fem) {
-        // tête arrondie : crâne ovale, front bombé, petit nez retroussé, menton fin
-        P(15, 13, 3, 3, shade(skin));
-        spans([[5, 14, 18], [6, 13, 19], [7, 12, 20], [8, 12, 20], [9, 12, 21], [10, 12, 20], [11, 12, 20], [12, 13, 20], [13, 14, 19], [14, 16, 18]], skin);
-      }
-      else {   // v1.84 : profil masculin moins carré — crâne arrondi, arcade, nez marqué, mâchoire qui remonte vers la nuque
-        P(14, 14, 3, 2, shade(skin));
-        spans([[5, 13, 19], [6, 12, 20], [7, 12, 20], [8, 12, 21], [9, 12, 21], [10, 12, 22], [11, 12, 21], [12, 13, 20], [13, 14, 20], [14, 16, 19]], skin);
-        P(21, 11, 1, 1, shade(skin)); P(13, 13, 1, 1, shade(skin));
-      }
+      // v1.85 : tête de profil simplifiée, dans le style du héros de face (tête ronde, nez d'un pixel, pas de traits chargés)
+      P(15, 13, 3, 3, shade(skin));                                                                     // cou
+      spans([[4, 14, 18], [5, 13, 19], [6, 12, 20], [7, 12, 20], [8, 12, 20], [9, 12, 20], [10, 12, 20], [11, 12, 20], [12, 13, 19], [13, 14, 18]], skin);
+      P(21, 9, 1, 1, skin); P(20, 10, 1, 1, shade(skin));                                               // petit nez
       if (hero.lignee === "elfe") { P(13, 8, 2, 3, skin); P(12, 6, 1, 3, skin); P(13, 9, 1, 1, shade(skin)); }
       else if (hero.lignee === "draconique") { P(12, 3, 2, 3, "#fef3c7"); P(10, 2, 2, 2, "#d97706"); P(19, 12, 1, 1, "#d97706"); }
       else P(14, 9, 2, 2, shade(skin));
@@ -5331,11 +5346,10 @@ const PhoenixV3 = (() => {
         if (f === "feroce") P(19, 12, 2, 1, "#450a0a");
       }
       if (fem) {
-        // cils marqués, joue rosée, lèvres
-        if (!["borgne", "masque"].includes(f)) { P(ex, ey - 1, 3, 1, "#0f172a"); P(ex + 2, ey - 2, 1, 1, "#0f172a"); P(ex + 2, ey, 1, 1, "#0f172a"); }
-        P(17, 11, 2, 1, "#fda4af");
-        if (!["rieur", "surpris", "feroce"].includes(f)) { P(20, 12, 1, 1, "#e11d48"); P(19, 12, 1, 1, "#be123c"); }
-      } else if (!["rieur", "surpris", "feroce"].includes(f)) P(19, 12, 2, 1, shade(skin));
+        if (!["borgne", "masque"].includes(f)) P(ex + 1, ey - 1, 2, 1, "#0f172a");                       // cils
+        P(17, 10, 1, 1, "#fda4af");                                                                       // joue
+        if (!["rieur", "surpris", "feroce"].includes(f)) P(19, 12, 1, 1, "#be123c");                       // bouche
+      } else if (!["rieur", "surpris", "feroce"].includes(f)) P(19, 12, 1, 1, shade(skin));
       if ((nain && !fem) || hero.barbe === "barbe") { P(15, 12, 7, 4, hc); P(17, 16, 4, 1, hc); }
       else if (hero.barbe === "moustache") P(19, 11, 3, 1, hc);
       if (hero.marque === "cicatrice") { P(17, 6, 1, 6, "#b91c1c"); P(16, 8, 3, 1, "#fecaca"); }
@@ -5343,7 +5357,7 @@ const PhoenixV3 = (() => {
       else if (hero.marque === "taches") [[16, 11], [18, 12], [20, 11]].forEach(([x, yy]) => P(x, yy, 1, 1, "#a16207"));
       // coiffure (dessus + nuque)
       if (!hidesHair) {
-        if (!fem) { P(12, 4, 9, 2, hc); P(11, 5, 4, 5, hc); P(19, 5, 2, 1, hc); }
+        if (!fem) { P(13, 3, 6, 1, hc); P(12, 4, 8, 2, hc); P(11, 5, 4, 5, hc); P(19, 5, 1, 1, hc); }
         if (hero.cheveux === "court") P(12, 3, 7, 1, hc);
         if (hero.cheveux === "carre") P(19, 5, 2, 3, hc);
         if (hero.cheveux === "crete") P(13, 2, 7, 2, hc);
@@ -5353,6 +5367,17 @@ const PhoenixV3 = (() => {
       }
 
       // ---------- CASQUE ----------
+      // v1.85 : vraie capuche de profil — dôme, rebord au-dessus du front, intérieur dans l'ombre, pointe et pèlerine
+      const hoodP = (M, I, glow, noTip) => {
+        const D = shade(M), n = parseInt(M.slice(1), 16), L = "#" + [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.min(255, Math.round(v + (255 - v) * 0.22)).toString(16).padStart(2, "0")).join("");
+        spans([[2, 14, 18], [3, 12, 20], [4, 11, 21], [5, 10, 21], [6, 10, 16], [7, 10, 15], [8, 10, 15], [9, 10, 15], [10, 10, 15], [11, 10, 15], [12, 10, 16], [13, 10, 17], [14, 10, 18], [15, 11, 18]], M);
+        spans([[6, 17, 21]], M); P(21, 6, 1, 1, D);                                   // rebord au-dessus du front
+        P(15, 7, 1, 6, I); P(16, 6, 5, 1, I); P(16, 12, 2, 1, I);                     // doublure / ombre autour du visage
+        P(14, 2, 4, 1, L); P(12, 3, 3, 1, L); P(19, 4, 2, 1, L);                     // reflet
+        P(10, 8, 1, 7, D); P(11, 14, 6, 1, D);                                        // ombre de la nuque et de la pèlerine
+        if (!noTip) { P(9, 4, 2, 2, M); P(8, 5, 1, 3, M); P(7, 7, 1, 2, D); }         // pointe qui retombe derrière
+        if (glow) { P(16, 7, 5, 1, shade(skin)); P(19, 8, 1, 2, glow); }   // visage dans l'ombre, regard qui luit
+      };
       if (H) {
         const K = H.kind, full = () => { P(11, 3, 11, 5, H.main); P(11, 7, 4, 6, H.main); P(19, 7, 2, 1, H.main); P(11, 3, 11, 1, H.trim); P(21, 6, 1, 4, H.trim); };
         if (K === "cap") { P(12, 3, 9, 3, H.main); P(19, 5, 4, 1, H.trim); }
@@ -5362,7 +5387,7 @@ const PhoenixV3 = (() => {
         else if (K === "winged") { full(); P(11, 3, 3, 2, H.trim); P(9, 2, 3, 2, H.trim); P(8, 1, 2, 2, H.trim); }
         else if (K === "flame") { full(); for (let k = 0; k < 4; k++) { const hh = 2 + Math.round(Math.abs(Math.sin(t * 8 + k * 1.7)) * 3); P(12 + k * 2, 3 - hh, 2, hh, k % 2 ? (H.glow || H.trim) : H.trim); } }
         else if (K === "crown") { P(12, 4, 8, 2, H.main); [12, 15, 18].forEach(x => P(x, 2, 2, 2, H.main)); P(15, 4, 2, 1, H.trim); P(19, 4, 1, 1, H.trim); }
-        else if (K === "hood") { P(11, 3, 10, 4, H.main); P(10, 5, 4, 11, H.main); P(9, 6, 2, 2, H.main); P(19, 6, 2, 1, H.trim); P(12, 15, 6, 1, H.main); }
+        else if (K === "hood") hoodP(H.main, H.trim, H.glow);
         else if (K === "wizard") { P(9, 5, 14, 2, H.main); P(12, 2, 8, 3, H.main); P(12, 0, 5, 2, H.main); P(10, 0, 2, 1, H.main); P(12, 4, 8, 1, H.trim); P(15, 3, 1, 1, "#ffffff"); }
         else if (K === "headband") { P(12, 6, 9, 2, H.main); P(9, 6, 3, 1, H.trim); P(8, 7 + (tick % 2), 2, 2, H.trim); }
         else if (K === "tricorn") { P(10, 4, 13, 2, H.main); P(12, 2, 9, 3, H.main); P(10, 5, 13, 1, H.trim); P(11, 0, 2, 4, H.trim); }
@@ -5371,14 +5396,14 @@ const PhoenixV3 = (() => {
         else if (K === "turban") { P(11, 2, 10, 5, H.main); P(10, 4, 3, 5, H.main); P(11, 2, 10, 1, "#ffffff"); P(11, 4, 10, 1, "#e7e5e4"); P(18, 3, 2, 2, H.trim); P(9, 6 + (tick % 2), 2, 3, H.trim);
           if (H.veil) { P(15, 12, 7, 3, H.trim); P(15, 12, 7, 1, H.glow || H.trim); } }
         else if (K === "halo") { P(12, 1, 9, 1, H.main); P(11, 2, 1, 1, H.main); P(21, 2, 1, 1, H.main); P(12 + (Math.floor(t * 8) % 9), 1, 1, 1, H.glow || "#ffffff"); }
-        else if (K === "skull") { P(11, 3, 10, 4, H.main); P(10, 5, 4, 11, H.main); P(14, 6, 8, 9, H.trim); const fl = Math.sin(t * 6) > 0 ? 0 : 1; P(18, 9, 3, 2 - fl, H.glow); P(20, 12, 1, 2, "#111827"); P(16, 13, 1, 1, "#111827"); }
+        else if (K === "skull") { hoodP(H.main, shade(H.main), null, true); P(16, 7, 5, 7, H.trim); const fl = Math.sin(t * 6) > 0 ? 0 : 1; P(18, 9, 3, 2 - fl, H.glow); P(20, 12, 1, 2, "#111827"); P(16, 13, 1, 1, "#111827"); }
         else if (K === "blood_helm") {
           P(11, 3, 11, 12, "#1c1414"); P(11, 3, 2, 12, "#0a0606"); P(11, 5, 11, 1, "#fbbf24"); P(14, 2, 2, 3, "#b91c1c"); P(14, 1, 2, 1, "#fbbf24");
           P(17, 9, 5, 2, "#0a0606"); P(18, 9, 3, 1, Math.sin(t * 5) > 0 ? "#ef4444" : "#fca5a5"); P(19, 12, 3, 1, "#0a0606"); P(12, 14, 9, 1, "#b8860b");
           P(9, 5, 3, 2, "#e7e5e4"); P(7, 3, 2, 3, "#e7e5e4"); P(6, 1, 2, 3, "#d6d3d1"); P(6, 0, 1, 1, "#fbbf24");
         }
         else if (K === "antler_hood") {
-          P(11, 4, 10, 4, "#3f6212"); P(10, 5, 4, 11, "#365314"); P(11, 7, 10, 1, "#84cc16"); P(16, 12, 5, 2, "#d6b48a");
+          hoodP("#3f6212", "#1a2e05", null, true); P(16, 6, 5, 1, "#84cc16");
           const A = "#e7d3a8", G = "#bef264";
           P(14, 0, 1, 4, A); P(12, 1, 2, 1, A); P(11, -1, 1, 3, A); P(13, -2, 1, 2, A); P(11, -2, 1, 1, G); P(13, -3, 1, 1, G);
           P(17, 0, 1, 4, A); P(18, 1, 2, 1, A); P(20, -1, 1, 3, A); P(18, -2, 1, 2, A); P(20, -2, 1, 1, G); P(18, -3, 1, 1, G);
@@ -5409,13 +5434,13 @@ const PhoenixV3 = (() => {
           for (let i = 0; i < 2; i++) { const a = t * 2 + i * 3.14; P(16 + Math.cos(a) * 6, 5 + Math.sin(a) * 1.5, 1, 1, i ? "#c4b5fd" : "#ffffff"); }
         }
         else if (K === "stellar_mask") {
-          P(11, 3, 10, 5, H.main); P(10, 5, 4, 11, H.main); P(11, 3, 10, 1, H.trim);
-          P(15, 7, 6, 8, "#1e1b4b"); P(18, 8, 2, 2, H.glow); P(17, 8, 1, 2, "#fde68a"); P(20, 8, 1, 2, "#fde68a");
+          hoodP(H.main, H.trim);
+          P(16, 7, 5, 6, "#1e1b4b"); P(18, 8, 2, 2, H.glow); P(17, 8, 1, 2, "#fde68a"); P(20, 8, 1, 2, "#fde68a");
           P(21, 10, 2, 2, "#312e81"); P(23, 11, 2, 1, "#312e81"); P(21, 10, 2, 1, "#fde68a");
         }
         else if (K === "stellar") {
-          P(11, 3, 10, 5, H.main); P(10, 5, 4, 11, H.main); P(12, 1, 7, 2, H.main); P(11, 0, 4, 1, H.main); P(9, 0, 2, 1, H.trim); P(8, 1, 1, 1, "#fde68a");
-          P(11, 3, 10, 1, H.trim); P(14, 7, 8, 8, "#04061a"); P(14, 11, 8, 4, "#0d1030"); P(14, 11, 8, 1, H.trim); P(20, 12, 1, 1, "#fde68a");
+          hoodP(H.main, H.trim); P(9, 4, 1, 1, "#fde68a");
+          P(16, 7, 5, 6, "#04061a"); P(14, 11, 8, 4, "#0d1030"); P(14, 11, 8, 1, H.trim); P(20, 12, 1, 1, "#fde68a");
           P(17, 9, 3, 1, H.glow); P(19, 8, 1, 1, H.glow); P(18, 9, 1, 1, "#ffffff");
           P(8 - (tick % 2), 12, 3, 1, H.trim); P(7 - (tick % 2), 13, 2, 3, "#312e81");
         }
@@ -5433,7 +5458,9 @@ const PhoenixV3 = (() => {
         else if (cl === "rodeur") { P(19, 6, 2, 2, "#92400e"); P(20, 8, 2, 8, "#92400e"); P(19, 16, 2, 2, "#92400e"); P(19, 8, 1, 8, "#e5e7eb"); }
         else { P(18, 9, 3, 3, "#22c55e"); P(19, 8, 1, 1, "#cbd5e1"); }
       } else {
-        P(15, 16, 3, 4, outfit); P(17, 19, 5, 2, outfit); P(21, 19, 2, 2, skin);
+        // v1.85 : bras naturel — l'épaule descend, coude plié contre le flanc, avant-bras vers l'avant, mains basses sur les rênes
+        P(15, 16, 3, 4, outfit); P(15, 19, 1, 1, shade(outfit)); P(16, 20, 3, 2, outfit); P(19, 20, 2, 2, outfit); P(19, 21, 2, 1, shade(outfit));
+        P(21, 20, 2, 2, skin); P(22, 21, 1, 1, shade(skin)); P(23, 21, 2, 1, "#78350f"); P(25, 22, 1, 1, "#78350f");
         if (A && A.kind !== "cuir") P(15, 16, 3, 1, A.trim);
       }
       // torche / lanterne : tenue à l'avant, pendue au pommeau
@@ -5442,20 +5469,20 @@ const PhoenixV3 = (() => {
         else drawOffhandSkin((x, yy, w, h, c) => px(x + 16, yy + 3, w, h, c), S, y, t);
       }
     }
-    const riderBuf = document.createElement("canvas"); riderBuf.width = riderBuf.height = 128;
+    const riderBuf = document.createElement("canvas"); riderBuf.width = 128; riderBuf.height = 160;   // v1.85 : plus haut pour une vraie jambe le long du flanc
     function drawRider(ctx, mountId, hero, cx, ground, t, walking, scale, pose) {
       const sp = BEAST_SPECS[mountId]; if (!sp) return;
       drawRiderProfile(riderBuf, hero, t, pose || 0);
       // v1.88 : taille de pixel ENTIÈRE pour la monture et le cavalier (sinon des lignes de 3 et 4 px alternent et « sautent » à chaque frame)
       const c = beastFrame(mountId, t, walking, true), s = beastPx(scale, sp);
-      const bob = walking ? ((Math.floor(t * 9) % 2) ? -s : 0) : 0;
+      const bob = 0;   // le rebond vient uniquement de l'animation de marche (plus de saut global qui faisait trembler la monture)
       cx = Math.round(cx); ground = Math.round(ground);
       const sxw = cx - Math.round(c._cx * s) + c._sx * s, syw = ground - Math.round(c._gy * s) + c._sy * s + bob;
       const hs = s / 4, dx = Math.round(sxw - 64 * hs), dy = Math.round(syw - 97 * hs);
       ctx.imageSmoothingEnabled = false;
       if (sp.wing) drawBeast(ctx, mountId, cx, ground, scale, t, walking, true, bob, "wings");
       drawBeast(ctx, mountId, cx, ground, scale, t, walking, true, bob, sp.wing ? "body" : undefined);
-      ctx.drawImage(riderBuf, dx, dy, Math.round(128 * hs), Math.round(128 * hs));
+      ctx.drawImage(riderBuf, dx, dy, Math.round(128 * hs), Math.round(riderBuf.height * hs));
       if (sp.front) drawBeast(ctx, mountId, cx, ground, scale, t, walking, true, bob, "front");
     }
 
